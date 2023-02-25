@@ -13,3 +13,11 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+**/*/output/
+version.json
+.vscode/*.log
+output
+**/*/.DS_Store
+**/*/__debug_bin
+**/*/*.nogit
