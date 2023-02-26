@@ -30,6 +30,7 @@ func initializeVersionCmd(ctx floc.Context, ctrl floc.Control) error {
 		if e := SetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeVersionCmd", e)
 		}
+		return err
 	}
 
 	infraOptions := []infrastructure.AdapterOption{
@@ -40,6 +41,7 @@ func initializeVersionCmd(ctx floc.Context, ctrl floc.Control) error {
 		if e := SetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeVersionCmd", e)
 		}
+		return err
 	}
 	if err = application.WithOptions(&c.Apps,
 		application.WithPrintVersionCommand(c.Adapters.Version, c.Adapters.Printer),
@@ -47,6 +49,7 @@ func initializeVersionCmd(ctx floc.Context, ctrl floc.Control) error {
 		if e := SetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeVersionCmd", e)
 		}
+		return err
 	}
 	if err = SetCmdCtx(ctx, common.Cmdctx{
 		Cmd:      c.Cmd,
@@ -55,9 +58,10 @@ func initializeVersionCmd(ctx floc.Context, ctrl floc.Control) error {
 		Adapters: c.Adapters,
 		Ports:    c.Ports,
 	}); err != nil {
-		if e := SetRCErrorTree(ctx, "initializeKubeDiffCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKubeDiffCmd", e)
+		if e := SetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeVersionCmd", e)
 		}
+		return err
 	}
 
 	return nil
