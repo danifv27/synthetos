@@ -12,6 +12,7 @@
 package application
 
 import (
+	"fry.org/cmo/cli/internal/application/healthchecker"
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/application/printer"
 	"fry.org/cmo/cli/internal/application/version"
@@ -42,6 +43,7 @@ type Commands struct {
 // Applications contains all exposed services of the application layer
 type Applications struct {
 	logger.Logger
+	healthchecker.Healthchecker
 	Queries  Queries
 	Commands Commands
 }
@@ -81,6 +83,16 @@ func WithLogger(l logger.Logger) ApplicationOption {
 	return ApplicationOptionFunc(func(a *Applications) error {
 
 		a.Logger = l
+
+		return nil
+	})
+}
+
+func WithHealthchecker(h healthchecker.Healthchecker) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Healthchecker = h
 
 		return nil
 	})

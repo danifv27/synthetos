@@ -21,6 +21,9 @@
 package infrastructure
 
 import (
+	"errors"
+
+	"fry.org/cmo/cli/internal/application/healthchecker"
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/application/printer"
 	"fry.org/cmo/cli/internal/application/version"
@@ -48,6 +51,7 @@ type Adapters struct {
 	logger.Logger
 	version.Version
 	printer.Printer
+	healthchecker.Healthchecker
 }
 
 // NewAdapters
@@ -119,5 +123,14 @@ func WithTablePrinter() AdapterOption {
 		}
 
 		return nil
+	})
+}
+
+func WithHealthchecker() AdapterOption {
+
+	return AdapterOptionFunc(func(a *Adapters) error {
+		var rcerror error
+
+		return errortree.Add(rcerror, "WithHealthchecker", errors.New("method not implemented"))
 	})
 }
