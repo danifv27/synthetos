@@ -12,9 +12,10 @@
 package application
 
 import (
-	"fmt"
-
 	"fry.org/cmo/cli/internal/application/logger"
+	"fry.org/cmo/cli/internal/application/printer"
+	"fry.org/cmo/cli/internal/application/version"
+	"github.com/speijnik/go-errortree"
 )
 
 // An Option applies optional changes to the Kong application.
@@ -35,6 +36,7 @@ type Queries struct {
 
 // Commands operations that accept data to make a change or trigger an action
 type Commands struct {
+	PrintVersion PrintVersionRequestHandler
 }
 
 // Applications contains all exposed services of the application layer
@@ -46,13 +48,14 @@ type Applications struct {
 
 // NewApplications bootstraps Application Layer dependencies
 func NewApplications(opts ...ApplicationOption) (Applications, error) {
+	var rcerror error
 
 	a := Applications{}
 
 	// Loop through each option
 	for _, option := range opts {
 		if err := option.Apply(&a); err != nil {
-			return Applications{}, fmt.Errorf("NewApplications: %w", err)
+			return Applications{}, errortree.Add(rcerror, "NewApplications", err)
 		}
 	}
 
@@ -61,11 +64,12 @@ func NewApplications(opts ...ApplicationOption) (Applications, error) {
 
 // WithOptions
 func WithOptions(a *Applications, opts ...ApplicationOption) error {
+	var rcerror error
 
 	// Loop through each option
 	for _, option := range opts {
 		if err := option.Apply(a); err != nil {
-			return fmt.Errorf("WithOptions: %w", err)
+			return errortree.Add(rcerror, "WithOptions", err)
 		}
 	}
 
@@ -77,6 +81,16 @@ func WithLogger(l logger.Logger) ApplicationOption {
 	return ApplicationOptionFunc(func(a *Applications) error {
 
 		a.Logger = l
+
+		return nil
+	})
+}
+
+func WithPrintVersionCommand(v version.Version, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.PrintVersion = NewPrintVersionRequestHandler(v, p)
 
 		return nil
 	})

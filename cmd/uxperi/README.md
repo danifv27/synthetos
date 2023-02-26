@@ -1,4 +1,3 @@
  # Uxperi a Cucumber based Prometheus Exporter 
  
- from user experience: The desired, expected, or actual experience of a user interacting with a product, especially as it relates to the design of the product's user interface.
- 
+The `Uxperi Exporter`  is a Prometheus exporter that exports metrics from Cucumber test results. It is designed to be used as a blackbox exporter for monitoring Cucumber tests in a similar way to how blackbox exporters monitor HTTP endpoints. The exporter is written in Go and is designed to work with Cucumber test results in JSON format or testing live web applications.

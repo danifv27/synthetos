@@ -4,9 +4,7 @@
 // handling asynchronous messages.
 package infrastructure
 
-import (
-	"fmt"
-)
+import "github.com/speijnik/go-errortree"
 
 // An PortOption applies optional changes to the Kong application.
 type PortOption interface {
@@ -25,13 +23,14 @@ type Ports struct{}
 
 // NewPorts  instantiates the services of input ports
 func NewPorts(opts ...PortOption) (Ports, error) {
+	var rcerror error
 
 	p := Ports{}
 
 	// Loop through each option
 	for _, option := range opts {
 		if err := option.Apply(&p); err != nil {
-			return Ports{}, fmt.Errorf("NewPorts: %w", err)
+			return Ports{}, errortree.Add(rcerror, "NewPorts", err)
 		}
 	}
 
@@ -40,11 +39,12 @@ func NewPorts(opts ...PortOption) (Ports, error) {
 
 // PortWithOptions instantiates the services of input ports
 func PortWithOptions(p *Ports, opts ...PortOption) error {
+	var rcerror error
 
 	// Loop through each option
 	for _, option := range opts {
 		if err := option.Apply(p); err != nil {
-			return fmt.Errorf("PortWithOptions: %w", err)
+			return errortree.Add(rcerror, "PortWithOptions", err)
 		}
 	}
 

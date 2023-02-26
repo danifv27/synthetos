@@ -19,34 +19,28 @@ func Parse(URI string) (logger.Logger, error) {
 
 	u, err := url.Parse(URI)
 	if err != nil {
-		rcerror = errortree.Add(rcerror, "parse", err)
-		return nil, rcerror
+		return nil, errortree.Add(rcerror, "Parse", err)
 	}
 	if u.Scheme != "logger" {
-		rcerror = errortree.Add(rcerror, "parse", fmt.Errorf("invalid scheme %s", URI))
-		return nil, rcerror
+		return nil, errortree.Add(rcerror, "Parse", fmt.Errorf("invalid scheme %s", URI))
 	}
 	switch u.Opaque {
 	case "logrus":
 		level = u.Query().Get("level")
 		if level == "" {
-			rcerror = errortree.Add(rcerror, "parse", errors.New("missing level query argument"))
-			return nil, rcerror
+			return nil, errortree.Add(rcerror, "Parse", errors.New("missing level query argument"))
 		}
 		output := u.Query().Get("output")
 		if output == "" {
-			rcerror = errortree.Add(rcerror, "parse", errors.New("missing output query argument"))
-			return nil, rcerror
+			return nil, errortree.Add(rcerror, "Parse", errors.New("missing output query argument"))
 		}
 		l = logrus.NewLogger()
 		l.SetLevel(level)
 		if err = l.SetFormat(fmt.Sprintf("logrus:hooked?output=%s", url.QueryEscape(output))); err != nil {
-			rcerror = errortree.Add(rcerror, "parse", err)
-			return nil, rcerror
+			return nil, errortree.Add(rcerror, "Parse", err)
 		}
 	default:
-		rcerror = errortree.Add(rcerror, "parse", fmt.Errorf("unsupported logger implementation %q", u.Opaque))
-		return nil, rcerror
+		return nil, errortree.Add(rcerror, "Parse", fmt.Errorf("unsupported logger implementation %q", u.Opaque))
 	}
 
 	return l, nil

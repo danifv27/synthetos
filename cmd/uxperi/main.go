@@ -81,7 +81,7 @@ func main() {
 		kong.Bind(pCtxcmd),
 		kong.Bind(&rcerror),
 		kong.Name(bin),
-		kong.Description("Zen tool for DevOps"),
+		kong.Description("Cucumber based Prometheus exporter"),
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{
 			Tree: true,
@@ -106,7 +106,7 @@ func main() {
 	}
 
 	flocCtx := floc.NewContext()
-	uxperi.SetCmdCtx(flocCtx, pCtxcmd)
+	uxperi.SetCmdCtx(flocCtx, *pCtxcmd)
 	uxperi.SetFlags(flocCtx, cli)
 	ctrl := floc.NewControl(flocCtx)
 

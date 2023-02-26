@@ -25,8 +25,7 @@ func (l *Logger) SetLevel(level string) error {
 
 	lvl, err := logrus.ParseLevel(level)
 	if err != nil {
-		rcerror = errortree.Add(rcerror, "SetLevel", err)
-		return rcerror
+		return errortree.Add(rcerror, "SetLevel", err)
 	}
 
 	l.entry.Logger.Level = lvl
@@ -40,12 +39,10 @@ func (l *Logger) SetFormat(format string) error {
 	var rcerror error
 	u, err := url.Parse(format)
 	if err != nil {
-		rcerror = errortree.Add(rcerror, "SetFormat", err)
-		return rcerror
+		return errortree.Add(rcerror, "SetFormat", err)
 	}
 	if u.Scheme != "logrus" {
-		rcerror = errortree.Add(rcerror, "SetFormat", fmt.Errorf("invalid scheme %s", u.Scheme))
-		return rcerror
+		return errortree.Add(rcerror, "SetFormat", fmt.Errorf("invalid scheme %s", u.Scheme))
 	}
 	output := u.Query().Get("output")
 	if output == "json" {
@@ -80,8 +77,7 @@ func (l *Logger) SetFormat(format string) error {
 			},
 		})
 	default:
-		rcerror = errortree.Add(rcerror, "SetFormat", fmt.Errorf("unsupported format %s", format))
-		return rcerror
+		return errortree.Add(rcerror, "SetFormat", fmt.Errorf("unsupported format %s", format))
 	}
 
 	return nil

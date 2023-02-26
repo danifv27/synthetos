@@ -22,9 +22,12 @@ package infrastructure
 
 import (
 	"fry.org/cmo/cli/internal/application/logger"
+	"fry.org/cmo/cli/internal/application/printer"
+	"fry.org/cmo/cli/internal/application/version"
 
 	ilogger "fry.org/cmo/cli/internal/infrastructure/logger"
-
+	itableprinter "fry.org/cmo/cli/internal/infrastructure/printer"
+	istorage "fry.org/cmo/cli/internal/infrastructure/storage"
 	"github.com/speijnik/go-errortree"
 )
 
@@ -43,6 +46,8 @@ func (o AdapterOptionFunc) Apply(a *Adapters) error {
 // Adapters contains the exposed adapters of interface adapters
 type Adapters struct {
 	logger.Logger
+	version.Version
+	printer.Printer
 }
 
 // NewAdapters
@@ -54,9 +59,7 @@ func NewAdapters(opts ...AdapterOption) (Adapters, error) {
 	// Loop through each option
 	for _, option := range opts {
 		if err := option.Apply(&a); err != nil {
-			rcerror = errortree.Add(rcerror, "infrastructure", err)
-			return Adapters{}, rcerror
-			// return Adapters{}, fmt.Errorf("NewAdapters: %w", err)
+			return Adapters{}, errortree.Add(rcerror, "NewAdapters", err)
 		}
 	}
 
@@ -70,8 +73,7 @@ func AdapterWithOptions(a *Adapters, opts ...AdapterOption) error {
 	// Loop through each option
 	for _, option := range opts {
 		if err := option.Apply(a); err != nil {
-			rcerror = errortree.Add(rcerror, "infrastructure", err)
-			return rcerror
+			return errortree.Add(rcerror, "AdapterWithOptions", err)
 			// return fmt.Errorf("AdapterWithOptions: %w", err)
 		}
 	}
@@ -85,7 +87,35 @@ func WithLogger(URI string) AdapterOption {
 		var err, rcerror error
 
 		if a.Logger, err = ilogger.Parse(URI); err != nil {
-			return errortree.Add(rcerror, "logger", err)
+			return errortree.Add(rcerror, "WithLogger", err)
+		}
+
+		return nil
+	})
+}
+
+func WithVersion(URI string) AdapterOption {
+
+	return AdapterOptionFunc(func(a *Adapters) error {
+		var err, rcerror error
+
+		if a.Version, err = istorage.Parse(URI); err != nil {
+			return errortree.Add(rcerror, "WithVersion", err)
+		}
+
+		return nil
+	})
+}
+
+func WithTablePrinter() AdapterOption {
+
+	return AdapterOptionFunc(func(a *Adapters) error {
+		var err, rcerror error
+
+		options := []itableprinter.TablePrinterOption{}
+
+		if a.Printer, err = itableprinter.NewTablePrinter(options...); err != nil {
+			return errortree.Add(rcerror, "WithTablePrinter", err)
 		}
 
 		return nil

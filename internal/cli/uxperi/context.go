@@ -24,22 +24,26 @@ func (c contextKey) String() string {
 func Flags(ctx floc.Context) (CLI, error) {
 	var cli CLI
 	var ok bool
+	var rcerror error
 
 	if cli, ok = ctx.Value(contextKeyCLI).(CLI); !ok {
-		return CLI{}, fmt.Errorf("type mismatch with key %s", contextKeyCLI)
+		return CLI{}, errortree.Add(rcerror, "Flags", fmt.Errorf("type mismatch with key %s", contextKeyCLI))
 	}
 
 	return cli, nil
 }
 
-func SetFlags(ctx floc.Context, c CLI) {
+func SetFlags(ctx floc.Context, c CLI) error {
 
 	ctx.AddValue(contextKeyCLI, c)
+
+	return nil
 }
 
 // RCError gets a pointer to errortree parent error
 func RCErrorTree(ctx floc.Context) (*error, error) {
 	var e *error
+	var rcerror error
 	var ok bool
 
 	obj := ctx.Value(contextKeyRCError)
@@ -47,35 +51,47 @@ func RCErrorTree(ctx floc.Context) (*error, error) {
 		e = new(error)
 		ctx.AddValue(contextKeyRCError, e)
 	} else if e, ok = obj.(*error); !ok {
-		return nil, fmt.Errorf("type mismatch with key %s", contextKeyRCError)
+		return nil, errortree.Add(rcerror, "RCErrorTree", fmt.Errorf("type mismatch with key %s", contextKeyRCError))
 	}
 
 	return e, nil
 }
 
-func SetRCErrorTree(ctx floc.Context, key string, e error) {
+func SetRCErrorTree(ctx floc.Context, key string, e error) error {
 	var rcerror *error
-	var err error
+	var err, rce error
 
 	if rcerror, err = RCErrorTree(ctx); err == nil {
 		*rcerror = errortree.Add(*rcerror, key, e)
 	}
 
+	return errortree.Add(rce, "SetRCErrorTree", err)
 }
 
 // CmdCtx gets a pointer to the command context
 func CmdCtx(ctx floc.Context) (*common.Cmdctx, error) {
 	var c *common.Cmdctx
 	var ok bool
+	var rcerror error
 
-	if c, ok = ctx.Value(contextKeyCmdCtx).(*common.Cmdctx); !ok {
-		return nil, fmt.Errorf("type mismatch with key %s", contextKeyCmdCtx)
+	obj := ctx.Value(contextKeyCmdCtx)
+	if obj == nil {
+		c = new(common.Cmdctx)
+		ctx.AddValue(contextKeyCmdCtx, c)
+	} else if c, ok = obj.(*common.Cmdctx); !ok {
+		return nil, errortree.Add(rcerror, "NewApplications", fmt.Errorf("type mismatch with key %s", contextKeyCmdCtx))
 	}
 
 	return c, nil
 }
 
-func SetCmdCtx(ctx floc.Context, p *common.Cmdctx) {
+func SetCmdCtx(ctx floc.Context, p common.Cmdctx) error {
+	var c *common.Cmdctx
+	var err, rcerror error
 
-	ctx.AddValue(contextKeyCmdCtx, p)
+	if c, err = CmdCtx(ctx); err == nil {
+		*c = p
+	}
+
+	return errortree.Add(rcerror, "SetCmdCtx", err)
 }
