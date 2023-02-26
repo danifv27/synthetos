@@ -1,7 +1,7 @@
 {
     "configurations": [
         {
-            "name": "Kube Version",
+            "name": "Version",
             "type": "go",
             "request": "launch",
             "mode": "debug",
@@ -11,6 +11,20 @@
             },
             "args": [
                 "version"
+            ],
+            "showLog": true
+        },
+        {
+            "name": "Prom",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/uxperi",
+            "env": {
+                "SC_LOGGING_LEVEL": "debug",
+            },
+            "args": [
+                "prom"
             ],
             "showLog": true
         }
