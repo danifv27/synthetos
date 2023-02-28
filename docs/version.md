@@ -22,9 +22,12 @@ Overall, the version command is a helpful tool for developers and users to keep 
 
 ```json
 {
-    "optimo": {
+    "synthetos": {
         "version": {
-            "format": "json"
+            "logging": {
+                "level": "debug",
+                "format": "json"
+            }
         }
     }
 }

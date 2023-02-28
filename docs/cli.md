@@ -43,3 +43,4 @@ synthetos <command> <subcommand> [flags]
 
 # Available Commands
 * [version](./version.md)
+* [test](./test.md)
