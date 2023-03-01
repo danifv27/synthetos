@@ -14,9 +14,8 @@ If the readiness flag is set, the application provides a readiness endpoint that
 
 | Flag                 | Environment Variable      | Default Value | Description |
 | :--------------------| :-------------------------| :------------ | :---------- |
-| --test.port \<integer> | SC\_TEST\_PORT | 8081 | The port number on which the HTTP server will listen for health probes. |
-| --test.liveness \<boolean> | SC\_TEST\_LIVENESS | false | Enable/disable the liveness endpoint. |
-| --test.readiness \<boolean> | SC\_TEST\_READINESS | false | Enable/disable the readiness endpoint. |
+| --actuator.enable\<boolean> | SC\_TEST\_ACTUATOR\_ENABLE | true | Enable actuator?. |
+| --actuator.addresss \<string> | SC\_TEST\_ACTUATOR\_ADDRESS | ":8081" | Actuator address. |
 
 ### Options inherited from parent commands
 
@@ -32,9 +31,11 @@ If the readiness flag is set, the application provides a readiness endpoint that
 {
     "synthetos": {
         "test": {
-            "port": 8081,
-            "liveness": true,
-            "readiness": false,
+            "actuator": {
+                "enable": true,
+                "liveness": true,
+                "readiness": false,
+            }
         }
     }
 }

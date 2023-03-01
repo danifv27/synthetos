@@ -14,19 +14,23 @@ import (
 	"github.com/workanator/go-floc/v3/run"
 )
 
-type PromCmd struct {
-	Flags VersionFlags `embed:""`
+type TestCmd struct {
+	Flags TestFlags `embed:""`
 }
 
-type PromFlags struct{}
+type TestFlags struct {
+	Enable  bool   `help:"enable actuator?." default:"true" prefix:"actuator." env:"SC_TEST_ACTUATOR_ENABLE" group:"actuator"`
+	Address string `help:"actuator adress with port" prefix:"actuator." default:":8081" env:"SC_TEST_ACTUATOR_ADDRESS" optional:"" group:"actuator"`
+	// Root           string  `help:"actuator root" default:"/probe" env:"SC_TEST_ACTUATOR_ROOT" optional:"" group:"actuator"`
+}
 
-func initializePromCmd(ctx floc.Context, ctrl floc.Control) error {
+func initializeTestCmd(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
 	var err, rcerror error
 
 	if c, err = CmdCtx(ctx); err != nil {
-		if e := SetRCErrorTree(ctx, "initializePromCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializePromCmd", e)
+		if e := SetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeTestCmd", e)
 		}
 		return err
 	}
@@ -35,8 +39,8 @@ func initializePromCmd(ctx floc.Context, ctrl floc.Control) error {
 		infrastructure.WithHealthchecker(),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
-		if e := SetRCErrorTree(ctx, "initializePromCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializePromCmd", e)
+		if e := SetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeTestCmd", e)
 		}
 		return err
 	}
@@ -48,8 +52,8 @@ func initializePromCmd(ctx floc.Context, ctrl floc.Control) error {
 	if err = application.WithOptions(&c.Apps,
 		application.WithHealthchecker(c.Adapters.Healthchecker),
 	); err != nil {
-		if e := SetRCErrorTree(ctx, "initializePromCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializePromCmd", e)
+		if e := SetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeTestCmd", e)
 		}
 		return err
 	}
@@ -60,8 +64,8 @@ func initializePromCmd(ctx floc.Context, ctrl floc.Control) error {
 		Adapters: c.Adapters,
 		Ports:    c.Ports,
 	}); err != nil {
-		if e := SetRCErrorTree(ctx, "initializePromCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializePromCmd", e)
+		if e := SetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeTestCmd", e)
 		}
 		return err
 	}
@@ -69,29 +73,29 @@ func initializePromCmd(ctx floc.Context, ctrl floc.Control) error {
 	return nil
 }
 
-func promRunHealthServer(ctx floc.Context, ctrl floc.Control) error {
+func testRunHealthServer(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
-	// var cli CLI
+	var cli CLI
 	var err error
 
 	if c, err = CmdCtx(ctx); err != nil {
-		SetRCErrorTree(ctx, "promRunHealthServer", err)
+		SetRCErrorTree(ctx, "testRunHealthServer", err)
 		return err
 	}
-	// if cli, err = Flags(ctx); err != nil {
-	// 	SetRCErrorTree(ctx, "promRunHealthServer", err)
-	// 	return err
-	// }
+	if cli, err = Flags(ctx); err != nil {
+		SetRCErrorTree(ctx, "testRunHealthServer", err)
+		return err
+	}
 
 	//FIXME: past healthcheck address through flags
-	// Start the server in a separate goroutine
+	// Start the servemake r in a separate goroutine
 	srv := &http.Server{
-		Addr:    "0.0.0.0:8080",
+		Addr:    cli.Test.Flags.Address,
 		Handler: c.Adapters.Healthchecker,
 	}
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			SetRCErrorTree(ctx, "promRunHealthServer", err)
+			SetRCErrorTree(ctx, "testRunHealthServer", err)
 		}
 	}()
 	// Wait for the context to be canceled
@@ -101,17 +105,17 @@ func promRunHealthServer(ctx floc.Context, ctrl floc.Control) error {
 	ct, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ct); err != nil {
-		SetRCErrorTree(ctx, "promRunHealthServer", err)
+		SetRCErrorTree(ctx, "testRunHealthServer", err)
 	}
 
 	return nil
 }
 
-func (cmd *PromCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
+func (cmd *TestCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 
-	c.InitSeq = append(c.InitSeq, initializePromCmd)
+	c.InitSeq = append(c.InitSeq, initializeTestCmd)
 	c.RunSeq = run.Parallel(
-		promRunHealthServer,
+		testRunHealthServer,
 		// run.Sequence(
 		// 	func(ctx floc.Context, ctrl floc.Control) error {
 

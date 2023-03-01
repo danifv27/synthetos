@@ -70,8 +70,8 @@ func (s *basicHandler) handle(w http.ResponseWriter, r *http.Request, checks ...
 
 	checkResults := make(map[string]string)
 	status := http.StatusOK
-	for _, checks := range checks {
-		s.collectChecks(checks, checkResults, &status)
+	for _, c := range checks {
+		s.collectChecks(c, checkResults, &status)
 	}
 
 	// write out the response code and content type header

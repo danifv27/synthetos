@@ -15,7 +15,7 @@
             "showLog": true
         },
         {
-            "name": "Prom",
+            "name": "Test",
             "type": "go",
             "request": "launch",
             "mode": "debug",
@@ -24,7 +24,7 @@
                 "SC_LOGGING_LEVEL": "debug",
             },
             "args": [
-                "prom"
+                "test"
             ],
             "showLog": true
         }
