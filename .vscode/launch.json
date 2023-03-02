@@ -24,7 +24,8 @@
                 "SC_LOGGING_LEVEL": "debug",
             },
             "args": [
-                "test"
+                "test",
+                "--no-actuator.enable",
             ],
             "showLog": true
         }

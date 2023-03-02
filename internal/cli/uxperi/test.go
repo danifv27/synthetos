@@ -19,7 +19,7 @@ type TestCmd struct {
 }
 
 type TestFlags struct {
-	Enable  bool   `help:"enable actuator?." default:"true" prefix:"actuator." env:"SC_TEST_ACTUATOR_ENABLE" group:"actuator"`
+	Enable  bool   `help:"enable actuator?." default:"true" prefix:"actuator." env:"SC_TEST_ACTUATOR_ENABLE" group:"actuator" negatable:""`
 	Address string `help:"actuator adress with port" prefix:"actuator." default:":8081" env:"SC_TEST_ACTUATOR_ADDRESS" optional:"" group:"actuator"`
 	// Root           string  `help:"actuator root" default:"/probe" env:"SC_TEST_ACTUATOR_ROOT" optional:"" group:"actuator"`
 }
@@ -113,24 +113,27 @@ func testRunHealthServer(ctx floc.Context, ctrl floc.Control) error {
 
 func (cmd *TestCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 
+	isActuatorEnabled := func(ctx floc.Context) bool {
+
+		return cli.Test.Flags.Enable
+	}
+
 	c.InitSeq = append(c.InitSeq, initializeTestCmd)
-	c.RunSeq = run.Parallel(
-		testRunHealthServer,
-		// run.Sequence(
-		// 	func(ctx floc.Context, ctrl floc.Control) error {
+	//FIXME: We need a way to wait while actuator is working
+	c.RunSeq = run.Sequence(
+		run.If(isActuatorEnabled, run.Background(testRunHealthServer)),
+		// func(ctx floc.Context, ctrl floc.Control) error {
+		// 	if rcerror, err := RCErrorTree(ctx); err != nil {
+		// 		ctrl.Fail(fmt.Sprintf("Command '%s' internal error", c.Cmd), err)
+		// 		return err
+		// 	} else if *rcerror != nil {
+		// 		ctrl.Fail(fmt.Sprintf("Command '%s' failed", c.Cmd), *rcerror)
+		// 		return *rcerror
+		// 	}
+		// 	ctrl.Complete(fmt.Sprintf("Command '%s' completed", c.Cmd))
 
-		// 		if rcerror, err := RCErrorTree(ctx); err != nil {
-		// 			ctrl.Fail(fmt.Sprintf("Command '%s' internal error", c.Cmd), err)
-		// 			return err
-		// 		} else if *rcerror != nil {
-		// 			ctrl.Fail(fmt.Sprintf("Command '%s' failed", c.Cmd), *rcerror)
-		// 			return *rcerror
-		// 		}
-		// 		ctrl.Complete(fmt.Sprintf("Command '%s' completed", c.Cmd))
-
-		// 		return nil
-		// 	},
-		// ),
+		// 	return nil
+		// },
 	)
 
 	return nil
