@@ -2,6 +2,7 @@ package uxperi
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -44,6 +45,7 @@ func initializeTestCmd(ctx floc.Context, ctrl floc.Control) error {
 		}
 		return err
 	}
+	//FIXME: Add proper k8s readiness
 	c.Adapters.Healthchecker.AddReadinessCheck(
 		"google-http",
 		healthchecker.HTTPGetCheck("https://www.google.es", 50*time.Second),
@@ -87,8 +89,7 @@ func testRunHealthServer(ctx floc.Context, ctrl floc.Control) error {
 		return err
 	}
 
-	//FIXME: past healthcheck address through flags
-	// Start the servemake r in a separate goroutine
+	// Start the server in a separate goroutine
 	srv := &http.Server{
 		Addr:    cli.Test.Flags.Address,
 		Handler: c.Adapters.Healthchecker,
@@ -118,22 +119,31 @@ func (cmd *TestCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 		return cli.Test.Flags.Enable
 	}
 
+	waitForCancel := func(ctx floc.Context, ctrl floc.Control) error {
+
+		// Wait for the context to be canceled
+		<-ctx.Done()
+
+		return nil
+	}
+
 	c.InitSeq = append(c.InitSeq, initializeTestCmd)
-	//FIXME: We need a way to wait while actuator is working
+
 	c.RunSeq = run.Sequence(
 		run.If(isActuatorEnabled, run.Background(testRunHealthServer)),
-		// func(ctx floc.Context, ctrl floc.Control) error {
-		// 	if rcerror, err := RCErrorTree(ctx); err != nil {
-		// 		ctrl.Fail(fmt.Sprintf("Command '%s' internal error", c.Cmd), err)
-		// 		return err
-		// 	} else if *rcerror != nil {
-		// 		ctrl.Fail(fmt.Sprintf("Command '%s' failed", c.Cmd), *rcerror)
-		// 		return *rcerror
-		// 	}
-		// 	ctrl.Complete(fmt.Sprintf("Command '%s' completed", c.Cmd))
+		run.If(isActuatorEnabled, waitForCancel),
+		func(ctx floc.Context, ctrl floc.Control) error {
+			if rcerror, err := RCErrorTree(ctx); err != nil {
+				ctrl.Fail(fmt.Sprintf("Command '%s' internal error", c.Cmd), err)
+				return err
+			} else if *rcerror != nil {
+				ctrl.Fail(fmt.Sprintf("Command '%s' failed", c.Cmd), *rcerror)
+				return *rcerror
+			}
+			ctrl.Complete(fmt.Sprintf("Command '%s' completed", c.Cmd))
 
-		// 	return nil
-		// },
+			return nil
+		},
 	)
 
 	return nil
