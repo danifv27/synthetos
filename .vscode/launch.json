@@ -25,7 +25,8 @@
             },
             "args": [
                 "test",
-                "--no-actuator.enable",
+                "--probes.enable",
+                "--metrics.route-prefix=/kkdlvk"
             ],
             "showLog": true
         }

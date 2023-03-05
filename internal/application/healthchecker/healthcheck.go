@@ -12,8 +12,7 @@ type Check func(ctx context.Context) error
 // readiness checks. It handles handle "/live" and "/ready" HTTP
 // endpoints.
 type Healthchecker interface {
-	// The Handler is an http.Handler, so it can be exposed directly and handle
-	// /live and /ready endpoints.
+	// The Handler is an http.Handler, so it can be exposed directly and handle endpoints.
 	http.Handler
 	// AddLivenessCheck adds a check that indicates that this instance of the
 	// application should be destroyed or restarted.

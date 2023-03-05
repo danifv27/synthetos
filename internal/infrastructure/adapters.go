@@ -21,12 +21,14 @@
 package infrastructure
 
 import (
+	"fry.org/cmo/cli/internal/application/exporters"
 	"fry.org/cmo/cli/internal/application/healthchecker"
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/application/printer"
 	"fry.org/cmo/cli/internal/application/version"
 
 	ihealthchecker "fry.org/cmo/cli/internal/infrastructure/endpoints/healthchecker"
+	iexporters "fry.org/cmo/cli/internal/infrastructure/exporters"
 	ilogger "fry.org/cmo/cli/internal/infrastructure/logger"
 	itableprinter "fry.org/cmo/cli/internal/infrastructure/printer"
 	istorage "fry.org/cmo/cli/internal/infrastructure/storage"
@@ -51,6 +53,7 @@ type Adapters struct {
 	version.Version
 	printer.Printer
 	healthchecker.Healthchecker
+	exporters.CucumberExporter
 }
 
 // NewAdapters
@@ -132,5 +135,16 @@ func WithHealthchecker() AdapterOption {
 		a.Healthchecker = ihealthchecker.NewHealthchecker()
 
 		return nil
+	})
+}
+
+func WithCucumberExporter(opts ...iexporters.ExporterOption) AdapterOption {
+
+	return AdapterOptionFunc(func(a *Adapters) error {
+		var err error
+
+		a.CucumberExporter, err = iexporters.NewCucumberExporter(opts...)
+
+		return err
 	})
 }

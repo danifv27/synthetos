@@ -9,17 +9,17 @@ import (
 	"fry.org/cmo/cli/internal/application/healthchecker"
 )
 
-// basicHandler is a basic Handler implementation.
-type basicHandler struct {
+// healthcheckHandler is a basic Healthchekcker implementation.
+type healthcheckHandler struct {
 	http.ServeMux
 	checksMutex     sync.RWMutex
 	livenessChecks  map[string]healthchecker.Check
 	readinessChecks map[string]healthchecker.Check
 }
 
-// NewHandler creates a new basic Handler
+// NewHealthchecker creates a new Healthchecker
 func NewHealthchecker() healthchecker.Healthchecker {
-	h := &basicHandler{
+	h := &healthcheckHandler{
 		livenessChecks:  make(map[string]healthchecker.Check),
 		readinessChecks: make(map[string]healthchecker.Check),
 	}
@@ -29,27 +29,32 @@ func NewHealthchecker() healthchecker.Healthchecker {
 	return h
 }
 
-func (s *basicHandler) LiveEndpoint(w http.ResponseWriter, r *http.Request) {
+func (s *healthcheckHandler) LiveEndpoint(w http.ResponseWriter, r *http.Request) {
+
 	s.handle(w, r, s.livenessChecks)
 }
 
-func (s *basicHandler) ReadyEndpoint(w http.ResponseWriter, r *http.Request) {
+func (s *healthcheckHandler) ReadyEndpoint(w http.ResponseWriter, r *http.Request) {
+
 	s.handle(w, r, s.readinessChecks, s.livenessChecks)
 }
 
-func (s *basicHandler) AddLivenessCheck(name string, check healthchecker.Check) {
+func (s *healthcheckHandler) AddLivenessCheck(name string, check healthchecker.Check) {
+
 	s.checksMutex.Lock()
 	defer s.checksMutex.Unlock()
 	s.livenessChecks[name] = check
 }
 
-func (s *basicHandler) AddReadinessCheck(name string, check healthchecker.Check) {
+func (s *healthcheckHandler) AddReadinessCheck(name string, check healthchecker.Check) {
+
 	s.checksMutex.Lock()
 	defer s.checksMutex.Unlock()
 	s.readinessChecks[name] = check
 }
 
-func (s *basicHandler) collectChecks(checks map[string]healthchecker.Check, resultsOut map[string]string, statusOut *int) {
+func (s *healthcheckHandler) collectChecks(checks map[string]healthchecker.Check, resultsOut map[string]string, statusOut *int) {
+
 	s.checksMutex.RLock()
 	defer s.checksMutex.RUnlock()
 	for name, check := range checks {
@@ -62,7 +67,8 @@ func (s *basicHandler) collectChecks(checks map[string]healthchecker.Check, resu
 	}
 }
 
-func (s *basicHandler) handle(w http.ResponseWriter, r *http.Request, checks ...map[string]healthchecker.Check) {
+func (s *healthcheckHandler) handle(w http.ResponseWriter, r *http.Request, checks ...map[string]healthchecker.Check) {
+
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
