@@ -1,6 +1,12 @@
 # synthetos test scenario
 
-This command loads the specified Cucumber feature configuration, runs the tests, updates the Prometheus metric with the test results, and starts an HTTP server that listens on the specified port number.
+This command loads the specified Cucumber feature configuration, runs the tests, updates the Prometheus metric with the test results, and starts an HTTP server that listens on the specified port number. 
+This command implements the multi-target exporter pattern, so we advice to read the guide [Understanding and using the multi-target exporter pattern](https://prometheus.io/docs/guides/multi-target-exporter/) to get the general idea about the configuration.
+
+There are two ways of querying the exporter:
+
+    * Querying the exporter itself. It has its own metrics, available at `/metrics`. Those are metrics in the Prometheus format. They come from the exporter’s instrumentation and tell us about the state of the exporter itself while it is running.
+    * Querying the exporter to test a scenario available at `/probe`. For this type of querying we need to provide feature name as parameter in the HTTP GET request. 
 
 ### Options inherited from parent commands
 

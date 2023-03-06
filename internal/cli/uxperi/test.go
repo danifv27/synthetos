@@ -11,7 +11,8 @@ import (
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/cli/common"
 	"fry.org/cmo/cli/internal/infrastructure"
-	iexporter "fry.org/cmo/cli/internal/infrastructure/exporters"
+	iexporters "fry.org/cmo/cli/internal/infrastructure/exporters"
+	ifeatures "fry.org/cmo/cli/internal/infrastructure/exporters/features"
 	"github.com/speijnik/go-errortree"
 	"github.com/workanator/go-floc/v3"
 	"github.com/workanator/go-floc/v3/run"
@@ -38,6 +39,7 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
 	var err, rcerror error
 	var cli CLI
+	var login iexporters.CucumberPlugin
 
 	if c, err = CmdCtx(ctx); err != nil {
 		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
@@ -46,7 +48,14 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 		return err
 	}
 	if cli, err = Flags(ctx); err != nil {
-		if e := SetRCErrorTree(ctx, "versionPrintJob", err); e != nil {
+		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeExporterCmd", e)
+		}
+		return err
+	}
+
+	if login, err = ifeatures.NewLoginPageFeature(); err != nil {
+		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeExporterCmd", e)
 		}
 		return err
@@ -55,7 +64,8 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 	infraOptions := []infrastructure.AdapterOption{
 		infrastructure.WithHealthchecker(),
 		infrastructure.WithCucumberExporter(
-			iexporter.WithCucumberRootPrefix(cli.Test.Flags.Metrics.RoutePrefix),
+			iexporters.WithCucumberRootPrefix(cli.Test.Flags.Metrics.RoutePrefix),
+			iexporters.WithCucumberPlugin("loginPage", login),
 		),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
