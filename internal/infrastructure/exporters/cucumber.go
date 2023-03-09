@@ -15,9 +15,28 @@ import (
 	"github.com/speijnik/go-errortree"
 )
 
-// TODO: Adapt interface to the real needs
+type CucumberResult int
+
+const (
+	CucumberFailure CucumberResult = iota //0
+	CucumberSuccess                       //1
+)
+
+func (rc CucumberResult) String() string {
+
+	return [...]string{"Failure", "Success"}[s]
+}
+
+// map[scenarioID][stepID]
+type CucumberStatsSet map[string]map[string]CucumberStats
+type CucumberStats struct {
+	duration time.Duration
+	result   CucumberResult
+}
+
 type CucumberPlugin interface {
-	Do(ctx context.Context) error
+	// Do execute a godog test suite and returns the stats
+	Do(ctx context.Context) (CucumberStatsSet, error)
 }
 
 // cucumberHandler is a basic Healthchekcker implementation.
