@@ -18,21 +18,34 @@ import (
 type CucumberResult int
 
 const (
-	CucumberFailure CucumberResult = iota //0
-	CucumberSuccess                       //1
+	CucumberFailure     CucumberResult = iota //0
+	CucumberSuccess                           //1
+	CucumberNotExecuted                       //2
 )
 
 func (rc CucumberResult) String() string {
 
-	return [...]string{"Failure", "Success"}[s]
+	return [...]string{"Failure", "Success", "Not executed"}[rc]
 }
 
+// map[scenarioID]
+// type CucumberScenariosStats map[string]CucumberStats
+
 // map[scenarioID][stepID]
-type CucumberStatsSet map[string]map[string]CucumberStats
+// type CucumberStepsStats map[string]map[string]CucumberStats
+type CucumberStatsSet map[string][]CucumberStats
 type CucumberStats struct {
-	duration time.Duration
-	result   CucumberResult
+	Id       string
+	Start    time.Time
+	Duration time.Duration
+	Result   CucumberResult
 }
+
+// type CucumberStatsSet struct {
+// Feature   CucumberStats
+// Scenarios CucumberScenariosStats
+// Steps     CucumberStepsStats
+// }
 
 type CucumberPlugin interface {
 	// Do execute a godog test suite and returns the stats
@@ -134,6 +147,7 @@ func (c *cucumberHandler) ProbesEndpoint(w http.ResponseWriter, r *http.Request)
 
 func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins map[string]CucumberPlugin) {
 	var plugin CucumberPlugin
+	var stats CucumberStatsSet
 	var ok bool
 	var err error
 
@@ -164,14 +178,11 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 		Help: "Returns how long the probe took to complete in seconds",
 	})
 
-	start := time.Now()
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(featureSuccessGauge)
 	registry.MustRegister(featureDurationGauge)
-	err = plugin.Do(ctx)
-	// success := prober(ctx, target, module, registry, sl)
-	duration := time.Since(start).Seconds()
-	featureDurationGauge.Set(duration)
+	stats, err = plugin.Do(ctx)
+	fmt.Printf("[DBG]stats %v\n", stats)
 	if err == nil {
 		// Feature test succeeded
 		featureSuccessGauge.Set(1)
