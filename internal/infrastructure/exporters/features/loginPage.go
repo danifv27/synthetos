@@ -93,32 +93,36 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 
 func (l *loginPage) iAmOnTheLoginPage() error {
 
-	time.Sleep(time.Duration(rand.Intn(3)) * time.Second)
-	fmt.Println("[DBG]I am on the login page")
+	d := time.Duration(rand.Intn(3)) * time.Second
+	time.Sleep(d)
+	fmt.Printf("[DBG]I am on the login page (sleeping %v)", d)
 
 	return nil
 }
 
 func (l *loginPage) iEnterMyUsernameAndPassword() error {
 
-	time.Sleep(time.Duration(rand.Intn(3)) * time.Second)
-	fmt.Println("[DBG]I enter my username and password")
+	d := time.Duration(rand.Intn(3)) * time.Second
+	time.Sleep(d)
+	fmt.Printf("[DBG]I enter my username and password (sleeping %v)", d)
 
 	return nil
 }
 
 func (l *loginPage) iClickTheLoginButton() error {
 
-	time.Sleep(time.Duration(rand.Intn(3)) * time.Second)
-	fmt.Println("[DBG]I click the login button")
+	d := time.Duration(rand.Intn(3)) * time.Second
+	time.Sleep(d)
+	fmt.Printf("[DBG]I click the login button (sleeping %v)", d)
 
 	return nil
 }
 
 func (l *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
 
-	time.Sleep(time.Duration(rand.Intn(3)) * time.Second)
-	fmt.Println("[DBG]I should be redirected to the dashboard page")
+	d := time.Duration(rand.Intn(3)) * time.Second
+	time.Sleep(d)
+	fmt.Printf("[DBG]I should be redirected to the dashboard page (sleeping %v)", d)
 
 	return nil
 }

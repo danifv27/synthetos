@@ -28,11 +28,6 @@ func (rc CucumberResult) String() string {
 	return [...]string{"Failure", "Success", "Not executed"}[rc]
 }
 
-// map[scenarioID]
-// type CucumberScenariosStats map[string]CucumberStats
-
-// map[scenarioID][stepID]
-// type CucumberStepsStats map[string]map[string]CucumberStats
 type CucumberStatsSet map[string][]CucumberStats
 type CucumberStats struct {
 	Id       string
@@ -169,26 +164,45 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 		return
 	}
 
-	featureSuccessGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "synthetos_feature_success",
-		Help: "Displays whether or not the feature test was a success",
-	})
-	featureDurationGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "synthetos_feature_duration_seconds",
-		Help: "Returns how long the probe took to complete in seconds",
-	})
+	stepSuccessGaugeVec := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "step_success",
+		Help: "Displays whether or not the step test was a success",
+	}, []string{"feature_name", "scenario_name"})
+
+	// stepDurationHistogramVec := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	// 	Name:    "step_bucket_duration_seconds",
+	// 	Help:    "Duration of test steps in seconds.",
+	// 	Buckets: prometheus.ExponentialBuckets(1, 1.5, 5),
+	// }, []string{"feature_name", "scenario_name", "step_name", "step_status"})
+
+	stepDurationGaugeVec := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "step_duration_seconds",
+		Help: "Duration of http request by phase, summed over all redirects",
+	}, []string{"feature_name", "scenario_name", "step_name", "step_status"})
 
 	registry := prometheus.NewRegistry()
-	registry.MustRegister(featureSuccessGauge)
-	registry.MustRegister(featureDurationGauge)
-	stats, err = plugin.Do(ctx)
-	fmt.Printf("[DBG]stats %v\n", stats)
-	if err == nil {
-		// Feature test succeeded
-		featureSuccessGauge.Set(1)
-	} else {
-		// Feature test failed
-		featureSuccessGauge.Set(0)
+	registry.MustRegister(stepSuccessGaugeVec)
+	registry.MustRegister(stepDurationGaugeVec)
+	// registry.MustRegister(stepDurationHistogramVec)
+	if stats, err = plugin.Do(ctx); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("%d - Something bad happened!\n\n%s", http.StatusInternalServerError, err.Error())))
+		return
+	}
+	for k, v := range stats {
+		success := 0
+		for _, stats := range v {
+			// fmt.Printf("[DBG]key[%s] value[%s]\n", k, v)
+			// stepDurationHistogramVec.WithLabelValues("loginPage", k, stats.Id, stats.Result.String()).Observe(stats.Duration.Seconds())
+			stepDurationGaugeVec.WithLabelValues("loginPage", k, stats.Id, stats.Result.String()).Set(stats.Duration.Seconds())
+			success += int(stats.Result)
+		}
+		//0 failure
+		if success > 0 {
+			stepSuccessGaugeVec.WithLabelValues("loginPage", k).Set(1)
+		} else {
+			stepSuccessGaugeVec.WithLabelValues("loginPage", k).Set(0)
+		}
 	}
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	h.ServeHTTP(w, r)
