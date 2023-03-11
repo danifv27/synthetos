@@ -9,19 +9,45 @@ import (
 
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
 	"github.com/cucumber/godog"
+	"github.com/mrz1836/go-sanitize"
 	"github.com/speijnik/go-errortree"
 )
 
-type loginPage struct {
-	scenarioID string
-	stats      exporters.CucumberStatsSet
+var (
+	contextKeyScenarioName = contextKey("scenarioName")
+)
+
+type contextKey string
+
+func (c contextKey) String() string {
+	return "loginPage." + string(c)
 }
 
-func NewLoginPageFeature(opts ...exporters.ExporterOption) (exporters.CucumberPlugin, error) {
+type loginPage struct {
+	// scenarioName  string
+	featureFolder string
+	stats         exporters.CucumberStatsSet
+}
+
+func scenarioNameFromContext(ctx context.Context) (string, error) {
+	var name string
+	var ok bool
+	var rcerror error
+
+	if name, ok = ctx.Value(contextKeyScenarioName).(string); !ok {
+		return "", errortree.Add(rcerror, "scenarioNameFromContext", fmt.Errorf("type mismatch with key %s", contextKeyScenarioName))
+	}
+
+	return name, nil
+}
+
+func NewLoginPageFeature(path string, opts ...exporters.ExporterOption) (exporters.CucumberPlugin, error) {
 	var rcerror error
 
 	rand.Seed(time.Now().UnixNano())
-	l := loginPage{}
+	l := loginPage{
+		featureFolder: path,
+	}
 	// Loop through each option
 	for _, option := range opts {
 		if err := option.Apply(&l); err != nil {
@@ -35,6 +61,7 @@ func NewLoginPageFeature(opts ...exporters.ExporterOption) (exporters.CucumberPl
 func (l *loginPage) suiteInit(ctx *godog.TestSuiteContext) {
 
 	ctx.BeforeSuite(func() {
+
 		l.stats = make(map[string][]exporters.CucumberStats)
 		// This code will be executed once, before any scenarios are run
 	})
@@ -43,47 +70,56 @@ func (l *loginPage) suiteInit(ctx *godog.TestSuiteContext) {
 func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 
 	ctx.Before(func(c context.Context, sc *godog.Scenario) (context.Context, error) {
-		// fmt.Printf("[DBG]Before scenario hook %s\n", sc.Id)
 
 		// This code will be executed once, before any scenarios are run
-		l.scenarioID = sc.Id
+		// l.scenarioName = sanitize.Alpha(sc.Name, false)
 
-		return c, nil
+		// return c, nil
+		return context.WithValue(c, contextKeyScenarioName, sanitize.Alpha(sc.Name, false)), nil
 	})
 
 	ctx.After(func(c context.Context, sc *godog.Scenario, err error) (context.Context, error) {
+
 		// This code will be executed once, after all scenarios have been run
-		l.scenarioID = ""
+		// l.scenarioName = ""
+		v, ok := c.Value(contextKeyScenarioName).(string)
+		fmt.Printf("[DBG]value: %v, ok:=%v", v, ok)
 
 		return c, nil
 	})
 	stepCtx := ctx.StepContext()
 	stepCtx.Before(func(c context.Context, st *godog.Step) (context.Context, error) {
+		var rcerror error
 
 		stat := exporters.CucumberStats{
-			Id:     st.Id,
+			Id:     sanitize.Alpha(st.Text, false),
 			Start:  time.Now(),
 			Result: exporters.CucumberNotExecuted,
 		}
-		l.stats[l.scenarioID] = append(l.stats[l.scenarioID], stat)
-		// fmt.Printf("[DBG]Before step hook %s (sc.Id %s)\n", st.Id, l.scenarioID)
+		if name, err := scenarioNameFromContext(c); err != nil {
+			return c, errortree.Add(rcerror, "step.Before", err)
+		} else {
+			l.stats[name] = append(l.stats[name], stat)
+		}
 
 		return c, nil
 	})
-	stepCtx.After(func(ctx context.Context, st *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
+	stepCtx.After(func(c context.Context, st *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
+		var rcerror error
 
-		// fmt.Printf("[DBG]After step hook %s\n", st.Id)
-		stat := l.stats[l.scenarioID][len(l.stats[l.scenarioID])-1]
-
-		stat.Duration = time.Since(stat.Start)
-		if status == godog.StepPassed {
-			stat.Result = exporters.CucumberSuccess
+		if name, err := scenarioNameFromContext(c); err != nil {
+			return c, errortree.Add(rcerror, "step.Before", err)
 		} else {
-			stat.Result = exporters.CucumberFailure
+			stat := l.stats[name][len(l.stats[name])-1]
+			stat.Duration = time.Since(stat.Start)
+			if status == godog.StepPassed {
+				stat.Result = exporters.CucumberSuccess
+			} else {
+				stat.Result = exporters.CucumberFailure
+			}
+			l.stats[name][len(l.stats[name])-1] = stat
 		}
-		l.stats[l.scenarioID][len(l.stats[l.scenarioID])-1] = stat
-
-		return ctx, nil
+		return c, nil
 	})
 	ctx.Step(`^I am on the login page$`, l.iAmOnTheLoginPage)
 	ctx.Step(`^I enter my username and password$`, l.iEnterMyUsernameAndPassword)
@@ -93,47 +129,48 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 
 func (l *loginPage) iAmOnTheLoginPage() error {
 
-	d := time.Duration(rand.Intn(3)) * time.Second
+	d := time.Duration(1+rand.Intn(3)) * time.Second
 	time.Sleep(d)
-	fmt.Printf("[DBG]I am on the login page (sleeping %v)", d)
+	fmt.Printf("[DBG]I am on the login page (sleeping %v)\n", d)
 
 	return nil
 }
 
 func (l *loginPage) iEnterMyUsernameAndPassword() error {
 
-	d := time.Duration(rand.Intn(3)) * time.Second
+	d := time.Duration(1+rand.Intn(3)) * time.Second
 	time.Sleep(d)
-	fmt.Printf("[DBG]I enter my username and password (sleeping %v)", d)
+	fmt.Printf("[DBG]I enter my username and password (sleeping %v)\n", d)
 
 	return nil
 }
 
 func (l *loginPage) iClickTheLoginButton() error {
 
-	d := time.Duration(rand.Intn(3)) * time.Second
+	d := time.Duration(1+rand.Intn(3)) * time.Second
 	time.Sleep(d)
-	fmt.Printf("[DBG]I click the login button (sleeping %v)", d)
+	fmt.Printf("[DBG]I click the login button (sleeping %v)\n", d)
 
 	return nil
 }
 
 func (l *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
 
-	d := time.Duration(rand.Intn(3)) * time.Second
+	d := time.Duration(1+rand.Intn(3)) * time.Second
 	time.Sleep(d)
-	fmt.Printf("[DBG]I should be redirected to the dashboard page (sleeping %v)", d)
+	fmt.Printf("[DBG]I should be redirected to the dashboard page (sleeping %v)\n", d)
 
 	return nil
 }
 
 func (l *loginPage) Do(ctx context.Context) (exporters.CucumberStatsSet, error) {
+	var rcerror error
 
 	godogOpts := godog.Options{
 		Output: io.Discard,
-		Paths:  []string{"/Users/fraildan/Proyectos/packagesGit/github/danifv27_donotdelete/synthetos/internal/infrastructure/exporters/features"},
+		Paths:  []string{l.featureFolder},
 		//pretty, progress, cucumber, events and junit
-		Format: "pretty",
+		Format: "junit",
 	}
 	suite := godog.TestSuite{
 		Name:                 "loginPage",
@@ -141,7 +178,17 @@ func (l *loginPage) Do(ctx context.Context) (exporters.CucumberStatsSet, error) 
 		ScenarioInitializer:  l.scenarioInit,
 		Options:              &godogOpts,
 	}
-	suite.Run()
+	rc := suite.Run()
+	switch rc {
+	case 0:
+		return l.stats, nil
+	case 1:
+		return exporters.CucumberStatsSet{}, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error  %d: failed test suite", rc))
+	case 2:
+		return exporters.CucumberStatsSet{}, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d:command line usage error running test suite", rc))
+	default:
+		return exporters.CucumberStatsSet{}, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d running test suite", rc))
+	}
 
-	return l.stats, nil
+	// return exporters.CucumberStatsSet{}, nil
 }

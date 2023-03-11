@@ -23,7 +23,8 @@ type ExporterCmd struct {
 }
 
 type ExporterFlags struct {
-	Probes struct {
+	FeaturesFolder string `help:"path to gherkin features folder" prefix:"test." hidden:"" default:"./features" env:"SC_TEST_FEATURES_FOLDER"`
+	Probes         struct {
 		Enable  bool   `help:"enable actuator?." default:"true" prefix:"probes." env:"SC_TEST_PROBES_ENABLE" group:"probes" negatable:""`
 		Address string `help:"actuator adress with port" prefix:"probes." default:":8081" env:"SC_TEST_PROBES_ADDRESS" optional:"" group:"probes"`
 		// Root           string  `help:"endpoint root" default:"/health" env:"SC_TEST_PROBES_ROOT" optional:"" group:"probes"`
@@ -54,7 +55,7 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 		return err
 	}
 
-	if login, err = ifeatures.NewLoginPageFeature(); err != nil {
+	if login, err = ifeatures.NewLoginPageFeature(cli.Test.Flags.FeaturesFolder); err != nil {
 		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeExporterCmd", e)
 		}

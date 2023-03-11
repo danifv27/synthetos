@@ -22,11 +22,11 @@
             "program": "${workspaceFolder}/cmd/uxperi",
             "env": {
                 "SC_LOGGING_LEVEL": "debug",
+                "SC_TEST_FEATURES_FOLDER": "/home/dfraile/Proyectos/packagesGit/github/danifv27/synthetos/internal/infrastructure/exporters/features",
             },
             "args": [
                 "test",
-                "--probes.enable",
-                "--metrics.route-prefix=/kkdlvk"
+                "--probes.enable"
             ],
             "showLog": true
         }

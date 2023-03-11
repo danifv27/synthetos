@@ -1,0 +1,37 @@
+# build stage
+FROM golang:1.20.2-alpine3.16 AS build-env
+
+RUN apk update && apk add --no-cache git make bash
+
+COPY . /src
+RUN cd /src/cmd/uxperi && make build-linux-amd64
+
+# final stage
+FROM alpine:3.16
+
+USER root
+
+ARG USER_ID=65535
+ARG GROUP_ID=65535
+ARG USER_NAME=rsync-user
+ARG GROUP_NAME=rsync-user
+
+RUN addgroup -g $GROUP_ID $GROUP_NAME && \
+    adduser --shell /sbin/nologin --disabled-password \
+    --no-create-home --uid $USER_ID --ingroup $GROUP_NAME $USER_NAME
+
+RUN mkdir -p /app/bin; mkdir -p /app/config
+
+COPY --from=build-env /src/output/linux/amd64/bin/uxperi /app/bin/uxperi
+
+RUN chown $USER_ID:$GROUP_ID -R /app
+
+WORKDIR /app
+
+# Use an unprivileged user.
+USER $USER_ID
+
+# executable
+ENTRYPOINT [ "/app/bin/uxperi" ]
+# arguments that can be overridden
+CMD ["version"]

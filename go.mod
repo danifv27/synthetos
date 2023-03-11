@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/kong v0.7.1
 	github.com/alexeyco/simpletable v1.0.0
 	github.com/cucumber/godog v0.12.6
+	github.com/mrz1836/go-sanitize v1.2.1
 	github.com/prometheus/client_golang v1.14.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/speijnik/go-errortree v1.0.1
