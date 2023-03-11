@@ -166,7 +166,7 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 
 	stepSuccessGaugeVec := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "step_success",
-		Help: "Displays whether or not the step test was a success",
+		Help: "Displays whether or not the test was a success",
 	}, []string{"feature_name", "scenario_name"})
 
 	// stepDurationHistogramVec := prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -177,7 +177,7 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 
 	stepDurationGaugeVec := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "step_duration_seconds",
-		Help: "Duration of http request by phase, summed over all redirects",
+		Help: "Duration of test steps in seconds",
 	}, []string{"feature_name", "scenario_name", "step_name", "step_status"})
 
 	registry := prometheus.NewRegistry()
