@@ -45,7 +45,7 @@ type CucumberStats struct {
 
 type CucumberPlugin interface {
 	// Do execute a godog test suite and returns the stats
-	Do(ctx context.Context) (CucumberStatsSet, error)
+	Do(ctx context.Context, cancel context.CancelFunc) (CucumberStatsSet, error)
 }
 
 // cucumberHandler is a basic Healthchekcker implementation.
@@ -53,6 +53,7 @@ type cucumberHandler struct {
 	http.ServeMux
 	pluginMutex sync.RWMutex
 	PluginSet   map[string]CucumberPlugin
+	timeout     time.Duration
 }
 
 // NewCucumberExporter creates a new CucumberExporter
@@ -61,6 +62,7 @@ func NewCucumberExporter(opts ...ExporterOption) (exporters.CucumberExporter, er
 
 	h := cucumberHandler{
 		PluginSet: make(map[string]CucumberPlugin),
+		timeout:   2 * time.Second,
 	}
 	// Loop through each option
 	for _, option := range opts {
@@ -84,6 +86,22 @@ func WithCucumberOptions(c *exporters.CucumberExporter, opts ...ExporterOption) 
 	}
 
 	return nil
+}
+
+func WithCucumberTimeout(t time.Duration) ExporterOption {
+
+	return ExportOptionFn(func(i interface{}) error {
+		var rcerror error
+		var c *cucumberHandler
+		var ok bool
+
+		if c, ok = i.(*cucumberHandler); ok {
+			c.timeout = t
+			return nil
+		}
+
+		return errortree.Add(rcerror, "WithCucumberRootPrefix", errors.New("type mismatch, cucumberHandler expected"))
+	})
 }
 
 func WithCucumberRootPrefix(prefix string) ExporterOption {
@@ -138,14 +156,34 @@ func (c *cucumberHandler) registerCucumberPlugin(k string, v CucumberPlugin) err
 
 func (c *cucumberHandler) ProbesEndpoint(w http.ResponseWriter, r *http.Request) {
 
-	c.handle(w, r, c.PluginSet)
+	ctx, cancel := context.WithTimeout(r.Context(), 1*time.Millisecond)
+	defer cancel()
+	reqWithTimeout := r.WithContext(ctx)
+	c.handle(w, reqWithTimeout, c.PluginSet)
+}
+
+type PluginResponse struct {
+	stats CucumberStatsSet
+	err   error
+}
+
+func helper(ctx context.Context, cancelFn context.CancelFunc, plugin CucumberPlugin) <-chan PluginResponse {
+
+	respChan := make(chan PluginResponse, 1)
+	go func() {
+		stats, err := plugin.Do(ctx, cancelFn)
+		respChan <- PluginResponse{
+			stats: stats,
+			err:   err,
+		}
+	}()
+
+	return respChan
 }
 
 func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins map[string]CucumberPlugin) {
 	var plugin CucumberPlugin
-	var stats CucumberStatsSet
 	var ok bool
-	var err error
 
 	params := r.URL.Query()
 	featureName := params.Get("feature")
@@ -153,11 +191,6 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 		http.Error(w, "missing feature param", http.StatusBadRequest)
 		return
 	}
-
-	//TODO: find timeout from headers or configuration
-	ctx, cancel := context.WithTimeout(r.Context(), 11*time.Second)
-	defer cancel()
-	r = r.WithContext(ctx)
 
 	plugin, ok = c.PluginSet[featureName]
 	if !ok {
@@ -170,12 +203,6 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 		Help: "Displays whether or not the test was a success",
 	}, []string{"feature_name", "scenario_name"})
 
-	// stepDurationHistogramVec := prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	// 	Name:    "step_bucket_duration_seconds",
-	// 	Help:    "Duration of test steps in seconds.",
-	// 	Buckets: prometheus.ExponentialBuckets(1, 1.5, 5),
-	// }, []string{"feature_name", "scenario_name", "step_name", "step_status"})
-
 	stepDurationGaugeVec := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "step_duration_seconds",
 		Help: "Duration of test steps in seconds",
@@ -184,28 +211,38 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(stepSuccessGaugeVec)
 	registry.MustRegister(stepDurationGaugeVec)
-	// registry.MustRegister(stepDurationHistogramVec)
-	if stats, err = plugin.Do(ctx); err != nil {
+
+	ctx, cancelFn := context.WithCancel(r.Context())
+	defer cancelFn()
+	select {
+	case <-ctx.Done():
+		cancelFn()
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(fmt.Sprintf("%d - Something bad happened!\n\n%s", http.StatusInternalServerError, err.Error())))
+		w.Write([]byte(fmt.Sprintf("Max deadline %v exceeded", c.timeout)))
 		return
-	}
-	//FIXME: set the feature name from the godog API
-	for k, v := range stats {
-		success := 0
-		for _, stats := range v {
-			// fmt.Printf("[DBG]key[%s] value[%s]\n", k, v)
-			// stepDurationHistogramVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id, stats.Result.String()).Observe(stats.Duration.Seconds())
-			stepDurationGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id, stats.Result.String()).Set(stats.Duration.Seconds())
-			success += int(stats.Result)
+	case pluginChan := <-helper(ctx, cancelFn, plugin):
+		if pluginChan.err != nil {
+			cancelFn()
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("%d - Something bad happened!\n\n%s", http.StatusInternalServerError, pluginChan.err.Error())))
+			return
 		}
-		//0 failure
-		if success > 0 {
-			stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(1)
-		} else {
-			stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(0)
+		for k, v := range pluginChan.stats {
+			success := 0
+			for _, stats := range v {
+				// fmt.Printf("[DBG]key[%s] value[%s]\n", k, v)
+				// stepDurationHistogramVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id, stats.Result.String()).Observe(stats.Duration.Seconds())
+				stepDurationGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id, stats.Result.String()).Set(stats.Duration.Seconds())
+				success += int(stats.Result)
+			}
+			//0 failure
+			if success > 0 {
+				stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(1)
+			} else {
+				stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(0)
+			}
 		}
+		h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
+		h.ServeHTTP(w, r)
 	}
-	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
-	h.ServeHTTP(w, r)
 }

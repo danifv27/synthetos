@@ -24,8 +24,8 @@ func (c contextKey) String() string {
 }
 
 type loginPage struct {
-	// scenarioName  string
 	featureFolder string
+	ctx           context.Context
 	stats         exporters.CucumberStatsSet
 }
 
@@ -44,6 +44,7 @@ func scenarioNameFromContext(ctx context.Context) (string, error) {
 func NewLoginPageFeature(path string, opts ...exporters.ExporterOption) (exporters.CucumberPlugin, error) {
 	var rcerror error
 
+	//TODO: remove seed when implementing steps
 	rand.Seed(time.Now().UnixNano())
 	l := loginPage{
 		featureFolder: path,
@@ -122,11 +123,18 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I should be redirected to the dashboard page$`, l.iShouldBeRedirectedToTheDashboardPage)
 }
 
-func (l *loginPage) iAmOnTheLoginPage() error {
+func (l *loginPage) iAmOnTheLoginPage(ctx context.Context) error {
 
-	d := time.Duration(1+rand.Intn(3)) * time.Second
-	time.Sleep(d)
+	d := time.Duration(5+rand.Intn(3)) * time.Second
 	fmt.Printf("[DBG]I am on the login page (sleeping %v)\n", d)
+	err := l.ctx.Err()
+	if err != nil {
+		fmt.Printf("[DBG]I am on the login page, context error: '%v')\n", err)
+		return err
+	}
+	// Do work
+	time.Sleep(d)
+	fmt.Printf("[DBG]I am on the login page finished\n")
 
 	return nil
 }
@@ -134,8 +142,15 @@ func (l *loginPage) iAmOnTheLoginPage() error {
 func (l *loginPage) iEnterMyUsernameAndPassword() error {
 
 	d := time.Duration(1+rand.Intn(3)) * time.Second
+	fmt.Printf("[DBG]I enter my username and password (sleeping %v\n", d)
+	err := l.ctx.Err()
+	if err != nil {
+		fmt.Printf("[DBG]I enter my username and password, context error: '%v')\n", err)
+		return err
+	}
+	// Do work
 	time.Sleep(d)
-	fmt.Printf("[DBG]I enter my username and password (sleeping %v)\n", d)
+	fmt.Printf("[DBG]I enter my username and password finished\n")
 
 	return nil
 }
@@ -143,8 +158,15 @@ func (l *loginPage) iEnterMyUsernameAndPassword() error {
 func (l *loginPage) iClickTheLoginButton() error {
 
 	d := time.Duration(1+rand.Intn(3)) * time.Second
-	time.Sleep(d)
+	err := l.ctx.Err()
 	fmt.Printf("[DBG]I click the login button (sleeping %v)\n", d)
+	if err != nil {
+		fmt.Printf("[DBG]I click the login button, context error: '%v')\n", err)
+		return err
+	}
+	// Do work
+	time.Sleep(d)
+	fmt.Printf("[DBG]I click the login button finished\n")
 
 	return nil
 }
@@ -152,20 +174,42 @@ func (l *loginPage) iClickTheLoginButton() error {
 func (l *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
 
 	d := time.Duration(1+rand.Intn(3)) * time.Second
-	time.Sleep(d)
+	err := l.ctx.Err()
 	fmt.Printf("[DBG]I should be redirected to the dashboard page (sleeping %v)\n", d)
+	if err != nil {
+		fmt.Printf("[DBG]I should be redirected to the dashboard page, context error: '%v')\n", err)
+		return err
+	}
+	// Do work
+	time.Sleep(d)
+	fmt.Printf("[DBG]I should be redirected to the dashboard page finished\n")
 
 	return nil
 }
 
-func (l *loginPage) Do(ctx context.Context) (exporters.CucumberStatsSet, error) {
+func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.CucumberStatsSet, error) {
 	var rcerror error
+	var rc int
 
+	// //Initialize chromedp context
+	// opts := append(chromedp.DefaultExecAllocatorOptions[:],
+	// 	chromedp.UserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.106 Safari/537.36"),
+	// 	chromedp.Flag("enable-automation", false),
+	// 	chromedp.Flag("headless", false),
+	// )
+	// chromedpCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
+	// defer cancel()
+	// pageCtx, cancel := chromedp.NewContext(chromedpCtx)
+	// defer cancel()
+	l.ctx = c
 	godogOpts := godog.Options{
 		Output: io.Discard,
 		Paths:  []string{l.featureFolder},
 		//pretty, progress, cucumber, events and junit
-		Format: "junit",
+		Format:        "junit",
+		StopOnFailure: true,
+		//This is the context passed as argument to scenario hooks
+		DefaultContext: c,
 	}
 	suite := godog.TestSuite{
 		Name:                 "loginPage",
@@ -173,7 +217,13 @@ func (l *loginPage) Do(ctx context.Context) (exporters.CucumberStatsSet, error) 
 		ScenarioInitializer:  l.scenarioInit,
 		Options:              &godogOpts,
 	}
-	rc := suite.Run()
+
+	go func() {
+		rc = suite.Run()
+		cancel()
+	}()
+	fmt.Printf("[DBG]Waiting for context done\n")
+	<-c.Done()
 	switch rc {
 	case 0:
 		return l.stats, nil

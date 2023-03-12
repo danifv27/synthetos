@@ -61,11 +61,12 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 		}
 		return err
 	}
-
+	//FIXME: set the timeout from flags, headers or configuration
 	infraOptions := []infrastructure.AdapterOption{
 		infrastructure.WithHealthchecker(),
 		infrastructure.WithCucumberExporter(
 			iexporters.WithCucumberRootPrefix(cli.Test.Flags.Metrics.RoutePrefix),
+			iexporters.WithCucumberTimeout(3*time.Second),
 			iexporters.WithCucumberPlugin("loginPage", login),
 		),
 	}
