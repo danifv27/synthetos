@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"fry.org/cmo/cli/internal/application/exporters"
+	"github.com/iancoleman/strcase"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/speijnik/go-errortree"
@@ -189,19 +190,20 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 		w.Write([]byte(fmt.Sprintf("%d - Something bad happened!\n\n%s", http.StatusInternalServerError, err.Error())))
 		return
 	}
+	//FIXME: set the feature name from the godog API
 	for k, v := range stats {
 		success := 0
 		for _, stats := range v {
 			// fmt.Printf("[DBG]key[%s] value[%s]\n", k, v)
-			// stepDurationHistogramVec.WithLabelValues("loginPage", k, stats.Id, stats.Result.String()).Observe(stats.Duration.Seconds())
-			stepDurationGaugeVec.WithLabelValues("loginPage", k, stats.Id, stats.Result.String()).Set(stats.Duration.Seconds())
+			// stepDurationHistogramVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id, stats.Result.String()).Observe(stats.Duration.Seconds())
+			stepDurationGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id, stats.Result.String()).Set(stats.Duration.Seconds())
 			success += int(stats.Result)
 		}
 		//0 failure
 		if success > 0 {
-			stepSuccessGaugeVec.WithLabelValues("loginPage", k).Set(1)
+			stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(1)
 		} else {
-			stepSuccessGaugeVec.WithLabelValues("loginPage", k).Set(0)
+			stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(0)
 		}
 	}
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})

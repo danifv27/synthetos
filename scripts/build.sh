@@ -76,7 +76,7 @@ if [ "${GOARCH}" = "arm" ]; then
   # GOARM="6"
 fi
 
-cmd="go build -o ${OUTPUT} -installsuffix \"static\""
+cmd="go mod download && go build -o ${OUTPUT} -installsuffix \"static\""
     
 if [ ! -z "${DEBUG}" ]; then
   # Here `-N` will disable optimization and `-l` disable inlining. 

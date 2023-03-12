@@ -9,7 +9,7 @@ import (
 
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
 	"github.com/cucumber/godog"
-	"github.com/mrz1836/go-sanitize"
+	"github.com/iancoleman/strcase"
 	"github.com/speijnik/go-errortree"
 )
 
@@ -72,18 +72,13 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 	ctx.Before(func(c context.Context, sc *godog.Scenario) (context.Context, error) {
 
 		// This code will be executed once, before any scenarios are run
-		// l.scenarioName = sanitize.Alpha(sc.Name, false)
-
-		// return c, nil
-		return context.WithValue(c, contextKeyScenarioName, sanitize.Alpha(sc.Name, false)), nil
+		return context.WithValue(c, contextKeyScenarioName, strcase.ToCamel(sc.Name)), nil
 	})
 
 	ctx.After(func(c context.Context, sc *godog.Scenario, err error) (context.Context, error) {
 
 		// This code will be executed once, after all scenarios have been run
-		// l.scenarioName = ""
-		v, ok := c.Value(contextKeyScenarioName).(string)
-		fmt.Printf("[DBG]value: %v, ok:=%v", v, ok)
+		// v, ok := c.Value(contextKeyScenarioName).(string)
 
 		return c, nil
 	})
@@ -92,7 +87,7 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 		var rcerror error
 
 		stat := exporters.CucumberStats{
-			Id:     sanitize.Alpha(st.Text, false),
+			Id:     strcase.ToCamel(st.Text),
 			Start:  time.Now(),
 			Result: exporters.CucumberNotExecuted,
 		}
