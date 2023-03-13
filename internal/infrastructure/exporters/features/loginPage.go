@@ -191,16 +191,6 @@ func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.
 	var rcerror error
 	var rc int
 
-	// //Initialize chromedp context
-	// opts := append(chromedp.DefaultExecAllocatorOptions[:],
-	// 	chromedp.UserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.106 Safari/537.36"),
-	// 	chromedp.Flag("enable-automation", false),
-	// 	chromedp.Flag("headless", false),
-	// )
-	// chromedpCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
-	// defer cancel()
-	// pageCtx, cancel := chromedp.NewContext(chromedpCtx)
-	// defer cancel()
 	l.ctx = c
 	godogOpts := godog.Options{
 		Output: io.Discard,
@@ -218,12 +208,13 @@ func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.
 		Options:              &godogOpts,
 	}
 
+	done := make(chan bool)
 	go func() {
 		rc = suite.Run()
-		cancel()
+		done <- true
 	}()
 	fmt.Printf("[DBG]Waiting for context done\n")
-	<-c.Done()
+	<-done
 	switch rc {
 	case 0:
 		return l.stats, nil
