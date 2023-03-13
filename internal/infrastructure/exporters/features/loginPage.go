@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
+	"github.com/chromedp/chromedp"
 	"github.com/cucumber/godog"
 	"github.com/iancoleman/strcase"
 	"github.com/speijnik/go-errortree"
@@ -124,64 +125,72 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 }
 
 func (l *loginPage) iAmOnTheLoginPage(ctx context.Context) error {
-
-	d := time.Duration(5+rand.Intn(3)) * time.Second
-	fmt.Printf("[DBG]I am on the login page (sleeping %v)\n", d)
 	err := l.ctx.Err()
 	if err != nil {
 		fmt.Printf("[DBG]I am on the login page, context error: '%v')\n", err)
 		return err
 	}
 	// Do work
-	time.Sleep(d)
+	fmt.Println("I am on the login page")
+	err = doAzureLogin(ctx)
+	if err != nil {
+		fmt.Printf("[DBG] Error step: I am on the login page: '%v')\n", err)
+		return err
+	}
 	fmt.Printf("[DBG]I am on the login page finished\n")
 
 	return nil
 }
 
-func (l *loginPage) iEnterMyUsernameAndPassword() error {
-
-	d := time.Duration(1+rand.Intn(3)) * time.Second
-	fmt.Printf("[DBG]I enter my username and password (sleeping %v\n", d)
+func (l *loginPage) iEnterMyUsernameAndPassword(ctx context.Context) error {
 	err := l.ctx.Err()
 	if err != nil {
 		fmt.Printf("[DBG]I enter my username and password, context error: '%v')\n", err)
 		return err
 	}
 	// Do work
-	time.Sleep(d)
+	fmt.Println("I enter my username and password")
+	err = loadUserAndPasswordWindow(ctx)
+	if err != nil {
+		fmt.Printf("[DBG] Error step: I enter my username and password: '%v')\n", err)
+		return err
+	}
 	fmt.Printf("[DBG]I enter my username and password finished\n")
 
 	return nil
 }
 
-func (l *loginPage) iClickTheLoginButton() error {
-
-	d := time.Duration(1+rand.Intn(3)) * time.Second
+func (l *loginPage) iClickTheLoginButton(ctx context.Context) error {
 	err := l.ctx.Err()
-	fmt.Printf("[DBG]I click the login button (sleeping %v)\n", d)
 	if err != nil {
 		fmt.Printf("[DBG]I click the login button, context error: '%v')\n", err)
 		return err
 	}
 	// Do work
-	time.Sleep(d)
+	fmt.Println("I click the login button")
+	err = loadConsentAzurePage(ctx)
+	if err != nil {
+		fmt.Printf("[DBG] Error step: I click the login button: '%v')\n", err)
+		return err
+	}
 	fmt.Printf("[DBG]I click the login button finished\n")
 
 	return nil
 }
 
-func (l *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
-
-	d := time.Duration(1+rand.Intn(3)) * time.Second
+func (l *loginPage) iShouldBeRedirectedToTheDashboardPage(ctx context.Context) error {
 	err := l.ctx.Err()
-	fmt.Printf("[DBG]I should be redirected to the dashboard page (sleeping %v)\n", d)
 	if err != nil {
 		fmt.Printf("[DBG]I should be redirected to the dashboard page, context error: '%v')\n", err)
 		return err
 	}
 	// Do work
-	time.Sleep(d)
+	fmt.Println("I should be redirected to the dashboard page")
+	err = isMainFELoad(ctx)
+	if err != nil {
+		fmt.Printf("[DBG] Error step: I should be redirected to the dashboard page: '%v')\n", err)
+		return err
+	}
 	fmt.Printf("[DBG]I should be redirected to the dashboard page finished\n")
 
 	return nil
@@ -192,16 +201,16 @@ func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.
 	var rc int
 
 	// //Initialize chromedp context
-	// opts := append(chromedp.DefaultExecAllocatorOptions[:],
-	// 	chromedp.UserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.106 Safari/537.36"),
-	// 	chromedp.Flag("enable-automation", false),
-	// 	chromedp.Flag("headless", false),
-	// )
-	// chromedpCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
-	// defer cancel()
-	// pageCtx, cancel := chromedp.NewContext(chromedpCtx)
-	// defer cancel()
-	l.ctx = c
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.Flag("headless", true),
+		chromedp.Flag("no-sandbox", true),
+		chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"),
+	)
+	//opts := append(chromedp.DefaultExecAllocatorOptions[:])
+	actx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
+	ctx, _ := chromedp.NewContext(actx)
+	//TODO ask dani context
+	l.ctx = ctx
 	godogOpts := godog.Options{
 		Output: io.Discard,
 		Paths:  []string{l.featureFolder},
