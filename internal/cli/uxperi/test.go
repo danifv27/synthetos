@@ -23,8 +23,10 @@ type ExporterCmd struct {
 }
 
 type ExporterFlags struct {
-	FeaturesFolder string `help:"path to gherkin features folder" prefix:"test." hidden:"" default:"./features" env:"SC_TEST_FEATURES_FOLDER"`
-	Probes         struct {
+	FeaturesFolder string        `help:"path to gherkin features folder" prefix:"test." hidden:"" default:"./features" env:"SC_TEST_FEATURES_FOLDER"`
+	Timeout        time.Duration `help:"maximum amount of time that we should wait for a step or scenario to complete before timing out and marking the test as failed" prefix:"test." default:"1m" env:"SC_TEST_TIMEOUT"`
+
+	Probes struct {
 		Enable  bool   `help:"enable actuator?." default:"true" prefix:"probes." env:"SC_TEST_PROBES_ENABLE" group:"probes" negatable:""`
 		Address string `help:"actuator adress with port" prefix:"probes." default:":8081" env:"SC_TEST_PROBES_ADDRESS" optional:"" group:"probes"`
 		// Root           string  `help:"endpoint root" default:"/health" env:"SC_TEST_PROBES_ROOT" optional:"" group:"probes"`
@@ -66,7 +68,7 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 		infrastructure.WithHealthchecker(),
 		infrastructure.WithCucumberExporter(
 			iexporters.WithCucumberRootPrefix(cli.Test.Flags.Metrics.RoutePrefix),
-			iexporters.WithCucumberTimeout(3*time.Second),
+			iexporters.WithCucumberTimeout(cli.Test.Flags.Timeout),
 			iexporters.WithCucumberPlugin("loginPage", login),
 		),
 	}
