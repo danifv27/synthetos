@@ -1,12 +1,8 @@
-# test scenario command
+# secret command
 
-This command loads the specified Cucumber feature configuration, runs the tests, updates the Prometheus metric with the test results, and starts an HTTP server that listens on the specified port number. 
-This command implements the multi-target exporter pattern, so we advice to read the guide [Understanding and using the multi-target exporter pattern](https://prometheus.io/docs/guides/multi-target-exporter/) to get the general idea about the configuration.
+This command allows you to interact with different Key Manager Systems (KMS). It provides a simple and easy-to-use interface to access and manage your secrets securely. With it, you can easily perform tasks like retrieving a secret, listing security objects, and decrypting a secret.
 
-There are two ways of querying the exporter:
-
-    * Querying the exporter itself. It has its own metrics, available at `/metrics`. Those are metrics in the Prometheus format. They come from the exporter’s instrumentation and tell us about the state of the exporter itself while it is running.
-    * Querying the exporter to test a scenario available at `/probe`. For this type of querying we need to provide feature name as parameter in the HTTP GET request. 
+To use this command, simply provide the necessary authentication credentials for the KMS you want to interact with. Currently, the application supports Fortanix as the KMS provider. Once authenticated, you can use the different commands to interact with the KMS. For example, to retrieve a secret from Fortanix, you can use the get command and provide the secret ID. Similarly, you can use the list command to list all the security objects from a Fortanix group.
 
 ## Options inherited from parent commands
 
@@ -24,8 +20,6 @@ There are two ways of querying the exporter:
 {
     "synthetos": {
         "secret": {
-            "scenario": {
-            }
         }
     }
 }
