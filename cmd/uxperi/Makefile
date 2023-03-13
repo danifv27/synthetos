@@ -11,7 +11,7 @@ IMAGE_NAME = $(DOCKER_REGISTRY)/$(VCS_USER)/$(BIN)
 VCS_USER ?= danifv27
 VCS_PASSWORD = $(shell echo $(BASE64_PASSWORD) | base64 --decode)
 VCS_PROTOCOL ?= https
-VCS_URL ?= https://github.com/danifv27/optimo
+VCS_URL ?= https://github.com/danifv27/synthetos
 ARTIFACTORY_CREDENTIALS ?= $(shell echo cGMtbWF2ZW46RGVjZW1iZXJAMjAxNg==| base64 --decode)
 
 TOP_LEVEL = ../..
