@@ -1,4 +1,4 @@
-# synthetos
+# CMO Atlas Command Line Interface
 
 The application is designed to be highly modular and flexible, with a focus on testability and maintainability. It follows the principles of clean architecture, which means that it is organized into layers that are decoupled from one another and can be easily swapped out or replaced without affecting the overall functionality of the system.
 
@@ -10,3 +10,80 @@ The CLI component of the application is built on top of the application layer, p
 
 Overall, this Golang CLI application is a powerful and flexible tool for building robust, scalable systems that are easy to test and maintain. Its clean architecture and modular design make it highly adaptable to a wide range of use cases, and its Prometheus exporter provides valuable insights into system performance and behavior.
 
+# Quick Start
+
+Installation of `uxperi` is dead-simple, just download the release for your system and run the binary. The binaries are published in Artifactory, under `pc-maven/com/adidas/devops/uxperi/` package.
+
+The binaries are classified by operating system (darwin, linux or windows), architecture (amd64) and version.
+
+## Download the binary 
+
+```bash
+export VERSION=0.0.1
+export GOOS=darwin
+export GOARCH=amd64
+
+curl -Lo uxperi https://tools.adidas-group.com/artifactory/pc-maven/com/adidas/devops/atlas/${GOOS}/${GOARCH}/${VERSION}/bin/uxperi
+
+# make the binary executable
+chmod +x optimo
+```
+
+## Build from source
+
+Clone this repo and:
+
+```bash
+git clone https://tools.adidas-group.com/bitbucket/scm/cmodevops/cmo-atlas.git
+cd cmd/uxperi
+make local
+
+# to 'install' the optimo binary, make it executable and either call it directy, put 
+# it in your PATH, or move it to a location which is already in your PATH:
+
+chmod +x uxperi
+mv uxperi /usr/local/bin
+```
+
+### Cross compile
+
+Use `make build-ARCH` to cross-compile to a diferent architecture. Currently available architectures are:
+ 
+ * linux-amd64
+ * darwin-amd64
+ * windows-amd64
+
+When crosscompiling to Windows you may need to install a compiler. If you are running on Mac OS:
+
+```bash
+brew install mingw-w64
+```
+
+### Makefile rules
+
+When developing, you can use the `Makefile` for doing the following operations:
+
+| Name                 | Description                                                      |
+| --------------------:| -----------------------------------------------------------------|
+| `init`               | Initialize the module                                            |
+| `clean`              | Clean out all generated items                                    |
+| `clean-<ARCH>`       | Clean out all generated items                                    |
+| `coverage`           | Generates the total code coverage of the project                 |
+| `package`            | Build final docker image with just the go binary inside          |
+| `tag`                | Tag image created by package with latest, git commit and version |
+| `push`               | Push tagged images to registry                                   |
+| `test`               | Run tests on a compiled project                                  |
+| `unit_test`          | Run all available unit tests.                                    |
+| `labels`             | Show image labels                                         |
+| `build-<ARCH>`       | Build application for a specific arch.                           |
+| `local`              | Build application for the local arch                             |
+| `artifactory-<ARCH>` | Push binary to Artifactory                                       |
+
+
+# Versioning
+
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://tools.adidas-group.com/bitbucket/scm/cmodevops/cmo-atlas.git). 
+
+# Acknowledgement
+
+* [synthetos](https://github.com/danifv27/synthetos
