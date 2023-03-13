@@ -1,4 +1,4 @@
-# CMO Atlas Command Line Interface
+# Synthetos Command Line Interface Framework
 
 The application is designed to be highly modular and flexible, with a focus on testability and maintainability. It follows the principles of clean architecture, which means that it is organized into layers that are decoupled from one another and can be easily swapped out or replaced without affecting the overall functionality of the system.
 
