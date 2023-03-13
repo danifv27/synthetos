@@ -26,8 +26,8 @@ func initializeVersionCmd(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
 	var err, rcerror error
 
-	if c, err = CmdCtx(ctx); err != nil {
-		if e := SetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
+	if c, err = UxperiCmdCtx(ctx); err != nil {
+		if e := UxperiSetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeVersionCmd", e)
 		}
 		return err
@@ -38,7 +38,7 @@ func initializeVersionCmd(ctx floc.Context, ctrl floc.Control) error {
 		infrastructure.WithTablePrinter(),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
-		if e := SetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
+		if e := UxperiSetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeVersionCmd", e)
 		}
 		return err
@@ -46,19 +46,19 @@ func initializeVersionCmd(ctx floc.Context, ctrl floc.Control) error {
 	if err = application.WithOptions(&c.Apps,
 		application.WithPrintVersionCommand(c.Adapters.Version, c.Adapters.Printer),
 	); err != nil {
-		if e := SetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
+		if e := UxperiSetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeVersionCmd", e)
 		}
 		return err
 	}
-	if err = SetCmdCtx(ctx, common.Cmdctx{
+	if err = UxperiSetCmdCtx(ctx, common.Cmdctx{
 		Cmd:      c.Cmd,
 		InitSeq:  c.InitSeq,
 		Apps:     c.Apps,
 		Adapters: c.Adapters,
 		Ports:    c.Ports,
 	}); err != nil {
-		if e := SetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
+		if e := UxperiSetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeVersionCmd", e)
 		}
 		return err
@@ -72,19 +72,19 @@ func versionPrintJob(ctx floc.Context, ctrl floc.Control) error {
 	var cli CLI
 	var err error
 
-	if c, err = CmdCtx(ctx); err != nil {
-		SetRCErrorTree(ctx, "versionPrintJob", err)
+	if c, err = UxperiCmdCtx(ctx); err != nil {
+		UxperiSetRCErrorTree(ctx, "versionPrintJob", err)
 		return err
 	}
-	if cli, err = Flags(ctx); err != nil {
-		SetRCErrorTree(ctx, "versionPrintJob", err)
+	if cli, err = UxperiFlags(ctx); err != nil {
+		UxperiSetRCErrorTree(ctx, "versionPrintJob", err)
 		return err
 	}
 	req := application.PrintVersionRequest{
 		Format: cli.Version.Flags.Output,
 	}
 	if err = c.Apps.Commands.PrintVersion.Handle(req); err != nil {
-		SetRCErrorTree(ctx, "versionPrintJob", err)
+		UxperiSetRCErrorTree(ctx, "versionPrintJob", err)
 		return err
 	}
 
@@ -102,7 +102,7 @@ func (cmd *VersionCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 			versionPrintJob,
 			func(ctx floc.Context, ctrl floc.Control) error {
 
-				if rcerror, err := RCErrorTree(ctx); err != nil {
+				if rcerror, err := UxperiRCErrorTree(ctx); err != nil {
 					ctrl.Fail(fmt.Sprintf("Command '%s' internal error", c.Cmd), err)
 					return err
 				} else if *rcerror != nil {
@@ -117,8 +117,8 @@ func (cmd *VersionCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 		func(ctx floc.Context, ctrl floc.Control, id interface{}) {
 			// Fail the flow on timeout
 			msg := fmt.Sprintf("Command '%s' timeout expired", c.Cmd)
-			SetRCErrorTree(ctx, "timeout", errors.New(msg))
-			if rcerror, err := RCErrorTree(ctx); err != nil {
+			UxperiSetRCErrorTree(ctx, "timeout", errors.New(msg))
+			if rcerror, err := UxperiRCErrorTree(ctx); err != nil {
 				ctrl.Fail(fmt.Sprintf("Command '%s' internal error", c.Cmd), err)
 			} else {
 				ctrl.Fail(msg, *rcerror)

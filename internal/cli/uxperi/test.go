@@ -44,21 +44,21 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 	var cli CLI
 	var login iexporters.CucumberPlugin
 
-	if c, err = CmdCtx(ctx); err != nil {
-		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
+	if c, err = UxperiCmdCtx(ctx); err != nil {
+		if e := UxperiSetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeExporterCmd", e)
 		}
 		return err
 	}
-	if cli, err = Flags(ctx); err != nil {
-		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
+	if cli, err = UxperiFlags(ctx); err != nil {
+		if e := UxperiSetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeExporterCmd", e)
 		}
 		return err
 	}
 
 	if login, err = ifeatures.NewLoginPageFeature(cli.Test.Flags.FeaturesFolder); err != nil {
-		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
+		if e := UxperiSetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeExporterCmd", e)
 		}
 		return err
@@ -73,7 +73,7 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 		),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
-		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
+		if e := UxperiSetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeExporterCmd", e)
 		}
 		return err
@@ -88,19 +88,19 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 	if err = application.WithOptions(&c.Apps,
 		application.WithHealthchecker(c.Adapters.Healthchecker),
 	); err != nil {
-		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
+		if e := UxperiSetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeExporterCmd", e)
 		}
 		return err
 	}
-	if err = SetCmdCtx(ctx, common.Cmdctx{
+	if err = UxperiSetCmdCtx(ctx, common.Cmdctx{
 		Cmd:      c.Cmd,
 		InitSeq:  c.InitSeq,
 		Apps:     c.Apps,
 		Adapters: c.Adapters,
 		Ports:    c.Ports,
 	}); err != nil {
-		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
+		if e := UxperiSetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeExporterCmd", e)
 		}
 		return err
@@ -114,12 +114,12 @@ func exporterRunHealthServer(ctx floc.Context, ctrl floc.Control) error {
 	var cli CLI
 	var err error
 
-	if c, err = CmdCtx(ctx); err != nil {
-		SetRCErrorTree(ctx, "exporterRunHealthServer", err)
+	if c, err = UxperiCmdCtx(ctx); err != nil {
+		UxperiSetRCErrorTree(ctx, "exporterRunHealthServer", err)
 		return err
 	}
-	if cli, err = Flags(ctx); err != nil {
-		SetRCErrorTree(ctx, "exporterRunHealthServer", err)
+	if cli, err = UxperiFlags(ctx); err != nil {
+		UxperiSetRCErrorTree(ctx, "exporterRunHealthServer", err)
 		return err
 	}
 
@@ -133,7 +133,7 @@ func exporterRunHealthServer(ctx floc.Context, ctrl floc.Control) error {
 			"address": cli.Test.Flags.Probes.Address,
 		}).Debug("Starting health server")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			SetRCErrorTree(ctx, "exporterRunHealthServer", err)
+			UxperiSetRCErrorTree(ctx, "exporterRunHealthServer", err)
 		}
 	}()
 	// Wait for the context to be canceled
@@ -143,7 +143,7 @@ func exporterRunHealthServer(ctx floc.Context, ctrl floc.Control) error {
 	ct, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ct); err != nil {
-		SetRCErrorTree(ctx, "exporterRunHealthServer", err)
+		UxperiSetRCErrorTree(ctx, "exporterRunHealthServer", err)
 	}
 
 	return nil
@@ -154,12 +154,12 @@ func exporterRunMetricsServer(ctx floc.Context, ctrl floc.Control) error {
 	var cli CLI
 	var err error
 
-	if c, err = CmdCtx(ctx); err != nil {
-		SetRCErrorTree(ctx, "exporterRunMetricsServer", err)
+	if c, err = UxperiCmdCtx(ctx); err != nil {
+		UxperiSetRCErrorTree(ctx, "exporterRunMetricsServer", err)
 		return err
 	}
-	if cli, err = Flags(ctx); err != nil {
-		SetRCErrorTree(ctx, "exporterRunMetricsServer", err)
+	if cli, err = UxperiFlags(ctx); err != nil {
+		UxperiSetRCErrorTree(ctx, "exporterRunMetricsServer", err)
 		return err
 	}
 
@@ -173,7 +173,7 @@ func exporterRunMetricsServer(ctx floc.Context, ctrl floc.Control) error {
 			"address": cli.Test.Flags.Metrics.Address,
 		}).Debug("Starting metrics server")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			SetRCErrorTree(ctx, "exporterRunMetricsServer", err)
+			UxperiSetRCErrorTree(ctx, "exporterRunMetricsServer", err)
 		}
 	}()
 	// Wait for the context to be canceled
@@ -183,7 +183,7 @@ func exporterRunMetricsServer(ctx floc.Context, ctrl floc.Control) error {
 	ct, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ct); err != nil {
-		SetRCErrorTree(ctx, "exporterRunMetricsServer<", err)
+		UxperiSetRCErrorTree(ctx, "exporterRunMetricsServer<", err)
 	}
 
 	return nil
@@ -211,7 +211,7 @@ func (cmd *ExporterCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 		run.If(isActuatorEnabled, run.Background(exporterRunHealthServer)),
 		waitForCancel,
 		func(ctx floc.Context, ctrl floc.Control) error {
-			if rcerror, err := RCErrorTree(ctx); err != nil {
+			if rcerror, err := UxperiRCErrorTree(ctx); err != nil {
 				ctrl.Fail(fmt.Sprintf("Command '%s' internal error", c.Cmd), err)
 				return err
 			} else if *rcerror != nil {
