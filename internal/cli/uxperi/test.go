@@ -18,11 +18,11 @@ import (
 	"github.com/workanator/go-floc/v3/run"
 )
 
-type ExporterCmd struct {
-	Flags ExporterFlags `embed:""`
+type TestCmd struct {
+	Flags TestFlags `embed:""`
 }
 
-type ExporterFlags struct {
+type TestFlags struct {
 	FeaturesFolder string        `help:"path to gherkin features folder" prefix:"test." hidden:"" default:"./features" env:"SC_TEST_FEATURES_FOLDER"`
 	Timeout        time.Duration `help:"maximum amount of time that we should wait for a step or scenario to complete before timing out and marking the test as failed" prefix:"test." default:"1m" env:"SC_TEST_TIMEOUT"`
 
@@ -38,7 +38,7 @@ type ExporterFlags struct {
 	} `embed:""`
 }
 
-func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
+func initializeTestCmd(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
 	var err, rcerror error
 	var cli CLI
@@ -189,7 +189,7 @@ func exporterRunMetricsServer(ctx floc.Context, ctrl floc.Control) error {
 	return nil
 }
 
-func (cmd *ExporterCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
+func (cmd *TestCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 
 	isActuatorEnabled := func(ctx floc.Context) bool {
 
@@ -204,7 +204,7 @@ func (cmd *ExporterCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 		return nil
 	}
 
-	c.InitSeq = append(c.InitSeq, initializeExporterCmd)
+	c.InitSeq = append(c.InitSeq, initializeTestCmd)
 
 	c.RunSeq = run.Sequence(
 		run.Background(exporterRunMetricsServer),
