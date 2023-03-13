@@ -96,6 +96,7 @@ func WithCucumberTimeout(t time.Duration) ExporterOption {
 		var ok bool
 
 		if c, ok = i.(*cucumberHandler); ok {
+			fmt.Printf("[DBG]setting timeout: %v\n", t)
 			c.timeout = t
 			return nil
 		}
@@ -156,7 +157,7 @@ func (c *cucumberHandler) registerCucumberPlugin(k string, v CucumberPlugin) err
 
 func (c *cucumberHandler) ProbesEndpoint(w http.ResponseWriter, r *http.Request) {
 
-	ctx, cancel := context.WithTimeout(r.Context(), 1*time.Millisecond)
+	ctx, cancel := context.WithTimeout(r.Context(), c.timeout)
 	defer cancel()
 	reqWithTimeout := r.WithContext(ctx)
 	c.handle(w, reqWithTimeout, c.PluginSet)
@@ -172,6 +173,7 @@ func helper(ctx context.Context, cancelFn context.CancelFunc, plugin CucumberPlu
 	respChan := make(chan PluginResponse, 1)
 	go func() {
 		stats, err := plugin.Do(ctx, cancelFn)
+		fmt.Printf("[DBG]plugin.Do finished, err: %v", err)
 		respChan <- PluginResponse{
 			stats: stats,
 			err:   err,
@@ -216,9 +218,10 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 	defer cancelFn()
 	select {
 	case <-ctx.Done():
-		cancelFn()
+		//TODO: should we treat the timeout as a test server failure, publishing only step_success metric?
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(fmt.Sprintf("Max deadline %v exceeded", c.timeout)))
+		cancelFn()
 		return
 	case pluginChan := <-helper(ctx, cancelFn, plugin):
 		if pluginChan.err != nil {
