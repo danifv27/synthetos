@@ -3,14 +3,13 @@ package features
 import (
 	"context"
 	"fmt"
+	"io"
 	"math/rand"
-	"os"
 	"time"
 
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
 	"github.com/chromedp/chromedp"
 	"github.com/cucumber/godog"
-	"github.com/cucumber/godog/colors"
 	"github.com/iancoleman/strcase"
 	"github.com/speijnik/go-errortree"
 )
@@ -97,8 +96,8 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 
 		err := l.ctx.Err()
 		if err != nil {
-			fmt.Printf("[DBG] '%v', context error: '%v')\n", err, st.Text)
-			return c, err
+			// fmt.Printf("[DBG] '%v', context error: '%v')\n", err, st.Text)
+			return c, errortree.Add(rcerror, "step.Before", err)
 		}
 
 		if name, err := scenarioNameFromContext(c); err != nil {
@@ -113,7 +112,7 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 		var rcerror error
 
 		if name, err := scenarioNameFromContext(c); err != nil {
-			return c, errortree.Add(rcerror, "step.Before", err)
+			return c, errortree.Add(rcerror, "step.After", err)
 		} else {
 			stat := l.stats[name][len(l.stats[name])-1]
 			stat.Duration = time.Since(stat.Start)
@@ -133,49 +132,57 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 }
 
 func (l *loginPage) iAmOnTheLoginPage() error {
-	fmt.Println("I am on the login page")
+	var rcerror error
+
+	// fmt.Println("I am on the login page")
 	err := doAzureLogin(l.ctx)
 	if err != nil {
-		fmt.Printf("[DBG] Error step: I am on the login page: '%v')\n", err)
-		return err
+		// fmt.Printf("[DBG] Error step: I am on the login page: '%v')\n", err)
+		return errortree.Add(rcerror, "iAmOnTheLoginPage", err)
 	}
-	fmt.Printf("[DBG]I am on the login page finished\n")
+	// fmt.Printf("[DBG]I am on the login page finished\n")
 
 	return nil
 }
 
 func (l *loginPage) iEnterMyUsernameAndPassword() error {
-	fmt.Println("I enter my username and password")
+	var rcerror error
+
+	// fmt.Println("I enter my username and password")
 	err := loadUserAndPasswordWindow(l.ctx)
 	if err != nil {
-		fmt.Printf("[DBG] Error step: I enter my username and password: '%v')\n", err)
-		return err
+		// fmt.Printf("[DBG] Error step: I enter my username and password: '%v')\n", err)
+		return errortree.Add(rcerror, "iEnterMyUsernameAndPassword", err)
 	}
-	fmt.Printf("[DBG]I enter my username and password finished\n")
+	// fmt.Printf("[DBG]I enter my username and password finished\n")
 
 	return nil
 }
 
 func (l *loginPage) iClickTheLoginButton() error {
-	fmt.Println("I click the login button")
+	var rcerror error
+
+	// fmt.Println("I click the login button")
 	err := loadConsentAzurePage(l.ctx)
 	if err != nil {
-		fmt.Printf("[DBG] Error step: I click the login button: '%v')\n", err)
-		return err
+		// fmt.Printf("[DBG] Error step: I click the login button: '%v')\n", err)
+		return errortree.Add(rcerror, "iClickTheLoginButton", err)
 	}
-	fmt.Printf("[DBG]I click the login button finished\n")
+	// fmt.Printf("[DBG]I click the login button finished\n")
 
 	return nil
 }
 
 func (l *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
-	fmt.Println("I should be redirected to the dashboard page")
+	var rcerror error
+
+	// fmt.Println("I should be redirected to the dashboard page")
 	err := isMainFELoad(l.ctx)
 	if err != nil {
-		fmt.Printf("[DBG] Error step: I should be redirected to the dashboard page: '%v')\n", err)
-		return err
+		// fmt.Printf("[DBG] Error step: I should be redirected to the dashboard page: '%v')\n", err)
+		return errortree.Add(rcerror, "scenarioNameFromContext", err)
 	}
-	fmt.Printf("[DBG]I should be redirected to the dashboard page finished\n")
+	// fmt.Printf("[DBG]I should be redirected to the dashboard page finished\n")
 
 	return nil
 }
@@ -193,7 +200,7 @@ func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.
 	actx, _ := chromedp.NewExecAllocator(c, opts...)
 	l.ctx, _ = chromedp.NewContext(actx)
 	godogOpts := godog.Options{
-		Output: colors.Colored(os.Stdout),
+		Output: io.Discard,
 		Paths:  []string{l.featureFolder},
 		//pretty, progress, cucumber, events and junit
 		Format:        "pretty",
@@ -213,7 +220,7 @@ func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.
 		rc = suite.Run()
 		done <- true
 	}()
-	fmt.Printf("[DBG]Waiting for context done\n")
+	// fmt.Printf("[DBG]Waiting for context done\n")
 	<-done
 	switch rc {
 	case 0:
