@@ -124,7 +124,7 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I should be redirected to the dashboard page$`, l.iShouldBeRedirectedToTheDashboardPage)
 }
 
-func (l *loginPage) iAmOnTheLoginPage(ctx context.Context) error {
+func (l *loginPage) iAmOnTheLoginPage() error {
 	err := l.ctx.Err()
 	if err != nil {
 		fmt.Printf("[DBG]I am on the login page, context error: '%v')\n", err)
@@ -132,7 +132,7 @@ func (l *loginPage) iAmOnTheLoginPage(ctx context.Context) error {
 	}
 	// Do work
 	fmt.Println("I am on the login page")
-	err = doAzureLogin(ctx)
+	err = doAzureLogin(l.ctx)
 	if err != nil {
 		fmt.Printf("[DBG] Error step: I am on the login page: '%v')\n", err)
 		return err
@@ -142,7 +142,7 @@ func (l *loginPage) iAmOnTheLoginPage(ctx context.Context) error {
 	return nil
 }
 
-func (l *loginPage) iEnterMyUsernameAndPassword(ctx context.Context) error {
+func (l *loginPage) iEnterMyUsernameAndPassword() error {
 	err := l.ctx.Err()
 	if err != nil {
 		fmt.Printf("[DBG]I enter my username and password, context error: '%v')\n", err)
@@ -150,7 +150,7 @@ func (l *loginPage) iEnterMyUsernameAndPassword(ctx context.Context) error {
 	}
 	// Do work
 	fmt.Println("I enter my username and password")
-	err = loadUserAndPasswordWindow(ctx)
+	err = loadUserAndPasswordWindow(l.ctx)
 	if err != nil {
 		fmt.Printf("[DBG] Error step: I enter my username and password: '%v')\n", err)
 		return err
@@ -160,7 +160,7 @@ func (l *loginPage) iEnterMyUsernameAndPassword(ctx context.Context) error {
 	return nil
 }
 
-func (l *loginPage) iClickTheLoginButton(ctx context.Context) error {
+func (l *loginPage) iClickTheLoginButton() error {
 	err := l.ctx.Err()
 	if err != nil {
 		fmt.Printf("[DBG]I click the login button, context error: '%v')\n", err)
@@ -168,7 +168,7 @@ func (l *loginPage) iClickTheLoginButton(ctx context.Context) error {
 	}
 	// Do work
 	fmt.Println("I click the login button")
-	err = loadConsentAzurePage(ctx)
+	err = loadConsentAzurePage(l.ctx)
 	if err != nil {
 		fmt.Printf("[DBG] Error step: I click the login button: '%v')\n", err)
 		return err
@@ -178,7 +178,7 @@ func (l *loginPage) iClickTheLoginButton(ctx context.Context) error {
 	return nil
 }
 
-func (l *loginPage) iShouldBeRedirectedToTheDashboardPage(ctx context.Context) error {
+func (l *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
 	err := l.ctx.Err()
 	if err != nil {
 		fmt.Printf("[DBG]I should be redirected to the dashboard page, context error: '%v')\n", err)
@@ -186,7 +186,7 @@ func (l *loginPage) iShouldBeRedirectedToTheDashboardPage(ctx context.Context) e
 	}
 	// Do work
 	fmt.Println("I should be redirected to the dashboard page")
-	err = isMainFELoad(ctx)
+	err = isMainFELoad(l.ctx)
 	if err != nil {
 		fmt.Printf("[DBG] Error step: I should be redirected to the dashboard page: '%v')\n", err)
 		return err
@@ -206,11 +206,8 @@ func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.
 		chromedp.Flag("no-sandbox", true),
 		chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"),
 	)
-	//opts := append(chromedp.DefaultExecAllocatorOptions[:])
-	actx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
-	ctx, _ := chromedp.NewContext(actx)
-	//TODO ask dani context
-	l.ctx = ctx
+	actx, cancel := chromedp.NewExecAllocator(c, opts...)
+	l.ctx, _ = chromedp.NewContext(actx)
 	godogOpts := godog.Options{
 		Output: io.Discard,
 		Paths:  []string{l.featureFolder},
@@ -218,7 +215,7 @@ func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.
 		Format:        "junit",
 		StopOnFailure: true,
 		//This is the context passed as argument to scenario hooks
-		DefaultContext: c,
+		DefaultContext: l.ctx,
 	}
 	suite := godog.TestSuite{
 		Name:                 "loginPage",
