@@ -3,13 +3,13 @@ package features
 import (
 	"context"
 	"fmt"
-	"io"
-	"math/rand"
+	"os"
 	"time"
 
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
 	"github.com/chromedp/chromedp"
 	"github.com/cucumber/godog"
+	"github.com/cucumber/godog/colors"
 	"github.com/iancoleman/strcase"
 	"github.com/speijnik/go-errortree"
 )
@@ -45,8 +45,6 @@ func scenarioNameFromContext(ctx context.Context) (string, error) {
 func NewLoginPageFeature(path string, opts ...exporters.ExporterOption) (exporters.CucumberPlugin, error) {
 	var rcerror error
 
-	//TODO: remove seed when implementing steps
-	rand.Seed(time.Now().UnixNano())
 	l := loginPage{
 		featureFolder: path,
 	}
@@ -222,16 +220,17 @@ func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.
 	}()
 	// fmt.Printf("[DBG]Waiting for context done\n")
 	<-done
+	// We have to return l.stats always to return the partial errors in case of error
 	switch rc {
 	case 0:
 		return l.stats, nil
 	case 1:
-		return exporters.CucumberStatsSet{}, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error  %d: failed test suite", rc))
+		return l.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error  %d: failed test suite", rc))
 	case 2:
-		return exporters.CucumberStatsSet{}, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d:command line usage error running test suite", rc))
+		return l.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d:command line usage error running test suite", rc))
 	default:
-		return exporters.CucumberStatsSet{}, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d running test suite", rc))
+		return l.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d running test suite", rc))
 	}
 
-	//return exporters.CucumberStatsSet{}, nil
+	//return l.stats, nil
 }
