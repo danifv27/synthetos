@@ -224,12 +224,13 @@ func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.
 		Options:              &godogOpts,
 	}
 
+	done := make(chan bool)
 	go func() {
 		rc = suite.Run()
-		cancel()
+		done <- true
 	}()
 	fmt.Printf("[DBG]Waiting for context done\n")
-	<-c.Done()
+	<-done
 	switch rc {
 	case 0:
 		return l.stats, nil
