@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/chromedp/chromedp"
@@ -78,10 +79,12 @@ func doAzureLogin(ctx context.Context) error {
 
 	// Check if the page has been redirected
 	redirectedURL := ""
-	if err := chromedp.Run(ctx, chromedp.Evaluate(`window.location.href`, &redirectedURL)); err != nil {
-		err := "Redirection failed"
-		return (errors.New(err))
-
+	err := chromedp.Run(ctx, chromedp.Evaluate(`window.location.href`, &redirectedURL))
+	if err == nil {
+		if strings.Contains(redirectedURL, os.Getenv("CREATION_PORTAL_URL")) {
+			err := "Redirection failed"
+			return (errors.New(err))
+		}
 	}
 	return nil
 }

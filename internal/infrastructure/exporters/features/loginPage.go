@@ -3,13 +3,14 @@ package features
 import (
 	"context"
 	"fmt"
-	"io"
 	"math/rand"
+	"os"
 	"time"
 
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
 	"github.com/chromedp/chromedp"
 	"github.com/cucumber/godog"
+	"github.com/cucumber/godog/colors"
 	"github.com/iancoleman/strcase"
 	"github.com/speijnik/go-errortree"
 )
@@ -93,6 +94,13 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 			Start:  time.Now(),
 			Result: exporters.CucumberNotExecuted,
 		}
+
+		err := l.ctx.Err()
+		if err != nil {
+			fmt.Printf("[DBG] '%v', context error: '%v')\n", err, st.Text)
+			return c, err
+		}
+
 		if name, err := scenarioNameFromContext(c); err != nil {
 			return c, errortree.Add(rcerror, "step.Before", err)
 		} else {
@@ -125,14 +133,8 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 }
 
 func (l *loginPage) iAmOnTheLoginPage() error {
-	err := l.ctx.Err()
-	if err != nil {
-		fmt.Printf("[DBG]I am on the login page, context error: '%v')\n", err)
-		return err
-	}
-	// Do work
 	fmt.Println("I am on the login page")
-	err = doAzureLogin(l.ctx)
+	err := doAzureLogin(l.ctx)
 	if err != nil {
 		fmt.Printf("[DBG] Error step: I am on the login page: '%v')\n", err)
 		return err
@@ -143,14 +145,8 @@ func (l *loginPage) iAmOnTheLoginPage() error {
 }
 
 func (l *loginPage) iEnterMyUsernameAndPassword() error {
-	err := l.ctx.Err()
-	if err != nil {
-		fmt.Printf("[DBG]I enter my username and password, context error: '%v')\n", err)
-		return err
-	}
-	// Do work
 	fmt.Println("I enter my username and password")
-	err = loadUserAndPasswordWindow(l.ctx)
+	err := loadUserAndPasswordWindow(l.ctx)
 	if err != nil {
 		fmt.Printf("[DBG] Error step: I enter my username and password: '%v')\n", err)
 		return err
@@ -161,14 +157,8 @@ func (l *loginPage) iEnterMyUsernameAndPassword() error {
 }
 
 func (l *loginPage) iClickTheLoginButton() error {
-	err := l.ctx.Err()
-	if err != nil {
-		fmt.Printf("[DBG]I click the login button, context error: '%v')\n", err)
-		return err
-	}
-	// Do work
 	fmt.Println("I click the login button")
-	err = loadConsentAzurePage(l.ctx)
+	err := loadConsentAzurePage(l.ctx)
 	if err != nil {
 		fmt.Printf("[DBG] Error step: I click the login button: '%v')\n", err)
 		return err
@@ -179,14 +169,8 @@ func (l *loginPage) iClickTheLoginButton() error {
 }
 
 func (l *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
-	err := l.ctx.Err()
-	if err != nil {
-		fmt.Printf("[DBG]I should be redirected to the dashboard page, context error: '%v')\n", err)
-		return err
-	}
-	// Do work
 	fmt.Println("I should be redirected to the dashboard page")
-	err = isMainFELoad(l.ctx)
+	err := isMainFELoad(l.ctx)
 	if err != nil {
 		fmt.Printf("[DBG] Error step: I should be redirected to the dashboard page: '%v')\n", err)
 		return err
@@ -206,13 +190,13 @@ func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.
 		chromedp.Flag("no-sandbox", true),
 		chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"),
 	)
-	actx, cancel := chromedp.NewExecAllocator(c, opts...)
+	actx, _ := chromedp.NewExecAllocator(c, opts...)
 	l.ctx, _ = chromedp.NewContext(actx)
 	godogOpts := godog.Options{
-		Output: io.Discard,
+		Output: colors.Colored(os.Stdout),
 		Paths:  []string{l.featureFolder},
 		//pretty, progress, cucumber, events and junit
-		Format:        "junit",
+		Format:        "pretty",
 		StopOnFailure: true,
 		//This is the context passed as argument to scenario hooks
 		DefaultContext: l.ctx,
@@ -242,5 +226,5 @@ func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.
 		return exporters.CucumberStatsSet{}, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d running test suite", rc))
 	}
 
-	// return exporters.CucumberStatsSet{}, nil
+	//return exporters.CucumberStatsSet{}, nil
 }

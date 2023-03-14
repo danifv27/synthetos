@@ -201,7 +201,7 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 	}
 
 	stepSuccessGaugeVec := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "step_success",
+		Name: "scenario_success",
 		Help: "Displays whether or not the test was a success",
 	}, []string{"feature_name", "scenario_name"})
 
@@ -233,8 +233,6 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 		for k, v := range pluginChan.stats {
 			success := 0
 			for _, stats := range v {
-				// fmt.Printf("[DBG]key[%s] value[%s]\n", k, v)
-				// stepDurationHistogramVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id, stats.Result.String()).Observe(stats.Duration.Seconds())
 				stepDurationGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id, stats.Result.String()).Set(stats.Duration.Seconds())
 				success += int(stats.Result)
 			}
