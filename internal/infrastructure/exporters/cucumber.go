@@ -200,10 +200,15 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 		return
 	}
 
-	stepSuccessGaugeVec := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	scenarioSuccessGaugeVec := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "scenario_success",
-		Help: "Displays whether or not the test was a success",
+		Help: "Displays whether or not the scenario test was succesful",
 	}, []string{"feature_name", "scenario_name"})
+
+	stepSuccessGaugeVec := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "step_success",
+		Help: "Displays whether or not the step was a success",
+	}, []string{"feature_name", "scenario_name", "step_name"})
 
 	stepDurationGaugeVec := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "step_duration_seconds",
@@ -211,6 +216,7 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 	}, []string{"feature_name", "scenario_name", "step_name", "step_status"})
 
 	registry := prometheus.NewRegistry()
+	registry.MustRegister(scenarioSuccessGaugeVec)
 	registry.MustRegister(stepSuccessGaugeVec)
 	registry.MustRegister(stepDurationGaugeVec)
 
@@ -221,29 +227,31 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 		//TODO: should we treat the timeout as a test server failure, publishing only step_success metric?
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(fmt.Sprintf("Max deadline %v exceeded", c.timeout)))
-		cancelFn()
 		return
 	case pluginChan := <-helper(ctx, cancelFn, plugin):
 		if pluginChan.err != nil {
-			cancelFn()
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(fmt.Sprintf("%d - Something bad happened!\n\n%s", http.StatusInternalServerError, pluginChan.err.Error())))
-			return
-		}
-		for k, v := range pluginChan.stats {
-			success := 0
-			for _, stats := range v {
-				stepDurationGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id, stats.Result.String()).Set(stats.Duration.Seconds())
-				success += int(stats.Result)
+			for k := range pluginChan.stats {
+				scenarioSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(float64(CucumberFailure))
 			}
-			//0 failure
-			if success > 0 {
-				stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(1)
-			} else {
-				stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(0)
+		} else {
+			for k, v := range pluginChan.stats {
+				isSucceeded := true
+				for _, stats := range v {
+					stepDurationGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id, stats.Result.String()).Set(stats.Duration.Seconds())
+					stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id).Set(float64(stats.Result))
+					if stats.Result != CucumberSuccess {
+						isSucceeded = false
+					}
+				}
+				//0 failure
+				if isSucceeded {
+					scenarioSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(float64(CucumberSuccess))
+				} else {
+					scenarioSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(float64(CucumberFailure))
+				}
 			}
 		}
-		h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
-		h.ServeHTTP(w, r)
 	}
+	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
+	h.ServeHTTP(w, r)
 }
