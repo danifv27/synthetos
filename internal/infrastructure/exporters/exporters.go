@@ -12,3 +12,14 @@ func (o ExportOptionFn) Apply(t interface{}) error {
 
 	return o(t)
 }
+
+var (
+	ContextKeyTargetUrl    = ContextKey("targetUrl")
+	ContextKeyScenarioName = ContextKey("scenarioName")
+)
+
+type ContextKey string
+
+func (c ContextKey) String() string {
+	return "exporters." + string(c)
+}
