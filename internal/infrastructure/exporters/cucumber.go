@@ -54,6 +54,7 @@ type cucumberHandler struct {
 	pluginMutex sync.RWMutex
 	PluginSet   map[string]CucumberPlugin
 	timeout     time.Duration
+	targetURL   string
 }
 
 // NewCucumberExporter creates a new CucumberExporter
@@ -188,6 +189,11 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 	var ok bool
 
 	params := r.URL.Query()
+	target := params.Get("target")
+	if target == "" {
+		http.Error(w, "missing target param", http.StatusBadRequest)
+		return
+	}
 	featureName := params.Get("feature")
 	if featureName == "" {
 		http.Error(w, "missing feature param", http.StatusBadRequest)
@@ -219,8 +225,8 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 	registry.MustRegister(scenarioSuccessGaugeVec)
 	registry.MustRegister(stepSuccessGaugeVec)
 	registry.MustRegister(stepDurationGaugeVec)
-
 	ctx, cancelFn := context.WithCancel(r.Context())
+	ct := context.WithValue(ctx, ContextKeyTargetUrl, target)
 	defer cancelFn()
 	select {
 	case <-ctx.Done():
@@ -228,7 +234,7 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(fmt.Sprintf("Max deadline %v exceeded", c.timeout)))
 		return
-	case pluginChan := <-helper(ctx, cancelFn, plugin):
+	case pluginChan := <-helper(ct, cancelFn, plugin):
 		if pluginChan.err != nil {
 			for k := range pluginChan.stats {
 				scenarioSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(float64(CucumberFailure))

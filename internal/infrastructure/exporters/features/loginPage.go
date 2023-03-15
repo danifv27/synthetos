@@ -14,15 +14,16 @@ import (
 	"github.com/speijnik/go-errortree"
 )
 
-var (
-	contextKeyScenarioName = contextKey("scenarioName")
-)
+// var (
+// 	contextKeyScenarioName = contextKey("scenarioName")
+// 	// contextKeyTargetUrl    = contextKey("targetUrl")
+// )
 
-type contextKey string
+// type contextKey string
 
-func (c contextKey) String() string {
-	return "loginPage." + string(c)
-}
+// func (c contextKey) String() string {
+// 	return "loginPage." + string(c)
+// }
 
 type loginPage struct {
 	featureFolder string
@@ -30,17 +31,29 @@ type loginPage struct {
 	stats         exporters.CucumberStatsSet
 }
 
-func scenarioNameFromContext(ctx context.Context) (string, error) {
-	var name string
+func stringFromContext(ctx context.Context, key exporters.ContextKey) (string, error) {
+	var value string
 	var ok bool
 	var rcerror error
 
-	if name, ok = ctx.Value(contextKeyScenarioName).(string); !ok {
-		return "", errortree.Add(rcerror, "scenarioNameFromContext", fmt.Errorf("type mismatch with key %s", contextKeyScenarioName))
+	if value, ok = ctx.Value(key).(string); !ok {
+		return "", errortree.Add(rcerror, "stringFromContext", fmt.Errorf("type mismatch with key %s", key))
 	}
 
-	return name, nil
+	return value, nil
 }
+
+// func scenarioNameFromContext(ctx context.Context) (string, error) {
+// 	var name string
+// 	var ok bool
+// 	var rcerror error
+
+// 	if name, ok = ctx.Value(contextKeyScenarioName).(string); !ok {
+// 		return "", errortree.Add(rcerror, "scenarioNameFromContext", fmt.Errorf("type mismatch with key %s", contextKeyScenarioName))
+// 	}
+
+// 	return name, nil
+// }
 
 func NewLoginPageFeature(path string, opts ...exporters.ExporterOption) (exporters.CucumberPlugin, error) {
 	var rcerror error
@@ -61,18 +74,17 @@ func NewLoginPageFeature(path string, opts ...exporters.ExporterOption) (exporte
 func (l *loginPage) suiteInit(ctx *godog.TestSuiteContext) {
 
 	ctx.BeforeSuite(func() {
-
-		l.stats = make(map[string][]exporters.CucumberStats)
 		// This code will be executed once, before any scenarios are run
+		l.stats = make(map[string][]exporters.CucumberStats)
 	})
 }
 
 func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 
 	ctx.Before(func(c context.Context, sc *godog.Scenario) (context.Context, error) {
-
 		// This code will be executed once, before any scenarios are run
-		return context.WithValue(c, contextKeyScenarioName, strcase.ToCamel(sc.Name)), nil
+
+		return context.WithValue(c, exporters.ContextKeyScenarioName, strcase.ToCamel(sc.Name)), nil
 	})
 
 	ctx.After(func(c context.Context, sc *godog.Scenario, err error) (context.Context, error) {
@@ -98,7 +110,7 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 			return c, errortree.Add(rcerror, "step.Before", err)
 		}
 
-		if name, err := scenarioNameFromContext(c); err != nil {
+		if name, err := stringFromContext(c, exporters.ContextKeyScenarioName); err != nil {
 			return c, errortree.Add(rcerror, "step.Before", err)
 		} else {
 			l.stats[name] = append(l.stats[name], stat)
@@ -109,7 +121,7 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 	stepCtx.After(func(c context.Context, st *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
 		var rcerror error
 
-		if name, err := scenarioNameFromContext(c); err != nil {
+		if name, err := stringFromContext(c, exporters.ContextKeyScenarioName); err != nil {
 			return c, errortree.Add(rcerror, "step.After", err)
 		} else {
 			stat := l.stats[name][len(l.stats[name])-1]
@@ -133,7 +145,7 @@ func (l *loginPage) iAmOnTheLoginPage() error {
 	var rcerror error
 
 	// fmt.Println("I am on the login page")
-	err := doAzureLogin(l.ctx)
+	err := l.doAzureLogin()
 	if err != nil {
 		// fmt.Printf("[DBG] Error step: I am on the login page: '%v')\n", err)
 		return errortree.Add(rcerror, "iAmOnTheLoginPage", err)
@@ -147,7 +159,7 @@ func (l *loginPage) iEnterMyUsernameAndPassword() error {
 	var rcerror error
 
 	// fmt.Println("I enter my username and password")
-	err := loadUserAndPasswordWindow(l.ctx)
+	err := l.loadUserAndPasswordWindow()
 	if err != nil {
 		// fmt.Printf("[DBG] Error step: I enter my username and password: '%v')\n", err)
 		return errortree.Add(rcerror, "iEnterMyUsernameAndPassword", err)
@@ -161,7 +173,7 @@ func (l *loginPage) iClickTheLoginButton() error {
 	var rcerror error
 
 	// fmt.Println("I click the login button")
-	err := loadConsentAzurePage(l.ctx)
+	err := l.loadConsentAzurePage()
 	if err != nil {
 		// fmt.Printf("[DBG] Error step: I click the login button: '%v')\n", err)
 		return errortree.Add(rcerror, "iClickTheLoginButton", err)
@@ -175,10 +187,10 @@ func (l *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
 	var rcerror error
 
 	// fmt.Println("I should be redirected to the dashboard page")
-	err := isMainFELoad(l.ctx)
+	err := l.isMainFELoad()
 	if err != nil {
 		// fmt.Printf("[DBG] Error step: I should be redirected to the dashboard page: '%v')\n", err)
-		return errortree.Add(rcerror, "scenarioNameFromContext", err)
+		return errortree.Add(rcerror, "iShouldBeRedirectedToTheDashboardPage", err)
 	}
 	// fmt.Printf("[DBG]I should be redirected to the dashboard page finished\n")
 
@@ -198,7 +210,9 @@ func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.
 	actx, _ := chromedp.NewExecAllocator(c, opts...)
 	l.ctx, _ = chromedp.NewContext(actx)
 	godogOpts := godog.Options{
-		Output: io.Discard,
+		//TODO: Remove colored output after debugging
+		// Output: io.Discard,
+		Output: colors.Colored(os.Stdout),
 		Paths:  []string{l.featureFolder},
 		//pretty, progress, cucumber, events and junit
 		Format:        "pretty",
