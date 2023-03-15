@@ -128,11 +128,11 @@ func WithTablePrinter() AdapterOption {
 	})
 }
 
-func WithHealthchecker() AdapterOption {
+func WithHealthchecker(root string) AdapterOption {
 
 	return AdapterOptionFunc(func(a *Adapters) error {
 
-		a.Healthchecker = ihealthchecker.NewHealthchecker()
+		a.Healthchecker = ihealthchecker.NewHealthchecker(root)
 
 		return nil
 	})

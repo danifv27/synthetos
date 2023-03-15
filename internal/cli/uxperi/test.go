@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"fry.org/cmo/cli/internal/application"
-	"fry.org/cmo/cli/internal/application/healthchecker"
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/cli/common"
 	"fry.org/cmo/cli/internal/infrastructure"
@@ -27,18 +26,18 @@ type ExporterFlags struct {
 	Timeout        time.Duration `help:"maximum amount of time that we should wait for a step or scenario to complete before timing out and marking the test as failed" prefix:"test." default:"1m" env:"SC_TEST_TIMEOUT"`
 	// TargetURL      string        `help:"URL to check against" prefix:"test." env:"SC_TEST_TARGET_URL"`
 	Auth struct {
-		Id       string `help:"name used for authentication" prefix:"test." env:"SC_TEST_AZURE_USERNAME"`
+		Id       string `help:"name used for authentication" prefix:"test." env:"SC_TEST_AZURE_USERNAME" hidden:""`
 		Password string `help:"password used for authentication" prefix:"test." env:"SC_TEST_AZURE_PASSWORD" hidden:""`
 	} `embed:"" group:"auth"`
 	Probes struct {
-		Enable  bool   `help:"enable actuator?." default:"true" prefix:"probes." env:"SC_TEST_PROBES_ENABLE" negatable:""`
-		Address string `help:"actuator adress with port" prefix:"probes." default:":8081" env:"SC_TEST_PROBES_ADDRESS" optional:""`
+		Enable     bool   `help:"enable actuator?." default:"true" prefix:"probes." env:"SC_TEST_PROBES_ENABLE" negatable:""`
+		Address    string `help:"actuator adress with port" prefix:"probes." default:":8081" env:"SC_TEST_PROBES_ADDRESS" optional:""`
+		RootPrefix string `help:"Prefix for the internal routes of web endpoints." prefix:"probes." env:"SC_TEST_PROBES_ROOT_PREFIX" default:"/actuator" optional:""`
 		// Root           string  `help:"endpoint root" default:"/health" env:"SC_TEST_PROBES_ROOT" optional:"" group:"probes"`
 	} `embed:"" group:"probes"`
 	Metrics struct {
-		Address     string `help:"actuator adress with port" prefix:"metrics." default:":8082" env:"SC_TEST_METRICS_ADDRESS" optional:"" `
-		RoutePrefix string `help:"Prefix for the internal routes of web endpoints." prefix:"metrics." env:"SC_TEST_METRICS_ROUTE_PREFIX" default:"/" optional:""`
-		// Root           string  `help:"enpoint root" default:"/probe" env:"SC_TEST_METRICS_ROOT" optional:"" group:"metrics"`
+		Address    string `help:"actuator adress with port" prefix:"metrics." default:":8082" env:"SC_TEST_METRICS_ADDRESS" optional:"" `
+		RootPrefix string `help:"Prefix for the internal routes of web endpoints." prefix:"metrics." env:"SC_TEST_METRICS_ROUTE_PREFIX" default:"/" optional:""`
 	} `embed:"" group:"metrics"`
 }
 
@@ -69,11 +68,11 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 		}
 		return err
 	}
-	//FIXME: set the timeout from flags, headers or configuration
+
 	infraOptions := []infrastructure.AdapterOption{
-		infrastructure.WithHealthchecker(),
+		infrastructure.WithHealthchecker(cli.Test.Flags.Probes.RootPrefix),
 		infrastructure.WithCucumberExporter(
-			iexporters.WithCucumberRootPrefix(cli.Test.Flags.Metrics.RoutePrefix),
+			iexporters.WithCucumberRootPrefix(cli.Test.Flags.Metrics.RootPrefix),
 			iexporters.WithCucumberTimeout(cli.Test.Flags.Timeout),
 			iexporters.WithCucumberPlugin("loginPage", login),
 		),
@@ -85,11 +84,11 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 		return err
 	}
 
-	//FIXME: Add proper k8s readiness
-	c.Adapters.Healthchecker.AddReadinessCheck(
-		"google-http",
-		healthchecker.HTTPGetCheck("https://www.google.es", 50*time.Second),
-	)
+	//TODO: Add proper k8s readiness and liveness
+	// c.Adapters.Healthchecker.AddReadinessCheck(
+	// 	"google-http",
+	// 	healthchecker.HTTPGetCheck("https://www.google.es", 50*time.Second),
+	// )
 
 	if err = application.WithOptions(&c.Apps,
 		application.WithHealthchecker(c.Adapters.Healthchecker),
