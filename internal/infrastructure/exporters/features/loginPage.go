@@ -2,6 +2,7 @@ package features
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -29,6 +30,10 @@ type loginPage struct {
 	featureFolder string
 	ctx           context.Context
 	stats         exporters.CucumberStatsSet
+	auth          struct {
+		id       string
+		password string
+	}
 }
 
 func stringFromContext(ctx context.Context, key exporters.ContextKey) (string, error) {
@@ -42,18 +47,6 @@ func stringFromContext(ctx context.Context, key exporters.ContextKey) (string, e
 
 	return value, nil
 }
-
-// func scenarioNameFromContext(ctx context.Context) (string, error) {
-// 	var name string
-// 	var ok bool
-// 	var rcerror error
-
-// 	if name, ok = ctx.Value(contextKeyScenarioName).(string); !ok {
-// 		return "", errortree.Add(rcerror, "scenarioNameFromContext", fmt.Errorf("type mismatch with key %s", contextKeyScenarioName))
-// 	}
-
-// 	return name, nil
-// }
 
 func NewLoginPageFeature(path string, opts ...exporters.ExporterOption) (exporters.CucumberPlugin, error) {
 	var rcerror error
@@ -69,6 +62,23 @@ func NewLoginPageFeature(path string, opts ...exporters.ExporterOption) (exporte
 	}
 
 	return &l, nil
+}
+
+func WithLoginPageAuth(id string, p string) exporters.ExporterOption {
+
+	return exporters.ExportOptionFn(func(i interface{}) error {
+		var rcerror error
+		var l *loginPage
+		var ok bool
+
+		if l, ok = i.(*loginPage); ok {
+			l.auth.id = id
+			l.auth.password = p
+			return nil
+		}
+
+		return errortree.Add(rcerror, "WithLoginPageAuth", errors.New("type mismatch, cucumberHandler expected"))
+	})
 }
 
 func (l *loginPage) suiteInit(ctx *godog.TestSuiteContext) {
