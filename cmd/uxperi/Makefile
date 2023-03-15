@@ -7,11 +7,11 @@ endif
 # The binary to build (just the basename).
 BIN ?= uxperi
 BASE64_PASSWORD = ZHVtbXlWYWx1ZQ==
-IMAGE_NAME = $(DOCKER_REGISTRY)/$(VCS_USER)/$(BIN)
-VCS_USER ?= danifv27
+IMAGE_NAME = $(DOCKER_REGISTRY)/ebtpc-commons/$(BIN)
+VCS_USER ?= cmo-sre
 VCS_PASSWORD = $(shell echo $(BASE64_PASSWORD) | base64 --decode)
 VCS_PROTOCOL ?= https
-VCS_URL ?= https://github.com/danifv27/optimo
+VCS_URL ?= bitbucket.tools.3stripes.net/scm/cmodevops/cmo-atlas.git
 ARTIFACTORY_CREDENTIALS ?= $(shell echo cGMtbWF2ZW46RGVjZW1iZXJAMjAxNg==| base64 --decode)
 
 TOP_LEVEL = ../..
