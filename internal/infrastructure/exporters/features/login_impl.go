@@ -2,7 +2,6 @@ package features
 
 import (
 	"errors"
-	"os"
 	"strings"
 	"time"
 
@@ -21,7 +20,7 @@ func (l *loginPage) loadUserAndPasswordWindow() error {
 	}
 
 	// Fill in the email address
-	if err := chromedp.Run(l.ctx, chromedp.SendKeys(emailInput, os.Getenv("AZURE_USERNAME"), chromedp.BySearch)); err != nil {
+	if err := chromedp.Run(l.ctx, chromedp.SendKeys(emailInput, l.auth.id, chromedp.BySearch)); err != nil {
 		return errortree.Add(rcerror, "loadUserAndPasswordWindow", err)
 	}
 
@@ -38,7 +37,7 @@ func (l *loginPage) loadUserAndPasswordWindow() error {
 	}
 
 	// Fill in the password
-	if err := chromedp.Run(l.ctx, chromedp.SendKeys(passwordInput, os.Getenv("AZURE_PASSWORD"), chromedp.BySearch)); err != nil {
+	if err := chromedp.Run(l.ctx, chromedp.SendKeys(passwordInput, l.auth.password, chromedp.BySearch)); err != nil {
 		return errortree.Add(rcerror, "loadUserAndPasswordWindow", err)
 	}
 	// Click the "Sign in" button to proceed to the OAuth2 consent page

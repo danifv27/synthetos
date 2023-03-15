@@ -26,16 +26,20 @@ type ExporterFlags struct {
 	FeaturesFolder string        `help:"path to gherkin features folder" prefix:"test." hidden:"" default:"./features" env:"SC_TEST_FEATURES_FOLDER"`
 	Timeout        time.Duration `help:"maximum amount of time that we should wait for a step or scenario to complete before timing out and marking the test as failed" prefix:"test." default:"1m" env:"SC_TEST_TIMEOUT"`
 	// TargetURL      string        `help:"URL to check against" prefix:"test." env:"SC_TEST_TARGET_URL"`
+	Auth struct {
+		Id       string `help:"name used for authentication" prefix:"test." env:"SC_TEST_AZURE_USERNAME"`
+		Password string `help:"password used for authentication" prefix:"test." env:"SC_TEST_AZURE_PASSWORD" hidden:""`
+	} `embed:"" group:"auth"`
 	Probes struct {
-		Enable  bool   `help:"enable actuator?." default:"true" prefix:"probes." env:"SC_TEST_PROBES_ENABLE" group:"probes" negatable:""`
-		Address string `help:"actuator adress with port" prefix:"probes." default:":8081" env:"SC_TEST_PROBES_ADDRESS" optional:"" group:"probes"`
+		Enable  bool   `help:"enable actuator?." default:"true" prefix:"probes." env:"SC_TEST_PROBES_ENABLE" negatable:""`
+		Address string `help:"actuator adress with port" prefix:"probes." default:":8081" env:"SC_TEST_PROBES_ADDRESS" optional:""`
 		// Root           string  `help:"endpoint root" default:"/health" env:"SC_TEST_PROBES_ROOT" optional:"" group:"probes"`
-	} `embed:""`
+	} `embed:"" group:"probes"`
 	Metrics struct {
-		Address     string `help:"actuator adress with port" prefix:"metrics." default:":8082" env:"SC_TEST_METRICS_ADDRESS" optional:"" group:"metrics"`
-		RoutePrefix string `help:"Prefix for the internal routes of web endpoints." prefix:"metrics." env:"SC_TEST_METRICS_ROUTE_PREFIX" default:"/" optional:"" group:"metrics"`
+		Address     string `help:"actuator adress with port" prefix:"metrics." default:":8082" env:"SC_TEST_METRICS_ADDRESS" optional:"" `
+		RoutePrefix string `help:"Prefix for the internal routes of web endpoints." prefix:"metrics." env:"SC_TEST_METRICS_ROUTE_PREFIX" default:"/" optional:""`
 		// Root           string  `help:"enpoint root" default:"/probe" env:"SC_TEST_METRICS_ROOT" optional:"" group:"metrics"`
-	} `embed:""`
+	} `embed:"" group:"metrics"`
 }
 
 func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
@@ -57,7 +61,9 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 		return err
 	}
 
-	if login, err = ifeatures.NewLoginPageFeature(cli.Test.Flags.FeaturesFolder); err != nil {
+	if login, err = ifeatures.NewLoginPageFeature(cli.Test.Flags.FeaturesFolder,
+		ifeatures.WithLoginPageAuth(cli.Test.Flags.Auth.Id, cli.Test.Flags.Auth.Password),
+	); err != nil {
 		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeExporterCmd", e)
 		}

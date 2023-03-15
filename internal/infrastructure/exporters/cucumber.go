@@ -54,7 +54,6 @@ type cucumberHandler struct {
 	pluginMutex sync.RWMutex
 	PluginSet   map[string]CucumberPlugin
 	timeout     time.Duration
-	targetURL   string
 }
 
 // NewCucumberExporter creates a new CucumberExporter
@@ -97,12 +96,11 @@ func WithCucumberTimeout(t time.Duration) ExporterOption {
 		var ok bool
 
 		if c, ok = i.(*cucumberHandler); ok {
-			fmt.Printf("[DBG]setting timeout: %v\n", t)
 			c.timeout = t
 			return nil
 		}
 
-		return errortree.Add(rcerror, "WithCucumberRootPrefix", errors.New("type mismatch, cucumberHandler expected"))
+		return errortree.Add(rcerror, "WithCucumberTimeout", errors.New("type mismatch, cucumberHandler expected"))
 	})
 }
 
