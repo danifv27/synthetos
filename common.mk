@@ -7,7 +7,7 @@ else
 endif
 
 # Where to push the docker image.
-DOCKER_REGISTRY ?= docker.io
+DOCKER_REGISTRY ?= registry.tools.3stripes.net
 # This repo's root import path (under GOPATH).
 MODULE_ROOT ?= fry.org/cmo/cli
 
