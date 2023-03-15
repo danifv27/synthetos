@@ -3,13 +3,12 @@ package features
 import (
 	"context"
 	"fmt"
-	"os"
+	"io"
 	"time"
 
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
 	"github.com/chromedp/chromedp"
 	"github.com/cucumber/godog"
-	"github.com/cucumber/godog/colors"
 	"github.com/iancoleman/strcase"
 	"github.com/speijnik/go-errortree"
 )
