@@ -25,7 +25,7 @@ type ExporterCmd struct {
 type ExporterFlags struct {
 	FeaturesFolder string        `help:"path to gherkin features folder" prefix:"test." hidden:"" default:"./features" env:"SC_TEST_FEATURES_FOLDER"`
 	Timeout        time.Duration `help:"maximum amount of time that we should wait for a step or scenario to complete before timing out and marking the test as failed" prefix:"test." default:"1m" env:"SC_TEST_TIMEOUT"`
-	// TargetURL      string        `help:"URL to check against" prefix:"test." hidden:"" env:"SC_TEST_TARGET_URL`
+	// TargetURL      string        `help:"URL to check against" prefix:"test." env:"SC_TEST_TARGET_URL"`
 	Probes struct {
 		Enable  bool   `help:"enable actuator?." default:"true" prefix:"probes." env:"SC_TEST_PROBES_ENABLE" group:"probes" negatable:""`
 		Address string `help:"actuator adress with port" prefix:"probes." default:":8081" env:"SC_TEST_PROBES_ADDRESS" optional:"" group:"probes"`
