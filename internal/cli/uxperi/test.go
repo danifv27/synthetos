@@ -62,6 +62,7 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 
 	if login, err = ifeatures.NewLoginPageFeature(cli.Test.Flags.FeaturesFolder,
 		ifeatures.WithLoginPageAuth(cli.Test.Flags.Auth.Id, cli.Test.Flags.Auth.Password),
+		ifeatures.WithLoginPageLogger(c.Apps.Logger),
 	); err != nil {
 		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeExporterCmd", e)

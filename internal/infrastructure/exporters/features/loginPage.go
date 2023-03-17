@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
 	"github.com/chromedp/chromedp"
 	"github.com/cucumber/godog"
@@ -27,6 +28,7 @@ import (
 // }
 
 type loginPage struct {
+	logger.Logger
 	featureFolder string
 	ctx           context.Context
 	stats         exporters.CucumberStatsSet
@@ -44,7 +46,6 @@ func stringFromContext(ctx context.Context, key exporters.ContextKey) (string, e
 	if value, ok = ctx.Value(key).(string); !ok {
 		return "", errortree.Add(rcerror, "stringFromContext", fmt.Errorf("type mismatch with key %s", key))
 	}
-
 	return value, nil
 }
 
@@ -64,6 +65,22 @@ func NewLoginPageFeature(path string, opts ...exporters.ExporterOption) (exporte
 	return &l, nil
 }
 
+func WithLoginPageLogger(l logger.Logger) exporters.ExporterOption {
+
+	return exporters.ExportOptionFn(func(i interface{}) error {
+		var rcerror error
+		var pl *loginPage
+		var ok bool
+
+		if pl, ok = i.(*loginPage); ok {
+			pl.Logger = l
+			return nil
+		}
+
+		return errortree.Add(rcerror, "WithLoginPageLogger", errors.New("type mismatch, loginPage expected"))
+	})
+}
+
 func WithLoginPageAuth(id string, p string) exporters.ExporterOption {
 
 	return exporters.ExportOptionFn(func(i interface{}) error {
@@ -77,19 +94,19 @@ func WithLoginPageAuth(id string, p string) exporters.ExporterOption {
 			return nil
 		}
 
-		return errortree.Add(rcerror, "WithLoginPageAuth", errors.New("type mismatch, cucumberHandler expected"))
+		return errortree.Add(rcerror, "WithLoginPageAuth", errors.New("type mismatch, loginPage expected"))
 	})
 }
 
-func (l *loginPage) suiteInit(ctx *godog.TestSuiteContext) {
+func (pl *loginPage) suiteInit(ctx *godog.TestSuiteContext) {
 
 	ctx.BeforeSuite(func() {
 		// This code will be executed once, before any scenarios are run
-		l.stats = make(map[string][]exporters.CucumberStats)
+		pl.stats = make(map[string][]exporters.CucumberStats)
 	})
 }
 
-func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
+func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 
 	ctx.Before(func(c context.Context, sc *godog.Scenario) (context.Context, error) {
 		// This code will be executed once, before any scenarios are run
@@ -114,7 +131,7 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 			Result: exporters.CucumberNotExecuted,
 		}
 
-		err := l.ctx.Err()
+		err := pl.ctx.Err()
 		if err != nil {
 			// fmt.Printf("[DBG] '%v', context error: '%v')\n", err, st.Text)
 			return c, errortree.Add(rcerror, "step.Before", err)
@@ -123,7 +140,7 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 		if name, err := stringFromContext(c, exporters.ContextKeyScenarioName); err != nil {
 			return c, errortree.Add(rcerror, "step.Before", err)
 		} else {
-			l.stats[name] = append(l.stats[name], stat)
+			pl.stats[name] = append(pl.stats[name], stat)
 		}
 
 		return c, nil
@@ -134,42 +151,46 @@ func (l *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 		if name, err := stringFromContext(c, exporters.ContextKeyScenarioName); err != nil {
 			return c, errortree.Add(rcerror, "step.After", err)
 		} else {
-			stat := l.stats[name][len(l.stats[name])-1]
+			stat := pl.stats[name][len(pl.stats[name])-1]
 			stat.Duration = time.Since(stat.Start)
 			if status == godog.StepPassed {
 				stat.Result = exporters.CucumberSuccess
 			} else {
 				stat.Result = exporters.CucumberFailure
 			}
-			l.stats[name][len(l.stats[name])-1] = stat
+			pl.stats[name][len(pl.stats[name])-1] = stat
 		}
 		return c, nil
 	})
-	ctx.Step(`^I am on the login page$`, l.iAmOnTheLoginPage)
-	ctx.Step(`^I enter my username and password$`, l.iEnterMyUsernameAndPassword)
-	ctx.Step(`^I click the login button$`, l.iClickTheLoginButton)
-	ctx.Step(`^I should be redirected to the dashboard page$`, l.iShouldBeRedirectedToTheDashboardPage)
+	ctx.Step(`^I am on the login page$`, pl.iAmOnTheLoginPage)
+	ctx.Step(`^I enter my username and password$`, pl.iEnterMyUsernameAndPassword)
+	ctx.Step(`^I click the login button$`, pl.iClickTheLoginButton)
+	ctx.Step(`^I should be redirected to the dashboard page$`, pl.iShouldBeRedirectedToTheDashboardPage)
 }
 
-func (l *loginPage) iAmOnTheLoginPage() error {
+func (pl *loginPage) iAmOnTheLoginPage() error {
 	var rcerror error
 
-	// fmt.Println("I am on the login page")
-	err := l.doAzureLogin()
+	pl.Logger.WithFields(logger.Fields{
+		"name": "I am on the login page",
+	}).Debug("Executing step")
+	err := pl.doAzureLogin()
 	if err != nil {
 		// fmt.Printf("[DBG] Error step: I am on the login page: '%v')\n", err)
 		return errortree.Add(rcerror, "iAmOnTheLoginPage", err)
 	}
-	// fmt.Printf("[DBG]I am on the login page finished\n")
+	pl.Logger.WithFields(logger.Fields{
+		"name": "I am on the login page",
+	}).Debug("Step done")
 
 	return nil
 }
 
-func (l *loginPage) iEnterMyUsernameAndPassword() error {
+func (pl *loginPage) iEnterMyUsernameAndPassword() error {
 	var rcerror error
 
 	// fmt.Println("I enter my username and password")
-	err := l.loadUserAndPasswordWindow()
+	err := pl.loadUserAndPasswordWindow()
 	if err != nil {
 		// fmt.Printf("[DBG] Error step: I enter my username and password: '%v')\n", err)
 		return errortree.Add(rcerror, "iEnterMyUsernameAndPassword", err)
@@ -179,11 +200,12 @@ func (l *loginPage) iEnterMyUsernameAndPassword() error {
 	return nil
 }
 
-func (l *loginPage) iClickTheLoginButton() error {
+func (pl *loginPage) iClickTheLoginButton() error {
 	var rcerror error
 
 	// fmt.Println("I click the login button")
-	err := l.loadConsentAzurePage()
+
+	err := pl.loadConsentAzurePage()
 	if err != nil {
 		// fmt.Printf("[DBG] Error step: I click the login button: '%v')\n", err)
 		return errortree.Add(rcerror, "iClickTheLoginButton", err)
@@ -193,11 +215,11 @@ func (l *loginPage) iClickTheLoginButton() error {
 	return nil
 }
 
-func (l *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
+func (pl *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
 	var rcerror error
 
 	// fmt.Println("I should be redirected to the dashboard page")
-	err := l.isMainFELoad()
+	err := pl.isMainFELoad()
 	if err != nil {
 		// fmt.Printf("[DBG] Error step: I should be redirected to the dashboard page: '%v')\n", err)
 		return errortree.Add(rcerror, "iShouldBeRedirectedToTheDashboardPage", err)
@@ -207,7 +229,7 @@ func (l *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
 	return nil
 }
 
-func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.CucumberStatsSet, error) {
+func (pl *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.CucumberStatsSet, error) {
 	var rcerror error
 	var rc int
 
@@ -218,22 +240,22 @@ func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.
 		chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"),
 	)
 	actx, _ := chromedp.NewExecAllocator(c, opts...)
-	l.ctx, _ = chromedp.NewContext(actx)
+	pl.ctx, _ = chromedp.NewContext(actx)
 	godogOpts := godog.Options{
 		//TODO: Remove colored output after debugging
 		// Output: io.Discard,
 		Output: colors.Colored(os.Stdout),
-		Paths:  []string{l.featureFolder},
+		Paths:  []string{pl.featureFolder},
 		//pretty, progress, cucumber, events and junit
 		Format:        "pretty",
 		StopOnFailure: true,
 		//This is the context passed as argument to scenario hooks
-		DefaultContext: l.ctx,
+		DefaultContext: pl.ctx,
 	}
 	suite := godog.TestSuite{
 		Name:                 "loginPage",
-		TestSuiteInitializer: l.suiteInit,
-		ScenarioInitializer:  l.scenarioInit,
+		TestSuiteInitializer: pl.suiteInit,
+		ScenarioInitializer:  pl.scenarioInit,
 		Options:              &godogOpts,
 	}
 
@@ -247,13 +269,13 @@ func (l *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.
 	// We have to return l.stats always to return the partial errors in case of error
 	switch rc {
 	case 0:
-		return l.stats, nil
+		return pl.stats, nil
 	case 1:
-		return l.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error  %d: failed test suite", rc))
+		return pl.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error  %d: failed test suite", rc))
 	case 2:
-		return l.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d:command line usage error running test suite", rc))
+		return pl.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d:command line usage error running test suite", rc))
 	default:
-		return l.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d running test suite", rc))
+		return pl.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d running test suite", rc))
 	}
 
 	//return l.stats, nil
