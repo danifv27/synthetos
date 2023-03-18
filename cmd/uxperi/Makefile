@@ -7,8 +7,8 @@ endif
 # The binary to build (just the basename).
 BIN ?= uxperi
 BASE64_PASSWORD = ZHVtbXlWYWx1ZQ==
-IMAGE_NAME = $(DOCKER_REGISTRY)/$(VCS_USER)/$(BIN)
-VCS_USER ?= danifv27
+IMAGE_NAME = $(DOCKER_REGISTRY)/ebtpc-commons/$(BIN)
+VCS_USER ?= cmo-sre
 VCS_PASSWORD = $(shell echo $(BASE64_PASSWORD) | base64 --decode)
 VCS_PROTOCOL ?= https
 VCS_URL ?= https://github.com/danifv27/synthetos

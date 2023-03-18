@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"path"
 	"sync"
 
 	"fry.org/cmo/cli/internal/application/healthchecker"
@@ -18,13 +19,13 @@ type healthcheckHandler struct {
 }
 
 // NewHealthchecker creates a new Healthchecker
-func NewHealthchecker() healthchecker.Healthchecker {
+func NewHealthchecker(root string) healthchecker.Healthchecker {
 	h := &healthcheckHandler{
 		livenessChecks:  make(map[string]healthchecker.Check),
 		readinessChecks: make(map[string]healthchecker.Check),
 	}
-	h.Handle("/liveness", http.HandlerFunc(h.LiveEndpoint))
-	h.Handle("/readiness", http.HandlerFunc(h.ReadyEndpoint))
+	h.Handle(path.Join(root, "/liveness"), http.HandlerFunc(h.LiveEndpoint))
+	h.Handle(path.Join(root, "/readiness"), http.HandlerFunc(h.ReadyEndpoint))
 
 	return h
 }
