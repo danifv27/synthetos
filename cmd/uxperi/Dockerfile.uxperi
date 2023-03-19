@@ -17,6 +17,19 @@ ARG GROUP_ID=65535
 ARG USER_NAME=uxperi
 ARG GROUP_NAME=uxperi
 
+RUN apk update && \
+    apk add --no-cache \
+        chromium \
+        nss \
+        freetype \
+        freetype-dev \
+        harfbuzz \
+        ca-certificates \
+        ttf-freefont
+
+
+ENV CHROME_BIN=/usr/bin/chromium-browser
+
 #RUN addgroup -g $GROUP_ID $GROUP_NAME && \
 #    adduser --shell /sbin/nologin --disabled-password \
 #    --no-create-home --uid $USER_ID --ingroup $GROUP_NAME $USER_NAME
@@ -24,6 +37,7 @@ ARG GROUP_NAME=uxperi
 RUN mkdir -p /app/bin; mkdir -p /app/config
 
 COPY --from=build-env /src/output/linux/amd64/bin/uxperi /app/bin/uxperi
+COPY --from=build-env /src/internal/infrastructure/exporters/features /app/bin/features
 
 RUN chown $USER_ID:$GROUP_ID -R /app
 
