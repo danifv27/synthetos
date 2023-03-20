@@ -3,6 +3,7 @@ package features
 import (
 	"context"
 	"io/ioutil"
+	"time"
 
 	"github.com/chromedp/chromedp"
 	"github.com/speijnik/go-errortree"
@@ -21,7 +22,7 @@ func takeSnapshot(ctx context.Context, stepName string) error {
 	}
 
 	// save screenshot to file
-	err = ioutil.WriteFile("/app/bin/features/snapshots/"+stepName+".png", buf, 0644)
+	err = ioutil.WriteFile("/app/bin/features/snapshots/"+stepName+time.Now().String()+".png", buf, 0644)
 	if err != nil {
 		return errortree.Add(rcerror, "failed to save snapshot", err)
 	}
