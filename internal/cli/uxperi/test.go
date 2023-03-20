@@ -74,6 +74,7 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 		infrastructure.WithHealthchecker(cli.Test.Flags.Probes.RootPrefix),
 		infrastructure.WithCucumberExporter(
 			iexporters.WithCucumberRootPrefix(cli.Test.Flags.Metrics.RootPrefix),
+			iexporters.WithCucumberHistoryEndpoint(cli.Test.Flags.Metrics.RootPrefix),
 			iexporters.WithCucumberTimeout(cli.Test.Flags.Timeout),
 			iexporters.WithCucumberPlugin("loginPage", login),
 		),

@@ -2,8 +2,10 @@ package exporters
 
 import (
 	"context"
+	"embed"
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"path"
 	"sync"
@@ -56,9 +58,13 @@ type cucumberHandler struct {
 	pluginMutex sync.RWMutex
 	PluginSet   map[string]CucumberPlugin
 	timeout     time.Duration
+	//go:embed html/*.gohtml html/layouts/*.gohtml html/css/*.css
+	files     embed.FS
+	templates map[string]*template.Template
 }
 
 // NewCucumberExporter creates a new CucumberExporter
+// NewCucumberExporter cretes a new CucumberExporter
 func NewCucumberExporter(opts ...ExporterOption) (exporters.CucumberExporter, error) {
 	var rcerror error
 
