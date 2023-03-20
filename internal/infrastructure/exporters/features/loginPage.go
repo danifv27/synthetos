@@ -174,8 +174,7 @@ func (pl *loginPage) iAmOnTheLoginPage() error {
 	}).Debug("Executing step")
 	err := pl.doAzureLogin()
 	if err != nil {
-		// fmt.Printf("[DBG] Error step: I am on the login page: '%v')\n", err)
-		takeSnapshot(l.ctx, "iAmOnTheLoginPage")
+		takeSnapshot(pl.ctx, "iAmOnTheLoginPage")
 		return errortree.Add(rcerror, "iAmOnTheLoginPage", err)
 	}
 	pl.Logger.WithFields(logger.Fields{
@@ -188,14 +187,11 @@ func (pl *loginPage) iAmOnTheLoginPage() error {
 func (pl *loginPage) iEnterMyUsernameAndPassword() error {
 	var rcerror error
 
-	// fmt.Println("I enter my username and password")
 	err := pl.loadUserAndPasswordWindow()
 	if err != nil {
-		// fmt.Printf("[DBG] Error step: I enter my username and password: '%v')\n", err)
-		takeSnapshot(l.ctx, "iEnterMyUsernameAndPassword")
+		takeSnapshot(pl.ctx, "iEnterMyUsernameAndPassword")
 		return errortree.Add(rcerror, "iEnterMyUsernameAndPassword", err)
 	}
-	// fmt.Printf("[DBG]I enter my username and password finished\n")
 
 	return nil
 }
@@ -203,31 +199,22 @@ func (pl *loginPage) iEnterMyUsernameAndPassword() error {
 func (pl *loginPage) iClickTheLoginButton() error {
 	var rcerror error
 
-	// fmt.Println("I click the login button")
-
 	err := pl.loadConsentAzurePage()
 	if err != nil {
-		// fmt.Printf("[DBG] Error step: I click the login button: '%v')\n", err)
-		takeSnapshot(l.ctx, "iClickTheLoginButton")
+		takeSnapshot(pl.ctx, "iClickTheLoginButton")
 		return errortree.Add(rcerror, "iClickTheLoginButton", err)
 	}
-	// fmt.Printf("[DBG]I click the login button finished\n")
-
 	return nil
 }
 
 func (pl *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
 	var rcerror error
 
-	// fmt.Println("I should be redirected to the dashboard page")
 	err := pl.isMainFELoad()
 	if err != nil {
-		// fmt.Printf("[DBG] Error step: I should be redirected to the dashboard page: '%v')\n", err)
-		takeSnapshot(l.ctx, "iShouldBeRedirectedToTheDashboardPage")
+		takeSnapshot(pl.ctx, "iShouldBeRedirectedToTheDashboardPage")
 		return errortree.Add(rcerror, "iShouldBeRedirectedToTheDashboardPage", err)
 	}
-	// fmt.Printf("[DBG]I should be redirected to the dashboard page finished\n")
-
 	return nil
 }
 
