@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"time"
 
 	"fry.org/cmo/cli/internal/application/logger"
@@ -15,17 +16,6 @@ import (
 	"github.com/iancoleman/strcase"
 	"github.com/speijnik/go-errortree"
 )
-
-// var (
-// 	contextKeyScenarioName = contextKey("scenarioName")
-// 	// contextKeyTargetUrl    = contextKey("targetUrl")
-// )
-
-// type contextKey string
-
-// func (c contextKey) String() string {
-// 	return "loginPage." + string(c)
-// }
 
 type loginPage struct {
 	logger.Logger
@@ -38,22 +28,11 @@ type loginPage struct {
 	}
 }
 
-func stringFromContext(ctx context.Context, key exporters.ContextKey) (string, error) {
-	var value string
-	var ok bool
-	var rcerror error
-
-	if value, ok = ctx.Value(key).(string); !ok {
-		return "", errortree.Add(rcerror, "stringFromContext", fmt.Errorf("type mismatch with key %s", key))
-	}
-	return value, nil
-}
-
-func NewLoginPageFeature(path string, opts ...exporters.ExporterOption) (exporters.CucumberPlugin, error) {
+func NewLoginPageFeature(p string, opts ...exporters.ExporterOption) (exporters.CucumberPlugin, error) {
 	var rcerror error
 
 	l := loginPage{
-		featureFolder: path,
+		featureFolder: path.Join(p, "loginPage.feature"),
 	}
 	// Loop through each option
 	for _, option := range opts {
@@ -130,7 +109,7 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 			return c, errortree.Add(rcerror, "step.Before", err)
 		}
 
-		if name, err := stringFromContext(c, exporters.ContextKeyScenarioName); err != nil {
+		if name, err := exporters.StringFromContext(c, exporters.ContextKeyScenarioName); err != nil {
 			return c, errortree.Add(rcerror, "step.Before", err)
 		} else {
 			pl.stats[name] = append(pl.stats[name], stat)
@@ -140,8 +119,7 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 	})
 	stepCtx.After(func(c context.Context, st *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
 		var rcerror error
-
-		if name, e := stringFromContext(c, exporters.ContextKeyScenarioName); e != nil {
+		if name, e := exporters.StringFromContext(c, exporters.ContextKeyScenarioName); e != nil {
 			return c, errortree.Add(rcerror, "step.After", e)
 		} else {
 			stat := pl.stats[name][len(pl.stats[name])-1]
@@ -160,69 +138,22 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 		}
 		return c, nil
 	})
+	pl.registerSteps(ctx)
+}
+
+func (pl *loginPage) registerSteps(ctx *godog.ScenarioContext) {
+
 	ctx.Step(`^I am on the login page$`, pl.iAmOnTheLoginPage)
 	ctx.Step(`^I enter my username and password$`, pl.iEnterMyUsernameAndPassword)
 	ctx.Step(`^I click the login button$`, pl.iClickTheLoginButton)
 	ctx.Step(`^I should be redirected to the dashboard page$`, pl.iShouldBeRedirectedToTheDashboardPage)
 }
 
-func (pl *loginPage) iAmOnTheLoginPage() error {
-	var rcerror error
-
-	pl.Logger.WithFields(logger.Fields{
-		"name": "I am on the login page",
-	}).Debug("Executing step")
-	err := pl.doAzureLogin()
-	if err != nil {
-		takeSnapshot(pl.ctx, "iAmOnTheLoginPage")
-		return errortree.Add(rcerror, "iAmOnTheLoginPage", err)
-	}
-	pl.Logger.WithFields(logger.Fields{
-		"name": "I am on the login page",
-	}).Debug("Step done")
-
-	return nil
-}
-
-func (pl *loginPage) iEnterMyUsernameAndPassword() error {
-	var rcerror error
-
-	err := pl.loadUserAndPasswordWindow()
-	if err != nil {
-		takeSnapshot(pl.ctx, "iEnterMyUsernameAndPassword")
-		return errortree.Add(rcerror, "iEnterMyUsernameAndPassword", err)
-	}
-
-	return nil
-}
-
-func (pl *loginPage) iClickTheLoginButton() error {
-	var rcerror error
-
-	err := pl.loadConsentAzurePage()
-	if err != nil {
-		takeSnapshot(pl.ctx, "iClickTheLoginButton")
-		return errortree.Add(rcerror, "iClickTheLoginButton", err)
-	}
-	return nil
-}
-
-func (pl *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
-	var rcerror error
-
-	err := pl.isMainFELoad()
-	if err != nil {
-		takeSnapshot(pl.ctx, "iShouldBeRedirectedToTheDashboardPage")
-		return errortree.Add(rcerror, "iShouldBeRedirectedToTheDashboardPage", err)
-	}
-	return nil
-}
-
 func (pl *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.CucumberStatsSet, error) {
 	var rcerror error
 	var rc int
 
-	// //Initialize chromedp context
+	//Initialize chromedp context
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("headless", true),
 		chromedp.Flag("no-sandbox", true),
@@ -268,4 +199,56 @@ func (pl *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters
 	}
 
 	//return l.stats, nil
+}
+
+func (pl *loginPage) iAmOnTheLoginPage() error {
+	var rcerror error
+
+	pl.Logger.WithFields(logger.Fields{
+		"name": "I am on the login page",
+	}).Debug("Executing step")
+	impl := loginPageImpl{}
+	if err := impl.doAzureLogin(pl.ctx); err != nil {
+		takeSnapshot(pl.ctx, "iAmOnTheLoginPage")
+		return errortree.Add(rcerror, "iAmOnTheLoginPage", err)
+	}
+	pl.Logger.WithFields(logger.Fields{
+		"name": "I am on the login page",
+	}).Debug("Step done")
+
+	return nil
+}
+
+func (pl *loginPage) iEnterMyUsernameAndPassword() error {
+	var rcerror error
+
+	impl := loginPageImpl{}
+	if err := impl.loadUserAndPasswordWindow(pl.ctx, pl.auth.id, pl.auth.password); err != nil {
+		takeSnapshot(pl.ctx, "iEnterMyUsernameAndPassword")
+		return errortree.Add(rcerror, "iEnterMyUsernameAndPassword", err)
+	}
+
+	return nil
+}
+
+func (pl *loginPage) iClickTheLoginButton() error {
+	var rcerror error
+
+	impl := loginPageImpl{}
+	if err := impl.loadConsentAzurePage(pl.ctx); err != nil {
+		takeSnapshot(pl.ctx, "iClickTheLoginButton")
+		return errortree.Add(rcerror, "iClickTheLoginButton", err)
+	}
+	return nil
+}
+
+func (pl *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
+	var rcerror error
+
+	impl := loginPageImpl{}
+	if err := impl.isMainFELoad(pl.ctx); err != nil {
+		takeSnapshot(pl.ctx, "iShouldBeRedirectedToTheDashboardPage")
+		return errortree.Add(rcerror, "iShouldBeRedirectedToTheDashboardPage", err)
+	}
+	return nil
 }
