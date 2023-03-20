@@ -124,14 +124,19 @@ func (l *loginPage) isMainFELoad() error {
 
 	//Last, but not least, check if CREATION-PORTAL title is part of the html
 	htmlLoaded := ""
+	htmlContent := ""
 	var expectedText = "CREATION PORTAL"
-	err = chromedp.Run(l.ctx, chromedp.Evaluate(`document.querySelector('h3').textContent`, &htmlLoaded))
+	chromedp.Run(l.ctx, chromedp.Evaluate(`document.documentElement.outerHTML`, &htmlContent))
+	err = chromedp.Run(l.ctx, chromedp.Evaluate(`document.querySelector('h3') !== null ? document.querySelector('h3').textContent : null`, &htmlLoaded))
 	if err != nil {
-		return errortree.Add(rcerror, "isMainFELoad", err)
-	} else {
-		if expectedText != htmlLoaded {
-			errortree.Add(rcerror, "isMainFELoad", errors.New("element from main page didn't match which creation portal expression"))
+		if htmlLoaded == "" {
+			return errortree.Add(rcerror, "isMainFELoad", errors.New("creation portal element not found in html main page"))
+		} else {
+			if expectedText != htmlLoaded {
+				return errortree.Add(rcerror, "isMainFELoad", errors.New("element from main page didn't match which creation portal expression"))
+			}
 		}
+
 	}
 	// log.Printf("Creation Portal html loaded: %v", htmlLoaded)
 

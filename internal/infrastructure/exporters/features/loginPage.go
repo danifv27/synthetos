@@ -114,13 +114,6 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 		return context.WithValue(c, exporters.ContextKeyScenarioName, strcase.ToCamel(sc.Name)), nil
 	})
 
-	ctx.After(func(c context.Context, sc *godog.Scenario, err error) (context.Context, error) {
-
-		// This code will be executed once, after all scenarios have been run
-		// v, ok := c.Value(contextKeyScenarioName).(string)
-
-		return c, nil
-	})
 	stepCtx := ctx.StepContext()
 	stepCtx.Before(func(c context.Context, st *godog.Step) (context.Context, error) {
 		var rcerror error
@@ -148,15 +141,20 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 	stepCtx.After(func(c context.Context, st *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
 		var rcerror error
 
-		if name, err := stringFromContext(c, exporters.ContextKeyScenarioName); err != nil {
-			return c, errortree.Add(rcerror, "step.After", err)
+		if name, e := stringFromContext(c, exporters.ContextKeyScenarioName); e != nil {
+			return c, errortree.Add(rcerror, "step.After", e)
 		} else {
 			stat := pl.stats[name][len(pl.stats[name])-1]
 			stat.Duration = time.Since(stat.Start)
-			if status == godog.StepPassed {
-				stat.Result = exporters.CucumberSuccess
-			} else {
+			if err != nil {
 				stat.Result = exporters.CucumberFailure
+			} else {
+				switch status {
+				case 0:
+					stat.Result = exporters.CucumberSuccess
+				case 2:
+					stat.Result = exporters.CucumberNotExecuted
+				}
 			}
 			pl.stats[name][len(pl.stats[name])-1] = stat
 		}
@@ -177,6 +175,7 @@ func (pl *loginPage) iAmOnTheLoginPage() error {
 	err := pl.doAzureLogin()
 	if err != nil {
 		// fmt.Printf("[DBG] Error step: I am on the login page: '%v')\n", err)
+		takeSnapshot(l.ctx, "iAmOnTheLoginPage")
 		return errortree.Add(rcerror, "iAmOnTheLoginPage", err)
 	}
 	pl.Logger.WithFields(logger.Fields{
@@ -193,6 +192,7 @@ func (pl *loginPage) iEnterMyUsernameAndPassword() error {
 	err := pl.loadUserAndPasswordWindow()
 	if err != nil {
 		// fmt.Printf("[DBG] Error step: I enter my username and password: '%v')\n", err)
+		takeSnapshot(l.ctx, "iEnterMyUsernameAndPassword")
 		return errortree.Add(rcerror, "iEnterMyUsernameAndPassword", err)
 	}
 	// fmt.Printf("[DBG]I enter my username and password finished\n")
@@ -208,6 +208,7 @@ func (pl *loginPage) iClickTheLoginButton() error {
 	err := pl.loadConsentAzurePage()
 	if err != nil {
 		// fmt.Printf("[DBG] Error step: I click the login button: '%v')\n", err)
+		takeSnapshot(l.ctx, "iClickTheLoginButton")
 		return errortree.Add(rcerror, "iClickTheLoginButton", err)
 	}
 	// fmt.Printf("[DBG]I click the login button finished\n")
@@ -222,6 +223,7 @@ func (pl *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
 	err := pl.isMainFELoad()
 	if err != nil {
 		// fmt.Printf("[DBG] Error step: I should be redirected to the dashboard page: '%v')\n", err)
+		takeSnapshot(l.ctx, "iShouldBeRedirectedToTheDashboardPage")
 		return errortree.Add(rcerror, "iShouldBeRedirectedToTheDashboardPage", err)
 	}
 	// fmt.Printf("[DBG]I should be redirected to the dashboard page finished\n")
