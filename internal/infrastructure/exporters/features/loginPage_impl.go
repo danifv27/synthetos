@@ -127,7 +127,7 @@ func (l *loginPage) isMainFELoad() error {
 	htmlContent := ""
 	var expectedText = "CREATION PORTAL"
 	chromedp.Run(l.ctx, chromedp.Evaluate(`document.documentElement.outerHTML`, &htmlContent))
-	err = chromedp.Run(l.ctx, chromedp.Evaluate(`document.querySelector('miau') !== null ? document.querySelector('miau').textContent : null`, &htmlLoaded))
+	err = chromedp.Run(l.ctx, chromedp.Evaluate(`document.querySelector('h3') !== null ? document.querySelector('h3').textContent : null`, &htmlLoaded))
 	if err != nil {
 		if htmlLoaded == "" {
 			return errortree.Add(rcerror, "isMainFELoad", errors.New("creation portal element not found in html main page"))

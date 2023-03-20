@@ -234,8 +234,11 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 		return
 	case pluginChan := <-helper(ct, cancelFn, plugin):
 		if pluginChan.err != nil {
-			for k := range pluginChan.stats {
+			for k, v := range pluginChan.stats {
 				scenarioSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(float64(CucumberFailure))
+				for _, stats := range v {
+					stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id).Set(float64(stats.Result))
+				}
 			}
 		} else {
 			for k, v := range pluginChan.stats {
