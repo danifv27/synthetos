@@ -45,7 +45,7 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
 	var err, rcerror error
 	var cli CLI
-	var login iexporters.CucumberPlugin
+	var login, products iexporters.CucumberPlugin
 
 	if c, err = CmdCtx(ctx); err != nil {
 		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
@@ -70,12 +70,22 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 		return err
 	}
 
+	if products, err = ifeatures.NewProductsTabFeature(cli.Test.Flags.FeaturesFolder,
+		ifeatures.WithProductsTabAuth(cli.Test.Flags.Auth.Id, cli.Test.Flags.Auth.Password),
+	); err != nil {
+		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeExporterCmd", e)
+		}
+		return err
+	}
+
 	infraOptions := []infrastructure.AdapterOption{
 		infrastructure.WithHealthchecker(cli.Test.Flags.Probes.RootPrefix),
 		infrastructure.WithCucumberExporter(
 			iexporters.WithCucumberRootPrefix(cli.Test.Flags.Metrics.RootPrefix),
 			iexporters.WithCucumberTimeout(cli.Test.Flags.Timeout),
 			iexporters.WithCucumberPlugin("loginPage", login),
+			iexporters.WithCucumberPlugin("productsTab", products),
 		),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
