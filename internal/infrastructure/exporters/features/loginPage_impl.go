@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
 	"github.com/chromedp/chromedp"
 	"github.com/speijnik/go-errortree"
@@ -54,6 +55,7 @@ func (l *loginPage) loadConsentAzurePage() error {
 	var rcerror error
 
 	// Wait for the consent checkbox to become available
+	time.Sleep(2 * time.Second)
 	consentCheckbox := `//input[@type='checkbox']`
 	if err := chromedp.Run(l.ctx, chromedp.WaitVisible(consentCheckbox)); err != nil {
 		return errortree.Add(rcerror, "loadConsentAzurePage", err)
@@ -130,6 +132,9 @@ func (l *loginPage) isMainFELoad() error {
 	err = chromedp.Run(l.ctx, chromedp.Evaluate(`document.querySelector('h3') !== null ? document.querySelector('h3').textContent : null`, &htmlLoaded))
 	if err != nil {
 		if htmlLoaded == "" {
+			l.Logger.WithFields(logger.Fields{
+				"name": "Is creation portal css load",
+			}).Debug(htmlContent)
 			return errortree.Add(rcerror, "isMainFELoad", errors.New("creation portal element not found in html main page"))
 		} else {
 			if expectedText != htmlLoaded {
@@ -138,7 +143,5 @@ func (l *loginPage) isMainFELoad() error {
 		}
 
 	}
-	// log.Printf("Creation Portal html loaded: %v", htmlLoaded)
-
 	return nil
 }
