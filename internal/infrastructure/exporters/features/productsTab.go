@@ -128,8 +128,8 @@ func (pl *productsTab) scenarioInit(ctx *godog.ScenarioContext) {
 func (pl *productsTab) registerSteps(ctx *godog.ScenarioContext) {
 
 	ctx.Step(`^I am logged in to creation portal$`, pl.iAmLoggedInToCreationPortal)
-	ctx.Step(`^the user switches to the "article" view with basic filter$`, pl.theUserSwitchesToTheArticleViewWithBasicFilter)
-	ctx.Step(`^the article info for the APP product should be displayed$`, pl.theArticleInfoForTheAPPProductShouldBeDisplayed)
+	ctx.Step(`^the user switches to the "model" view with basic filter$`, pl.theUserSwitchesToTheModelViewWithBasicFilter)
+	ctx.Step(`^the model info for the APP product should be displayed$`, pl.theModelInfoForTheAPPProductShouldBeDisplayed)
 	ctx.Step(`^the user clicks on the first product in the "table" view on Product Page$`, pl.theUserClicksOnTheFirstProductInTheTableViewOnProductPage)
 	ctx.Step(`^the Product Details Page should be loaded$`, pl.theProductDetailsPageShouldBeLoaded)
 }
@@ -192,23 +192,25 @@ func (pl *productsTab) iAmLoggedInToCreationPortal() error {
 	return nil
 }
 
-func (pl *productsTab) theUserSwitchesToTheArticleViewWithBasicFilter() error {
+func (pl *productsTab) theUserSwitchesToTheModelViewWithBasicFilter() error {
 	var rcerror error
 
-	err := pl.loadArticleProductsPage()
+	err := pl.loadModelProductsPage()
 	if err != nil {
-		return errortree.Add(rcerror, "theUserSwitchesToTheArticleViewWithBasicFilter", err)
+		return errortree.Add(rcerror, "theUserSwitchesToTheModelViewWithBasicFilter", err)
 	}
 
 	return nil
 }
 
-func (pl *productsTab) theArticleInfoForTheAPPProductShouldBeDisplayed() error {
+func (pl *productsTab) theModelInfoForTheAPPProductShouldBeDisplayed() error {
 	var rcerror error
 
-	err := pl.loadArticleDataInTable()
+	time.Sleep(3 * time.Second)
+
+	err := pl.loadModelDataInTable()
 	if err != nil {
-		return errortree.Add(rcerror, "theArticleInfoForTheAPPProductShouldBeDisplayed", err)
+		return errortree.Add(rcerror, "theModelInfoForTheAPPProductShouldBeDisplayed", err)
 	}
 
 	return nil
@@ -219,13 +221,20 @@ func (pl *productsTab) theUserClicksOnTheFirstProductInTheTableViewOnProductPage
 
 	err := pl.loadArticleDataInfoFromTable()
 	if err != nil {
-		return errortree.Add(rcerror, "theArticleInfoForTheAPPProductShouldBeDisplayed", err)
+		return errortree.Add(rcerror, "theUserClicksOnTheFirstProductInTheTableViewOnProductPage", err)
 	}
 
 	return nil
 }
 
 func (pl *productsTab) theProductDetailsPageShouldBeLoaded() error {
-	// implementation of verifying that the Product Details Page is loaded
-	return godog.ErrPending
+	var rcerror error
+	time.Sleep(3 * time.Second)
+
+	err := pl.checkProductDetailsPage()
+	if err != nil {
+		return errortree.Add(rcerror, "theProductDetailsPageShouldBeLoaded", err)
+	}
+
+	return nil
 }

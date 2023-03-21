@@ -1,7 +1,9 @@
 package features
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
 	"github.com/chromedp/cdproto/cdp"
@@ -16,9 +18,9 @@ var (
 
 type productTabsImpl struct{}
 
-func (pl *productsTab) loadArticleProductsPage() error {
+func (pl *productsTab) loadModelProductsPage() error {
 	var rcerror, err error
-	var destinationPath = "/papp/product-search/article-season/items?page=0&size=20&sort=art.articleNumber,asc"
+	var destinationPath = "/products"
 
 	if target, err = exporters.StringFromContext(pl.ctx, exporters.ContextKeyTargetUrl); err != nil {
 		return errortree.Add(rcerror, "loadProducts:composeURL", err)
@@ -31,40 +33,58 @@ func (pl *productsTab) loadArticleProductsPage() error {
 	return nil
 }
 
-func (pl *productsTab) loadArticleDataInTable() error {
+func (pl *productsTab) loadModelDataInTable() error {
 	var rcerror, err error
 	// select all the rows in the table
-	var rowNodes []*cdp.Node
-	err = chromedp.Run(pl.ctx, chromedp.Nodes(`table tr`, &rowNodes))
+	var rowCount = ""
+	err = chromedp.Run(pl.ctx, chromedp.Evaluate(`document.querySelector('.ag-root').getAttribute('aria-rowcount') !== null ? document.querySelector('.ag-root').getAttribute('aria-rowcount') : null`, &rowCount))
 	if err != nil {
-		return errortree.Add(rcerror, "loadArticleDataInTable:loadTable", err)
+		if rowCount == "" {
+			return errortree.Add(rcerror, "loadArticleDataInTable:loadTableInfo", errors.New("table products element not found in page"))
+		}
+	} else {
+		if num, err := strconv.Atoi(rowCount); err == nil && num == 0 {
+			return errortree.Add(rcerror, "loadArticleDataInTable:checkRowsInTable", err)
+		}
 	}
 	return nil
 }
 
 func (pl *productsTab) loadArticleDataInfoFromTable() error {
+
 	var rcerror, err error
 	// find the first element in the "%s" column
-	var modelNumber string
-	var articleNumber string
-	var season string
-	path := fmt.Sprintf("/product/%s/%d/article/%e", modelNumber, season, articleNumber)
-	err = chromedp.Run(pl.ctx, chromedp.Text("#mdl.modelNumber td:first-child", &modelNumber))
+	var modelNumber = ""
+	var season = ""
+	err = chromedp.Run(pl.ctx, chromedp.Evaluate(`document.querySelectorAll('[col-id="mdl.modelNumber"]')[1].textContent !== null ? document.querySelectorAll('[col-id="mdl.modelNumber"]')[1].textContent : null`, &modelNumber))
 	if err != nil {
-		return errortree.Add(rcerror, "loadArticleDataInfoFromTable:getModelNumberElement", err)
+		if modelNumber == "" {
+			return errortree.Add(rcerror, "loadArticleDataInfoFromTable:getModelNumberElement", errors.New("modelNumber not found in page"))
+		}
 	}
-	err = chromedp.Run(pl.ctx, chromedp.Text("#art.articleNumber td:first-child", &articleNumber))
+	err = chromedp.Run(pl.ctx, chromedp.Evaluate(`document.querySelectorAll('[col-id="mdl.season"]')[1].textContent !== null ? document.querySelectorAll('[col-id="mdl.season"]')[1].textContent : null`, &season))
 	if err != nil {
-		return errortree.Add(rcerror, "loadArticleDataInfoFromTable:getArticleNumberElement", err)
-	}
-	err = chromedp.Run(pl.ctx, chromedp.Text("#mdl.season td:first-child", &season))
-	if err != nil {
-		return errortree.Add(rcerror, "loadArticleDataInfoFromTable:getArticleNumberElement", err)
+		if season == "" {
+			return errortree.Add(rcerror, "loadArticleDataInfoFromTable:getArticleNumberElement", errors.New("season not found in page"))
+		}
 	}
 
 	//Last, navigate into details page
+	path := fmt.Sprintf("/product/%s/%s", modelNumber, getSeasonFrom(season))
 	if err = chromedp.Run(pl.ctx, chromedp.Navigate(target+path)); err != nil {
 		return errortree.Add(rcerror, "loadProductDetails:navigate", err)
+	}
+	return nil
+}
+
+func (pl *productsTab) checkProductDetailsPage() error {
+	var rcerror, err error
+	var modelDetails = ""
+	err = chromedp.Run(pl.ctx, chromedp.Evaluate(`document.querySelector('.product-details-header h4').textContent !== null ? document.querySelector('.product-details-header h4').textContent : null`, &modelDetails))
+	if err != nil {
+		if modelDetails == "" {
+			return errortree.Add(rcerror, "checkProductDetailsPage:getDetails", errors.New("model information not found in page"))
+		}
 	}
 	return nil
 }
