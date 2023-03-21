@@ -1,36 +1,35 @@
 package exporters
 
 import (
+	"embed"
 	"errors"
 	"fmt"
 	"html/template"
-	"io/fs"
 	"net/http"
 	"path"
+	"strings"
 
 	"github.com/speijnik/go-errortree"
 )
 
+//go:embed all:html
+var htmlFS embed.FS
+
 func (c *cucumberHandler) loadTemplates() error {
 	var rcerror, err error
-	var tmplFiles []fs.DirEntry
 	var pt *template.Template
 
-	if tmplFiles, err = fs.ReadDir(c.files, "templates"); err != nil {
+	funcs := template.FuncMap{
+		"uppercase": func(v string) string {
+			return strings.ToUpper(v)
+		},
+	}
+
+	if pt, err = template.New("layout.gohtml").Funcs(funcs).ParseFS(htmlFS, "html/layout.gohtml", "html/log.gohtml"); err != nil {
 		return errortree.Add(rcerror, "loadTemplates", err)
 	}
 
-	for _, tmpl := range tmplFiles {
-		if tmpl.IsDir() {
-			continue
-		}
-
-		if pt, err = template.ParseFS(c.files, "templates/"+tmpl.Name(), "templates/layouts/*.gohtml"); err != nil {
-			return errortree.Add(rcerror, "loadTemplates", err)
-		}
-
-		c.templates[tmpl.Name()] = pt
-	}
+	c.templates[pt.Name()] = pt
 
 	return nil
 }
@@ -56,10 +55,24 @@ func WithCucumberHistoryEndpoint(prefix string) ExporterOption {
 }
 
 func (c *cucumberHandler) HistoryEndpoint(w http.ResponseWriter, r *http.Request) {
+	var t *template.Template
+	var ok bool
 
-	if _, ok := c.templates["layout.gohtml"]; !ok {
+	if t, ok = c.templates["layout.gohtml"]; !ok {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(fmt.Sprintf("Template not found")))
+		w.Write([]byte("Template not found"))
+		return
+	}
+	if err := t.Execute(w, struct {
+		Title   string
+		Message string
+	}{
+		Title:   "Page Title",
+		Message: "This is the message",
+	}); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf("Template %s Error: '%s'", t.Name(), err.Error())))
+		return
 	}
 
 	// w.Header().Set("Content-Type", "text/html")
