@@ -2,7 +2,6 @@ package exporters
 
 import (
 	"context"
-	"embed"
 	"errors"
 	"fmt"
 	"html/template"
@@ -58,9 +57,7 @@ type cucumberHandler struct {
 	pluginMutex sync.RWMutex
 	PluginSet   map[string]CucumberPlugin
 	timeout     time.Duration
-	//go:embed html/*.gohtml html/layouts/*.gohtml html/css/*.css
-	files     embed.FS
-	templates map[string]*template.Template
+	templates   map[string]*template.Template
 }
 
 // NewCucumberExporter creates a new CucumberExporter
