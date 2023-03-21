@@ -128,10 +128,10 @@ func (pl *productsTab) scenarioInit(ctx *godog.ScenarioContext) {
 func (pl *productsTab) registerSteps(ctx *godog.ScenarioContext) {
 
 	ctx.Step(`^I am logged in to creation portal$`, pl.iAmLoggedInToCreationPortal)
-	ctx.Step(`^I can see factory info for APP product$`, pl.iCanSeeFactoryInfoForAPPProduct)
-	ctx.Step(`^I switch to "([^"]*)" view on Product Page$`, pl.iSwitchToViewOnProductPage)
-	ctx.Step(`^user clicks on first product in "([^"]*)" view on Product Page$`, pl.userClicksOnFirstProductInViewOnProductPage)
-	ctx.Step(`^user sees Factory Details Page is loaded$`, pl.userSeesFactoryDetailsPageIsLoaded)
+	ctx.Step(`^the user switches to the "article" view with basic filter$`, pl.theUserSwitchesToTheArticleViewWithBasicFilter)
+	ctx.Step(`^the article info for the APP product should be displayed$`, pl.theArticleInfoForTheAPPProductShouldBeDisplayed)
+	ctx.Step(`^the user clicks on the first product in the "table" view on Product Page$`, pl.theUserClicksOnTheFirstProductInTheTableViewOnProductPage)
+	ctx.Step(`^the Product Details Page should be loaded$`, pl.theProductDetailsPageShouldBeLoaded)
 }
 
 func (pl *productsTab) Do(c context.Context, cancel context.CancelFunc) (exporters.CucumberStatsSet, error) {
@@ -192,18 +192,40 @@ func (pl *productsTab) iAmLoggedInToCreationPortal() error {
 	return nil
 }
 
-func (pl *productsTab) iCanSeeFactoryInfoForAPPProduct() error {
-	return godog.ErrPending
+func (pl *productsTab) theUserSwitchesToTheArticleViewWithBasicFilter() error {
+	var rcerror error
+
+	err := pl.loadArticleProductsPage()
+	if err != nil {
+		return errortree.Add(rcerror, "theUserSwitchesToTheArticleViewWithBasicFilter", err)
+	}
+
+	return nil
 }
 
-func (pl *productsTab) iSwitchToViewOnProductPage(arg1 string) error {
-	return godog.ErrPending
+func (pl *productsTab) theArticleInfoForTheAPPProductShouldBeDisplayed() error {
+	var rcerror error
+
+	err := pl.loadArticleDataInTable()
+	if err != nil {
+		return errortree.Add(rcerror, "theArticleInfoForTheAPPProductShouldBeDisplayed", err)
+	}
+
+	return nil
 }
 
-func (pl *productsTab) userClicksOnFirstProductInViewOnProductPage(arg1 string) error {
-	return godog.ErrPending
+func (pl *productsTab) theUserClicksOnTheFirstProductInTheTableViewOnProductPage() error {
+	var rcerror error
+
+	err := pl.loadArticleDataInfoFromTable()
+	if err != nil {
+		return errortree.Add(rcerror, "theArticleInfoForTheAPPProductShouldBeDisplayed", err)
+	}
+
+	return nil
 }
 
-func (pl *productsTab) userSeesFactoryDetailsPageIsLoaded() error {
+func (pl *productsTab) theProductDetailsPageShouldBeLoaded() error {
+	// implementation of verifying that the Product Details Page is loaded
 	return godog.ErrPending
 }
