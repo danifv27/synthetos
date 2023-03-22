@@ -1,8 +1,57 @@
-<html>
+<!DOCTYPE html>
+<html class="yarn">
     <head>
-        <title>{{.Title}}</title>
+        {{block "base" . }}{{end}}
+        {{block "colors" . }}{{end}}
+        {{block "components" . }}{{end}}
+        {{block "core" . }}{{end}}
+        {{block "grid" . }}{{end}}
+        {{block "layout" . }}{{end}}
+        {{block "print" . }}{{end}}
+        {{block "utils" . }}{{end}}
+        <title>Dashboard</title>
     </head>
     <body>
-        {{block "content" .}}{{end}}
+        <div class="page-container">
+            <header class="header yarn-theme--dark header-container">
+                <nav class="header__container">
+                    <div class="header__left">
+                        <div class="header__brand">
+                            <svg class="icon yarn-svg-icon yarn-svg-icon--md header__icon">
+                                <use xlink:href="#icon-products"></use>
+                            </svg>
+                            <span class="header__headline">Dashboard</span>
+                        </div>
+                    </div>
+                    <div class="header__right"></div>
+                </nav>
+            </header>
+            <main class="main">
+                <div class="container">
+                    <div class="">
+                        <table class="table">
+                            <thead class="">
+                                <tr class="table__head-row">
+                                    <th class="table__head-cell"></th>
+                                    <th class="table__head-cell">Name</th>
+                                    <th class="table__head-cell">Gender</th>
+                                    <th class="table__head-cell">Season</th>
+                                    <th class="table__head-cell">Category</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table__body">
+                                <tr class="table__body-row">
+                                    <td class="table__body-cell">Running</td>
+                                    <td class="table__body-cell">Jersey (long sleeve)</td>
+                                    <td class="table__body-cell">Male</td>
+                                    <td class="table__body-cell">FW21</td>
+                                    <td class="table__body-cell">Apparel</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
     </body>
 </html>
