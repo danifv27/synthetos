@@ -25,7 +25,7 @@ func (c *cucumberHandler) loadTemplates() error {
 		},
 	}
 
-	if pt, err = template.New("layout.gohtml").Funcs(funcs).ParseFS(htmlFS, "html/layout.gohtml", "html/log.gohtml"); err != nil {
+	if pt, err = template.New("layout.gohtml").Funcs(funcs).ParseFS(htmlFS, "html/layout.gohtml", "html/css/*.gocss"); err != nil {
 		return errortree.Add(rcerror, "loadTemplates", err)
 	}
 
