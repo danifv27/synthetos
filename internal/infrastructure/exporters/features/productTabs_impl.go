@@ -37,7 +37,7 @@ func (pl *productsTab) loadModelDataInTable() error {
 	var rcerror, err error
 	// select all the rows in the table
 	var rowCount = ""
-	err = waitUntilLoads(pl.ctx, `.ag-root2`)
+	err = waitUntilLoads(pl.ctx, `.ag-root`)
 	if err != nil {
 		return errortree.Add(rcerror, "isMainFELoad", errors.New("failed to load main table element in main page"))
 	}

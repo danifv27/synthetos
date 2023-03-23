@@ -3,10 +3,12 @@ package features
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
+	"github.com/chromedp/cdproto/runtime"
 	"github.com/chromedp/chromedp"
 	"github.com/speijnik/go-errortree"
 )
@@ -62,23 +64,9 @@ func (l *loginPageImpl) loadUserAndPasswordWindow(ctx context.Context, user stri
 func (l *loginPageImpl) loadConsentAzurePage(ctx context.Context) error {
 	var rcerror error
 
-	// Wait for the consent checkbox to become available
-	time.Sleep(2 * time.Second)
-	consentCheckbox := `//input[@type='checkbox']`
-	err := chromedp.Run(ctx, chromedp.Click(consentCheckbox))
-	if err != nil || errors.Is(err, context.Canceled) {
-		return errortree.Add(rcerror, "loadConsentAzurePage:consentCheckboxLoad", err)
-	}
-
-	// Click the consent checkbox to give consent to the app
-	err = chromedp.Run(ctx, chromedp.Click(consentCheckbox))
-	if err != nil || errors.Is(err, context.Canceled) {
-		return errortree.Add(rcerror, "loadConsentAzurePage:consentCheckboxLoadClick", err)
-	}
-
 	// Click the "Accept" button to finish the OAuth2 flow
 	acceptButton := `//input[@type='submit']`
-	err = chromedp.Run(ctx, chromedp.Click(acceptButton))
+	err := chromedp.Run(ctx, chromedp.Click(acceptButton))
 	if err != nil || errors.Is(err, context.Canceled) {
 		return errortree.Add(rcerror, "loadConsentAzurePage:submitOauth2", err)
 	}
@@ -114,9 +102,17 @@ func (l *loginPageImpl) doAzureLogin(ctx context.Context) error {
 
 func (l *loginPageImpl) isMainFELoad(ctx context.Context) error {
 	var rcerror error
-
-	time.Sleep(5 * time.Second)
 	// check if main.css has been loaded
+
+	chromedp.ListenTarget(ctx, func(ev interface{}) {
+		switch ev := ev.(type) {
+		case *runtime.EventExceptionThrown:
+			// Since ts.URL uses a random port, replace it.
+			s := ev.ExceptionDetails.Error()
+			fmt.Printf("* %s\n", s)
+		}
+	})
+
 	cssLoaded := false
 	err := chromedp.Run(ctx, chromedp.EvaluateAsDevTools(`
 		Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
@@ -136,11 +132,15 @@ func (l *loginPageImpl) isMainFELoad(ctx context.Context) error {
 		return errortree.Add(rcerror, "isMainFELoad:loadjs", err)
 	}
 	// log.Printf("main.js loaded: %v", jsLoaded)
-
+	err = waitUntilLoads(ctx, "h3")
+	if err != nil {
+		return errortree.Add(rcerror, "isMainFELoad", errors.New("failed to load h3 element in main page"))
+	}
 	//Last, but not least, check if CREATION-PORTAL title is part of the html
 	htmlLoaded := ""
 	htmlContent := ""
 	expectedText := "CREATION PORTAL"
+
 	chromedp.Run(ctx, chromedp.Evaluate(`document.documentElement.outerHTML`, &htmlContent))
 	err = chromedp.Run(ctx, chromedp.Evaluate(`document.querySelector('h3') !== null ? document.querySelector('h3').textContent : null`, &htmlLoaded))
 	if err != nil {
@@ -161,18 +161,38 @@ func (l *loginPageImpl) doFeature(ctx context.Context, user string, pass string)
 
 	impl := loginPageImpl{}
 
+	time.Sleep(5 * time.Second)
 	if err = impl.doAzureLogin(ctx); err != nil {
 		return errortree.Add(rcerror, "doFeature.iAmOnTheLoginPage", err)
 	}
+	time.Sleep(5 * time.Second)
 	if err = impl.loadUserAndPasswordWindow(ctx, user, pass); err != nil {
 		return errortree.Add(rcerror, "doFeature.iEnterMyUsernameAndPassword", err)
 	}
+	time.Sleep(5 * time.Second)
 	if err = impl.loadConsentAzurePage(ctx); err != nil {
 		return errortree.Add(rcerror, "doFeature.iClickTheLoginButton", err)
 	}
+	time.Sleep(5 * time.Second)
 	if err := impl.isMainFELoad(ctx); err != nil {
 		return errortree.Add(rcerror, "iShouldBeRedirectedToTheDashboardPage", err)
 	}
 
+	return nil
+}
+
+func navigate(ctx context.Context) error {
+	var target string
+	var rcerror, err error
+
+	target, err = exporters.StringFromContext(ctx, exporters.ContextKeyTargetUrl)
+	if err != nil || errors.Is(err, context.Canceled) {
+		return errortree.Add(rcerror, "doAzureLogin:extractURL", err)
+	}
+	// Start by navigating to the login page
+	err = chromedp.Run(ctx, chromedp.Navigate(target))
+	if err != nil || errors.Is(err, context.Canceled) {
+		return errortree.Add(rcerror, "doAzureLogin:navigateURL", err)
+	}
 	return nil
 }
