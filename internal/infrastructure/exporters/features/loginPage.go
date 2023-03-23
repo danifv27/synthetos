@@ -149,6 +149,11 @@ func (pl *loginPage) registerSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I should be redirected to the dashboard page$`, pl.iShouldBeRedirectedToTheDashboardPage)
 }
 
+func (pl *loginPage) GetScenarioName() (string, error) {
+
+	return exporters.StringFromContext(pl.ctx, exporters.ContextKeyScenarioName)
+}
+
 func (pl *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.CucumberStatsSet, error) {
 	var rcerror error
 	var rc int
@@ -222,6 +227,7 @@ func (pl *loginPage) iAmOnTheLoginPage() error {
 func (pl *loginPage) iEnterMyUsernameAndPassword() error {
 	var rcerror error
 
+	time.Sleep(5 * time.Second)
 	impl := loginPageImpl{}
 	if err := impl.loadUserAndPasswordWindow(pl.ctx, pl.auth.id, pl.auth.password); err != nil {
 		takeSnapshot(pl.ctx, "iEnterMyUsernameAndPassword")
@@ -234,6 +240,7 @@ func (pl *loginPage) iEnterMyUsernameAndPassword() error {
 func (pl *loginPage) iClickTheLoginButton() error {
 	var rcerror error
 
+	time.Sleep(5 * time.Second)
 	impl := loginPageImpl{}
 	if err := impl.loadConsentAzurePage(pl.ctx); err != nil {
 		takeSnapshot(pl.ctx, "iClickTheLoginButton")
@@ -245,6 +252,7 @@ func (pl *loginPage) iClickTheLoginButton() error {
 func (pl *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
 	var rcerror error
 
+	time.Sleep(5 * time.Second)
 	impl := loginPageImpl{}
 	if err := impl.isMainFELoad(pl.ctx); err != nil {
 		takeSnapshot(pl.ctx, "iShouldBeRedirectedToTheDashboardPage")

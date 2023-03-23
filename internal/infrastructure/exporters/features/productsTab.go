@@ -70,7 +70,7 @@ func (pl *productsTab) scenarioInit(ctx *godog.ScenarioContext) {
 
 	ctx.Before(func(c context.Context, sc *godog.Scenario) (context.Context, error) {
 		// This code will be executed once, before any scenarios are run
-
+		pl.ctx = context.WithValue(pl.ctx, exporters.ContextKeyScenarioName, strcase.ToCamel(sc.Name))
 		return context.WithValue(c, exporters.ContextKeyScenarioName, strcase.ToCamel(sc.Name)), nil
 	})
 
@@ -134,6 +134,11 @@ func (pl *productsTab) registerSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the Product Details Page should be loaded$`, pl.theProductDetailsPageShouldBeLoaded)
 }
 
+func (pl *productsTab) GetScenarioName() (string, error) {
+
+	return exporters.StringFromContext(pl.ctx, exporters.ContextKeyScenarioName)
+}
+
 func (pl *productsTab) Do(c context.Context, cancel context.CancelFunc) (exporters.CucumberStatsSet, error) {
 	var rcerror error
 	var rc int
@@ -194,6 +199,7 @@ func (pl *productsTab) iAmLoggedInToCreationPortal() error {
 
 func (pl *productsTab) theUserSwitchesToTheModelViewWithBasicFilter() error {
 	var rcerror error
+	time.Sleep(5 * time.Second)
 
 	err := pl.loadModelProductsPage()
 	if err != nil {
@@ -206,7 +212,7 @@ func (pl *productsTab) theUserSwitchesToTheModelViewWithBasicFilter() error {
 func (pl *productsTab) theModelInfoForTheAPPProductShouldBeDisplayed() error {
 	var rcerror error
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	err := pl.loadModelDataInTable()
 	if err != nil {
@@ -219,6 +225,7 @@ func (pl *productsTab) theModelInfoForTheAPPProductShouldBeDisplayed() error {
 func (pl *productsTab) theUserClicksOnTheFirstProductInTheTableViewOnProductPage() error {
 	var rcerror error
 
+	time.Sleep(5 * time.Second)
 	err := pl.loadArticleDataInfoFromTable()
 	if err != nil {
 		return errortree.Add(rcerror, "theUserClicksOnTheFirstProductInTheTableViewOnProductPage", err)
@@ -229,7 +236,7 @@ func (pl *productsTab) theUserClicksOnTheFirstProductInTheTableViewOnProductPage
 
 func (pl *productsTab) theProductDetailsPageShouldBeLoaded() error {
 	var rcerror error
-	time.Sleep(3 * time.Second)
+	time.Sleep(5 * time.Second)
 
 	err := pl.checkProductDetailsPage()
 	if err != nil {

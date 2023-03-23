@@ -47,6 +47,7 @@ type CucumberStats struct {
 type CucumberPlugin interface {
 	// Do execute a godog test suite and returns the stats
 	Do(ctx context.Context, cancel context.CancelFunc) (CucumberStatsSet, error)
+	GetScenarioName() (string, error)
 }
 
 // cucumberHandler is a basic Healthchekcker implementation.
@@ -229,7 +230,7 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 	defer cancelFn()
 	//Initialize chromedp context
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("headless", false),
+		chromedp.Flag("headless", true),
 		chromedp.Flag("no-sandbox", true),
 		chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"),
 	)
@@ -237,11 +238,27 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 	plugingCtx, _ := chromedp.NewContext(actx)
 
 	select {
-	case <-ctx.Done():
-		//TODO: should we treat the timeout as a test server failure, publishing only step_success metric?
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(fmt.Sprintf("Max deadline %v exceeded", c.timeout)))
-		return
+	case <-plugingCtx.Done():
+		// Extract the reason for cancellation
+		err := plugingCtx.Err()
+		switch err {
+		case context.Canceled:
+			// Handle cancellation scenario
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("context cancel detected"))
+		case context.DeadlineExceeded:
+			// Handle max timeout
+			if name, e := plugin.GetScenarioName(); e != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(fmt.Sprintf("Scenario name not found for metrics %v", e)))
+			} else {
+				scenarioSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), name).Set(float64(CucumberFailure))
+			}
+		default:
+			// Handle other errors
+
+		}
+
 	case pluginChan := <-helper(plugingCtx, cancelFn, plugin):
 		if pluginChan.err != nil {
 			for k, v := range pluginChan.stats {

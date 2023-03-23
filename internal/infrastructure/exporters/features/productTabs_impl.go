@@ -37,6 +37,10 @@ func (pl *productsTab) loadModelDataInTable() error {
 	var rcerror, err error
 	// select all the rows in the table
 	var rowCount = ""
+	err = waitUntilLoads(pl.ctx, `.ag-root2`)
+	if err != nil {
+		return errortree.Add(rcerror, "isMainFELoad", errors.New("failed to load main table element in main page"))
+	}
 	err = chromedp.Run(pl.ctx, chromedp.Evaluate(`document.querySelector('.ag-root').getAttribute('aria-rowcount') !== null ? document.querySelector('.ag-root').getAttribute('aria-rowcount') : null`, &rowCount))
 	if err != nil {
 		if rowCount == "" {
@@ -56,6 +60,10 @@ func (pl *productsTab) loadArticleDataInfoFromTable() error {
 	// find the first element in the "%s" column
 	var modelNumber = ""
 	var season = ""
+	err = waitUntilLoads(pl.ctx, `[col-id="mdl.modelNumber"]`)
+	if err != nil {
+		return errortree.Add(rcerror, "isMainFELoad", errors.New("failed to load first element table in main page"))
+	}
 	err = chromedp.Run(pl.ctx, chromedp.Evaluate(`document.querySelectorAll('[col-id="mdl.modelNumber"]')[1].textContent !== null ? document.querySelectorAll('[col-id="mdl.modelNumber"]')[1].textContent : null`, &modelNumber))
 	if err != nil {
 		if modelNumber == "" {
@@ -80,6 +88,10 @@ func (pl *productsTab) loadArticleDataInfoFromTable() error {
 func (pl *productsTab) checkProductDetailsPage() error {
 	var rcerror, err error
 	var modelDetails = ""
+	err = waitUntilLoads(pl.ctx, `.product-details-header h4`)
+	if err != nil {
+		return errortree.Add(rcerror, "isMainFELoad", errors.New("failed to load product details page"))
+	}
 	err = chromedp.Run(pl.ctx, chromedp.Evaluate(`document.querySelector('.product-details-header h4').textContent !== null ? document.querySelector('.product-details-header h4').textContent : null`, &modelDetails))
 	if err != nil {
 		if modelDetails == "" {

@@ -39,3 +39,26 @@ func getSeasonFrom(season string) string {
 	}
 	return seasonNumber
 }
+
+func waitUntilLoads(ctx context.Context, elementQuery string) error {
+	var rcerror error
+	for {
+		// Reload the current page
+		err := chromedp.Run(ctx, chromedp.Reload())
+		if err != nil {
+			return errortree.Add(rcerror, "reloadPage", err)
+		}
+
+		// Wait for the HTML object to become visible
+		err = chromedp.Run(ctx, chromedp.WaitVisible(elementQuery, chromedp.ByQuery))
+		if err == nil {
+			// Object found, break out of loop
+			break
+		} else {
+			// Object not found, continue looping
+			continue
+		}
+	}
+	return nil
+
+}
