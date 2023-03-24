@@ -89,7 +89,7 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 
 	ctx.Before(func(c context.Context, sc *godog.Scenario) (context.Context, error) {
 		// This code will be executed once, before any scenarios are run
-
+		pl.ctx = context.WithValue(pl.ctx, exporters.ContextKeyScenarioName, strcase.ToCamel(sc.Name))
 		return context.WithValue(c, exporters.ContextKeyScenarioName, strcase.ToCamel(sc.Name)), nil
 	})
 
@@ -130,6 +130,8 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 				switch status {
 				case 0:
 					stat.Result = exporters.CucumberSuccess
+                case 1:
+                    stat.Result = exporters.CucumberFailure
 				case 2:
 					stat.Result = exporters.CucumberNotExecuted
 				}
@@ -157,25 +159,23 @@ func (pl *loginPage) GetScenarioName() (string, error) {
 func (pl *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.CucumberStatsSet, error) {
 	var rcerror error
 	var rc int
+	var godogOpts godog.Options
 
-	//Initialize chromedp context
-	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.Flag("headless", true),
-		chromedp.Flag("no-sandbox", true),
-		chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"),
-	)
-	actx, _ := chromedp.NewExecAllocator(c, opts...)
-	pl.ctx, _ = chromedp.NewContext(actx)
-	godogOpts := godog.Options{
-		//TODO: Remove colored output after debugging
-		// Output: io.Discard,
-		Output: colors.Colored(os.Stdout),
-		Paths:  []string{pl.featureFolder},
-		//pretty, progress, cucumber, events and junit
-		Format:        "pretty",
-		StopOnFailure: true,
-		//This is the context passed as argument to scenario hooks
-		DefaultContext: pl.ctx,
+	pl.ctx = c
+	if content, err := exporters.GetFeature(exporters.FeaturesFS, pl.featureFolder); err != nil {
+		return pl.stats, errortree.Add(rcerror, "loginPage.Do", err)
+	} else {
+		godogOpts = godog.Options{
+			//TODO: Remove colored output after debugging
+			// Output: io.Discard,
+			Output: colors.Colored(os.Stdout),
+			//pretty, progress, cucumber, events and junit
+			Format:        "pretty",
+			StopOnFailure: true,
+			//This is the context passed as argument to scenario hooks
+			DefaultContext:  pl.ctx,
+			FeatureContents: content,
+		}
 	}
 	suite := godog.TestSuite{
 		Name:                 "loginPage",

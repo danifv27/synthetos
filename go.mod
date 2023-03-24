@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/alecthomas/kong v0.7.1
 	github.com/alexeyco/simpletable v1.0.0
+	github.com/chromedp/cdproto v0.0.0-20230220211738-2b1ec77315c9
 	github.com/chromedp/chromedp v0.9.1
 	github.com/cucumber/godog v0.12.6
 	github.com/iancoleman/strcase v0.2.0
@@ -17,7 +18,6 @@ require (
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/chromedp/cdproto v0.0.0-20230220211738-2b1ec77315c9 // indirect
 	github.com/chromedp/sysutil v1.0.0 // indirect
 	github.com/cucumber/gherkin-go/v19 v19.0.3 // indirect
 	github.com/cucumber/messages-go/v16 v16.0.1 // indirect

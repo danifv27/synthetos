@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
+	"github.com/chromedp/chromedp"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"github.com/iancoleman/strcase"
@@ -74,13 +75,6 @@ func (pl *productsTab) scenarioInit(ctx *godog.ScenarioContext) {
 		return context.WithValue(c, exporters.ContextKeyScenarioName, strcase.ToCamel(sc.Name)), nil
 	})
 
-	ctx.After(func(c context.Context, sc *godog.Scenario, err error) (context.Context, error) {
-
-		// This code will be executed once, after all scenarios have been run
-		// v, ok := c.Value(contextKeyScenarioName).(string)
-
-		return c, nil
-	})
 	stepCtx := ctx.StepContext()
 	stepCtx.Before(func(c context.Context, st *godog.Step) (context.Context, error) {
 		var rcerror error
@@ -107,16 +101,22 @@ func (pl *productsTab) scenarioInit(ctx *godog.ScenarioContext) {
 	})
 	stepCtx.After(func(c context.Context, st *godog.Step, status godog.StepResultStatus, err error) (context.Context, error) {
 		var rcerror error
-		//FIXME check if err is not nil indicating an error in the Before step
-		if name, e := exporters.StringFromContext(c, exporters.ContextKeyScenarioName); err != nil {
+		if name, e := exporters.StringFromContext(c, exporters.ContextKeyScenarioName); e != nil {
 			return c, errortree.Add(rcerror, "step.After", e)
 		} else {
 			stat := pl.stats[name][len(pl.stats[name])-1]
 			stat.Duration = time.Since(stat.Start)
-			if status == godog.StepPassed {
-				stat.Result = exporters.CucumberSuccess
-			} else {
+            if err != nil {
 				stat.Result = exporters.CucumberFailure
+			} else {
+			    switch status {
+				case 0:
+					stat.Result = exporters.CucumberSuccess
+                case 1:
+                    stat.Result = exporters.CucumberFailure
+				case 2:
+					stat.Result = exporters.CucumberNotExecuted
+				}
 			}
 			pl.stats[name][len(pl.stats[name])-1] = stat
 		}
@@ -142,18 +142,23 @@ func (pl *productsTab) GetScenarioName() (string, error) {
 func (pl *productsTab) Do(c context.Context, cancel context.CancelFunc) (exporters.CucumberStatsSet, error) {
 	var rcerror error
 	var rc int
+	var godogOpts godog.Options
 
 	pl.ctx = c
-	godogOpts := godog.Options{
-		//TODO: Remove colored output after debugging
-		// Output: io.Discard,
-		Output: colors.Colored(os.Stdout),
-		Paths:  []string{pl.featureFolder},
-		//pretty, progress, cucumber, events and junit
-		Format:        "pretty",
-		StopOnFailure: true,
-		//This is the context passed as argument to scenario hooks
-		DefaultContext: pl.ctx,
+	if content, err := exporters.GetFeature(exporters.FeaturesFS, pl.featureFolder); err != nil {
+		return pl.stats, errortree.Add(rcerror, "loginPage.Do", err)
+	} else {
+	    godogOpts = godog.Options{
+		    //TODO: Remove colored output after debugging
+		    // Output: io.Discard,
+		    Output: colors.Colored(os.Stdout),
+		    //pretty, progress, cucumber, events and junit
+		    Format:        "pretty",
+		    StopOnFailure: true,
+		    //This is the context passed as argument to scenario hooks
+		    DefaultContext: pl.ctx,
+			FeatureContents: content,
+        }
 	}
 	suite := godog.TestSuite{
 		Name:                 "productsTab",
