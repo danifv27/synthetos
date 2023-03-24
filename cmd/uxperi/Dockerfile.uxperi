@@ -37,7 +37,6 @@ ENV CHROME_BIN=/usr/bin/chromium-browser
 RUN mkdir -p /app/bin; mkdir -p /app/config
 
 COPY --from=build-env /src/output/linux/amd64/bin/uxperi /app/bin/uxperi
-COPY --from=build-env /src/internal/infrastructure/exporters/features /app/bin/features
 
 RUN chown $USER_ID:$GROUP_ID -R /app
 
