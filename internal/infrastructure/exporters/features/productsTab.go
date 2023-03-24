@@ -8,8 +8,8 @@ import (
 	"path"
 	"time"
 
+	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
-	"github.com/chromedp/chromedp"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"github.com/iancoleman/strcase"
@@ -17,6 +17,7 @@ import (
 )
 
 type productsTab struct {
+	logger.Logger
 	featureFolder string
 	ctx           context.Context
 	stats         exporters.CucumberStatsSet
@@ -40,6 +41,22 @@ func NewProductsTabFeature(p string, opts ...exporters.ExporterOption) (exporter
 	}
 
 	return &l, nil
+}
+
+func WithProductsTabLogger(l logger.Logger) exporters.ExporterOption {
+
+	return exporters.ExportOptionFn(func(i interface{}) error {
+		var rcerror error
+		var pl *productsTab
+		var ok bool
+
+		if pl, ok = i.(*productsTab); ok {
+			pl.Logger = l
+			return nil
+		}
+
+		return errortree.Add(rcerror, "WithProductsTabLogger", errors.New("type mismatch, productsTab expected"))
+	})
 }
 
 func WithProductsTabAuth(id string, p string) exporters.ExporterOption {
@@ -106,14 +123,14 @@ func (pl *productsTab) scenarioInit(ctx *godog.ScenarioContext) {
 		} else {
 			stat := pl.stats[name][len(pl.stats[name])-1]
 			stat.Duration = time.Since(stat.Start)
-            if err != nil {
+			if err != nil {
 				stat.Result = exporters.CucumberFailure
 			} else {
-			    switch status {
+				switch status {
 				case 0:
 					stat.Result = exporters.CucumberSuccess
-                case 1:
-                    stat.Result = exporters.CucumberFailure
+				case 1:
+					stat.Result = exporters.CucumberFailure
 				case 2:
 					stat.Result = exporters.CucumberNotExecuted
 				}
@@ -148,17 +165,17 @@ func (pl *productsTab) Do(c context.Context, cancel context.CancelFunc) (exporte
 	if content, err := exporters.GetFeature(exporters.FeaturesFS, pl.featureFolder); err != nil {
 		return pl.stats, errortree.Add(rcerror, "loginPage.Do", err)
 	} else {
-	    godogOpts = godog.Options{
-		    //TODO: Remove colored output after debugging
-		    // Output: io.Discard,
-		    Output: colors.Colored(os.Stdout),
-		    //pretty, progress, cucumber, events and junit
-		    Format:        "pretty",
-		    StopOnFailure: true,
-		    //This is the context passed as argument to scenario hooks
-		    DefaultContext: pl.ctx,
+		godogOpts = godog.Options{
+			//TODO: Remove colored output after debugging
+			// Output: io.Discard,
+			Output: colors.Colored(os.Stdout),
+			//pretty, progress, cucumber, events and junit
+			Format:        "pretty",
+			StopOnFailure: true,
+			//This is the context passed as argument to scenario hooks
+			DefaultContext:  pl.ctx,
 			FeatureContents: content,
-        }
+		}
 	}
 	suite := godog.TestSuite{
 		Name:                 "productsTab",

@@ -10,7 +10,6 @@ import (
 
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
-	"github.com/chromedp/chromedp"
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"github.com/iancoleman/strcase"
@@ -130,8 +129,8 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 				switch status {
 				case 0:
 					stat.Result = exporters.CucumberSuccess
-                case 1:
-                    stat.Result = exporters.CucumberFailure
+				case 1:
+					stat.Result = exporters.CucumberFailure
 				case 2:
 					stat.Result = exporters.CucumberNotExecuted
 				}
