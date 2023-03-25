@@ -32,21 +32,29 @@
                         <table class="table">
                             <thead class="">
                                 <tr class="table__head-row">
-                                    <th class="table__head-cell"></th>
-                                    <th class="table__head-cell">Name</th>
-                                    <th class="table__head-cell">Gender</th>
-                                    <th class="table__head-cell">Season</th>
-                                    <th class="table__head-cell">Category</th>
+                                    <th class="table__head-cell">Id</th>
+                                    <th class="table__head-cell">Scenario</th>
+                                    <th class="table__head-cell">StepId</th>
+                                    <th class="table__head-cell">Start</th>
+                                    <th class="table__head-cell">Duration</th>
+                                    <th class="table__head-cell">Result</th>
                                 </tr>
                             </thead>
-                            <tbody class="table__body">
-                                <tr class="table__body-row">
-                                    <td class="table__body-cell">Running</td>
-                                    <td class="table__body-cell">Jersey (long sleeve)</td>
-                                    <td class="table__body-cell">Male</td>
-                                    <td class="table__body-cell">FW21</td>
-                                    <td class="table__body-cell">Apparel</td>
-                                </tr>
+                            <tbody class="table__body">   
+                            {{- range $i, $set := .}}
+                                {{- range $scenario, $stats := $set}}
+                                    {{- range $v := $stats}}
+                                    <tr class="table__body-row">
+                                        <td class="table__body-cell">{{$i}}</td>
+                                        <td class="table__body-cell">{{$scenario}}</td>
+                                        <td class="table__body-cell">{{$v.Id}}</td>
+                                        <td class="table__body-cell">{{$v.Start}}</td>
+                                        <td class="table__body-cell">{{$v.Duration}}</td>
+                                        <td class="table__body-cell">{{$v.Result}}</td>
+                                    </tr>
+                                    {{end}}
+                                {{end}}
+                            {{end}}
                             </tbody>
                         </table>
                     </div>

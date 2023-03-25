@@ -39,12 +39,6 @@ type CucumberStats struct {
 	Result   CucumberResult
 }
 
-// type CucumberStatsSet struct {
-// Feature   CucumberStats
-// Scenarios CucumberScenariosStats
-// Steps     CucumberStepsStats
-// }
-
 type CucumberPlugin interface {
 	// Do execute a godog test suite and returns the stats
 	Do(ctx context.Context, cancel context.CancelFunc) (CucumberStatsSet, error)
@@ -58,6 +52,7 @@ type cucumberHandler struct {
 	PluginSet   map[string]CucumberPlugin
 	timeout     time.Duration
 	templates   map[string]*template.Template
+	history     historyBuffer
 }
 
 // NewCucumberExporter creates a new CucumberExporter
@@ -261,8 +256,8 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 			// Handle other errors
 
 		}
-
 	case pluginChan := <-helper(plugingCtx, cancelFn, plugin):
+		c.addHistory(pluginChan.stats)
 		if pluginChan.err != nil {
 			for k, v := range pluginChan.stats {
 				scenarioSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(float64(CucumberFailure))
