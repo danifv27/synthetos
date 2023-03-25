@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html class="yarn">
     <head>
-        {{block "base" . }}{{end}}
-        {{block "colors" . }}{{end}}
-        {{block "components" . }}{{end}}
-        {{block "core" . }}{{end}}
-        {{block "grid" . }}{{end}}
-        {{block "layout" . }}{{end}}
-        {{block "print" . }}{{end}}
-        {{block "utils" . }}{{end}}
         <title>Dashboard</title>
+        {{- block "base" . -}}{{- end -}}
+        {{- block "colors" . -}}{{- end -}}
+        {{- block "components" . -}}{{- end -}}
+        {{- block "core" . -}}{{- end -}}
+        {{- block "grid" . -}}{{- end -}}
+        {{- block "layout" . -}}{{- end -}}
+        {{- block "print" . -}}{{- end -}}
+        {{- block "utils" . -}}{{- end -}}
     </head>
     <body>
         <div class="page-container">
@@ -41,20 +41,20 @@
                                 </tr>
                             </thead>
                             <tbody class="table__body">   
-                            {{- range $i, $set := .}}
-                                {{- range $scenario, $stats := $set}}
-                                    {{- range $v := $stats}}
-                                    <tr class="table__body-row">
-                                        <td class="table__body-cell">{{$i}}</td>
-                                        <td class="table__body-cell">{{$scenario}}</td>
-                                        <td class="table__body-cell">{{$v.Id}}</td>
-                                        <td class="table__body-cell">{{$v.Start}}</td>
-                                        <td class="table__body-cell">{{$v.Duration}}</td>
-                                        <td class="table__body-cell">{{$v.Result}}</td>
-                                    </tr>
-                                    {{end}}
-                                {{end}}
-                            {{end}}
+                            {{- range $i, $set := . -}}
+                                {{- range $scenario, $stats := $set -}}
+                                    {{- range $v := $stats -}}
+                                <tr class="table__body-row">
+                                    <td class="table__body-cell">{{$i}}</td>
+                                    <td class="table__body-cell">{{$scenario}}</td>
+                                    <td class="table__body-cell">{{$v.Id}}</td>
+                                    <td class="table__body-cell">{{$v.Start}}</td>
+                                    <td class="table__body-cell">{{$v.Duration}}</td>
+                                    <td class="table__body-cell">{{$v.Result}}</td>
+                                </tr>
+                                    {{- end}}
+                                {{- end}}
+                            {{- end}}
                             </tbody>
                         </table>
                     </div>

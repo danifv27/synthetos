@@ -72,7 +72,7 @@ func WithCucumberHistoryEndpoint(prefix string) ExporterOption {
 			if err := c.loadTemplates(); err != nil {
 				return errortree.Add(rcerror, "WithCucumberHistory", err)
 			}
-			c.newHistoryBuffer(2)
+			c.newHistoryBuffer(25)
 
 			return nil
 		}
