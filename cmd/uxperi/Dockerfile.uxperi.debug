@@ -3,8 +3,7 @@ FROM golang:1.20.2-alpine3.16 AS build-env
 
 RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv@v1.8.3
 RUN apk update && apk add --no-cache git make bash
-
-COPY . /src
+ADD . /src
 RUN cd /src/cmd/uxperi && DEBUG=true make build-linux-amd64
 
 # final stage
