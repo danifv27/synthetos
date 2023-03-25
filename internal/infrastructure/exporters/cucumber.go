@@ -174,7 +174,7 @@ func helper(ctx context.Context, cancelFn context.CancelFunc, plugin CucumberPlu
 	respChan := make(chan PluginResponse, 1)
 	go func() {
 		stats, err := plugin.Do(ctx, cancelFn)
-		fmt.Printf("[DBG]plugin.Do finished, err: %v", err)
+		// fmt.Printf("[DBG]plugin.Do finished, err: %v\n", err)
 		respChan <- PluginResponse{
 			stats: stats,
 			err:   err,

@@ -8,6 +8,9 @@ There are two ways of querying the exporter:
     * Querying the exporter itself. It has its own metrics, available at `/metrics`. Those are metrics in the Prometheus format. They come from the exporter’s instrumentation and tell us about the state of the exporter itself while it is running.
     * Querying the exporter to test a scenario available at `/probe`. For this type of querying we need to provide feature name as parameter in the HTTP GET request. 
 
+ &#x24D8;
+ > Currently there is a limitation when using features. Each feature can have only one scenario defined
+
 ### Options inherited from parent commands
 
 | Name                       | Environment Variable | Default Value | Description |

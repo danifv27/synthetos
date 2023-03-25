@@ -72,6 +72,7 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 
 	if products, err = ifeatures.NewProductsTabFeature(cli.Test.Flags.FeaturesFolder,
 		ifeatures.WithProductsTabAuth(cli.Test.Flags.Auth.Id, cli.Test.Flags.Auth.Password),
+		ifeatures.WithProductsTabLogger(c.Apps.Logger),
 	); err != nil {
 		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeExporterCmd", e)
