@@ -16,7 +16,7 @@ import (
 	"github.com/speijnik/go-errortree"
 )
 
-type loginPage struct {
+type productsTab struct {
 	logger.Logger
 	featureFolder string
 	ctx           context.Context
@@ -27,56 +27,56 @@ type loginPage struct {
 	}
 }
 
-func NewLoginPageFeature(p string, opts ...exporters.ExporterOption) (exporters.CucumberPlugin, error) {
+func NewProductsTabFeature(p string, opts ...exporters.ExporterOption) (exporters.CucumberPlugin, error) {
 	var rcerror error
 
-	l := loginPage{
-		featureFolder: path.Join(p, "loginPage.feature"),
+	l := productsTab{
+		featureFolder: path.Join(p, "productsTab.feature"),
 	}
 	// Loop through each option
 	for _, option := range opts {
 		if err := option.Apply(&l); err != nil {
-			return nil, errortree.Add(rcerror, "NewLoginPageFeature", err)
+			return nil, errortree.Add(rcerror, "NewProductsTabFeature", err)
 		}
 	}
 
 	return &l, nil
 }
 
-func WithLoginPageLogger(l logger.Logger) exporters.ExporterOption {
+func WithProductsTabLogger(l logger.Logger) exporters.ExporterOption {
 
 	return exporters.ExportOptionFn(func(i interface{}) error {
 		var rcerror error
-		var pl *loginPage
+		var pl *productsTab
 		var ok bool
 
-		if pl, ok = i.(*loginPage); ok {
+		if pl, ok = i.(*productsTab); ok {
 			pl.Logger = l
 			return nil
 		}
 
-		return errortree.Add(rcerror, "WithLoginPageLogger", errors.New("type mismatch, loginPage expected"))
+		return errortree.Add(rcerror, "WithProductsTabLogger", errors.New("type mismatch, productsTab expected"))
 	})
 }
 
-func WithLoginPageAuth(id string, p string) exporters.ExporterOption {
+func WithProductsTabAuth(id string, p string) exporters.ExporterOption {
 
 	return exporters.ExportOptionFn(func(i interface{}) error {
 		var rcerror error
-		var l *loginPage
+		var pl *productsTab
 		var ok bool
 
-		if l, ok = i.(*loginPage); ok {
-			l.auth.id = id
-			l.auth.password = p
+		if pl, ok = i.(*productsTab); ok {
+			pl.auth.id = id
+			pl.auth.password = p
 			return nil
 		}
 
-		return errortree.Add(rcerror, "WithLoginPageAuth", errors.New("type mismatch, loginPage expected"))
+		return errortree.Add(rcerror, "WithProductTabsAuth", errors.New("type mismatch, productsTab expected"))
 	})
 }
 
-func (pl *loginPage) suiteInit(ctx *godog.TestSuiteContext) {
+func (pl *productsTab) suiteInit(ctx *godog.TestSuiteContext) {
 
 	ctx.BeforeSuite(func() {
 		// This code will be executed once, before any scenarios are run
@@ -84,7 +84,7 @@ func (pl *loginPage) suiteInit(ctx *godog.TestSuiteContext) {
 	})
 }
 
-func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
+func (pl *productsTab) scenarioInit(ctx *godog.ScenarioContext) {
 
 	ctx.Before(func(c context.Context, sc *godog.Scenario) (context.Context, error) {
 		// This code will be executed once, before any scenarios are run
@@ -142,20 +142,21 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 	pl.registerSteps(ctx)
 }
 
-func (pl *loginPage) registerSteps(ctx *godog.ScenarioContext) {
+func (pl *productsTab) registerSteps(ctx *godog.ScenarioContext) {
 
-	ctx.Step(`^I am on the login page$`, pl.iAmOnTheLoginPage)
-	ctx.Step(`^I enter my username and password$`, pl.iEnterMyUsernameAndPassword)
-	ctx.Step(`^I click the login button$`, pl.iClickTheLoginButton)
-	ctx.Step(`^I should be redirected to the dashboard page$`, pl.iShouldBeRedirectedToTheDashboardPage)
+	ctx.Step(`^I am logged in to creation portal$`, pl.iAmLoggedInToCreationPortal)
+	ctx.Step(`^the user switches to the "model" view with basic filter$`, pl.theUserSwitchesToTheModelViewWithBasicFilter)
+	ctx.Step(`^the model info for the APP product should be displayed$`, pl.theModelInfoForTheAPPProductShouldBeDisplayed)
+	ctx.Step(`^the user clicks on the first product in the "table" view on Product Page$`, pl.theUserClicksOnTheFirstProductInTheTableViewOnProductPage)
+	ctx.Step(`^the Product Details Page should be loaded$`, pl.theProductDetailsPageShouldBeLoaded)
 }
 
-func (pl *loginPage) GetScenarioName() (string, error) {
+func (pl *productsTab) GetScenarioName() (string, error) {
 
 	return exporters.StringFromContext(pl.ctx, exporters.ContextKeyScenarioName)
 }
 
-func (pl *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.CucumberStatsSet, error) {
+func (pl *productsTab) Do(c context.Context, cancel context.CancelFunc) (exporters.CucumberStatsSet, error) {
 	var rcerror error
 	var rc int
 	var godogOpts godog.Options
@@ -177,7 +178,7 @@ func (pl *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters
 		}
 	}
 	suite := godog.TestSuite{
-		Name:                 "loginPage",
+		Name:                 "productsTab",
 		TestSuiteInitializer: pl.suiteInit,
 		ScenarioInitializer:  pl.scenarioInit,
 		Options:              &godogOpts,
@@ -195,67 +196,74 @@ func (pl *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters
 	case 0:
 		return pl.stats, nil
 	case 1:
-		return pl.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error  %d: failed test suite", rc))
+		return pl.stats, errortree.Add(rcerror, "productsTab.Do", fmt.Errorf("error  %d: failed test suite", rc))
 	case 2:
-		return pl.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d:command line usage error running test suite", rc))
+		return pl.stats, errortree.Add(rcerror, "productsTab.Do", fmt.Errorf("error %d:command line usage error running test suite", rc))
 	default:
-		return pl.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d running test suite", rc))
+		return pl.stats, errortree.Add(rcerror, "productsTab.Do", fmt.Errorf("error %d running test suite", rc))
 	}
 
 	//return l.stats, nil
 }
 
-func (pl *loginPage) iAmOnTheLoginPage() error {
+func (pl *productsTab) iAmLoggedInToCreationPortal() error {
 	var rcerror error
 
-	pl.Logger.WithFields(logger.Fields{
-		"name": "I am on the login page",
-	}).Debug("Executing step")
 	impl := loginPageImpl{}
-	if err := impl.doAzureLogin(pl.ctx); err != nil {
-		takeSnapshot(pl.ctx, "iAmOnTheLoginPage")
-		return errortree.Add(rcerror, "iAmOnTheLoginPage", err)
-	}
-	pl.Logger.WithFields(logger.Fields{
-		"name": "I am on the login page",
-	}).Debug("Step done")
 
-	return nil
-}
-
-func (pl *loginPage) iEnterMyUsernameAndPassword() error {
-	var rcerror error
-
-	time.Sleep(5 * time.Second)
-	impl := loginPageImpl{}
-	if err := impl.loadUserAndPasswordWindow(pl.ctx, pl.auth.id, pl.auth.password); err != nil {
-		takeSnapshot(pl.ctx, "iEnterMyUsernameAndPassword")
-		return errortree.Add(rcerror, "iEnterMyUsernameAndPassword", err)
+	err := impl.doFeature(pl.ctx, pl.auth.id, pl.auth.password)
+	if err != nil {
+		return errortree.Add(rcerror, "iAmLoggedInToCreationPortal", err)
 	}
 
 	return nil
 }
 
-func (pl *loginPage) iClickTheLoginButton() error {
+func (pl *productsTab) theUserSwitchesToTheModelViewWithBasicFilter() error {
 	var rcerror error
-
 	time.Sleep(5 * time.Second)
-	impl := loginPageImpl{}
-	if err := impl.loadConsentAzurePage(pl.ctx); err != nil {
-		takeSnapshot(pl.ctx, "iClickTheLoginButton")
-		return errortree.Add(rcerror, "iClickTheLoginButton", err)
+
+	err := pl.loadModelProductsPage()
+	if err != nil {
+		return errortree.Add(rcerror, "theUserSwitchesToTheModelViewWithBasicFilter", err)
 	}
+
 	return nil
 }
 
-func (pl *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
+func (pl *productsTab) theModelInfoForTheAPPProductShouldBeDisplayed() error {
 	var rcerror error
 
 	time.Sleep(5 * time.Second)
-	impl := loginPageImpl{}
-	if err := impl.isMainFELoad(pl.ctx); err != nil {
-		takeSnapshot(pl.ctx, "iShouldBeRedirectedToTheDashboardPage")
-		return errortree.Add(rcerror, "iShouldBeRedirectedToTheDashboardPage", err)
+
+	err := pl.loadModelDataInTable()
+	if err != nil {
+		return errortree.Add(rcerror, "theModelInfoForTheAPPProductShouldBeDisplayed", err)
 	}
+
+	return nil
+}
+
+func (pl *productsTab) theUserClicksOnTheFirstProductInTheTableViewOnProductPage() error {
+	var rcerror error
+
+	time.Sleep(5 * time.Second)
+	err := pl.loadArticleDataInfoFromTable()
+	if err != nil {
+		return errortree.Add(rcerror, "theUserClicksOnTheFirstProductInTheTableViewOnProductPage", err)
+	}
+
+	return nil
+}
+
+func (pl *productsTab) theProductDetailsPageShouldBeLoaded() error {
+	var rcerror error
+	time.Sleep(5 * time.Second)
+
+	err := pl.checkProductDetailsPage()
+	if err != nil {
+		return errortree.Add(rcerror, "theProductDetailsPageShouldBeLoaded", err)
+	}
+
 	return nil
 }

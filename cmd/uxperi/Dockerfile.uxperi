@@ -1,7 +1,6 @@
 # build stage
 FROM registry.tools.3stripes.net/ebtpc-commons/golang:1.18.6-alpine3.15 AS build-env
 
-RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv@v1.8.3
 RUN apk update && apk add --no-cache git make bash
 
 COPY . /src
@@ -37,7 +36,6 @@ ENV CHROME_BIN=/usr/bin/chromium-browser
 RUN mkdir -p /app/bin; mkdir -p /app/config
 
 COPY --from=build-env /src/output/linux/amd64/bin/uxperi /app/bin/uxperi
-COPY --from=build-env /src/internal/infrastructure/exporters/features /app/bin/features
 
 RUN chown $USER_ID:$GROUP_ID -R /app
 

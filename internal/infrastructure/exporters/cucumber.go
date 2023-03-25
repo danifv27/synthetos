@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"fry.org/cmo/cli/internal/application/exporters"
+	"github.com/chromedp/chromedp"
 	"github.com/iancoleman/strcase"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -46,6 +47,7 @@ type CucumberStats struct {
 type CucumberPlugin interface {
 	// Do execute a godog test suite and returns the stats
 	Do(ctx context.Context, cancel context.CancelFunc) (CucumberStatsSet, error)
+	GetScenarioName() (string, error)
 }
 
 // cucumberHandler is a basic Healthchekcker implementation.
@@ -172,7 +174,7 @@ func helper(ctx context.Context, cancelFn context.CancelFunc, plugin CucumberPlu
 	respChan := make(chan PluginResponse, 1)
 	go func() {
 		stats, err := plugin.Do(ctx, cancelFn)
-		fmt.Printf("[DBG]plugin.Do finished, err: %v", err)
+		// fmt.Printf("[DBG]plugin.Do finished, err: %v\n", err)
 		respChan <- PluginResponse{
 			stats: stats,
 			err:   err,
@@ -226,16 +228,44 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 	ctx, cancelFn := context.WithCancel(r.Context())
 	ct := context.WithValue(ctx, ContextKeyTargetUrl, target)
 	defer cancelFn()
+	//Initialize chromedp context
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.Flag("headless", true),
+		chromedp.Flag("no-sandbox", true),
+		chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"),
+	)
+	actx, _ := chromedp.NewExecAllocator(ct, opts...)
+	plugingCtx, _ := chromedp.NewContext(actx)
+
 	select {
-	case <-ctx.Done():
-		//TODO: should we treat the timeout as a test server failure, publishing only step_success metric?
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(fmt.Sprintf("Max deadline %v exceeded", c.timeout)))
-		return
-	case pluginChan := <-helper(ct, cancelFn, plugin):
+	case <-plugingCtx.Done():
+		// Extract the reason for cancellation
+		err := plugingCtx.Err()
+		switch err {
+		case context.Canceled:
+			// Handle cancellation scenario
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("context cancel detected"))
+		case context.DeadlineExceeded:
+			// Handle max timeout
+			if name, e := plugin.GetScenarioName(); e != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(fmt.Sprintf("Scenario name not found for metrics %v", e)))
+			} else {
+				scenarioSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), name).Set(float64(CucumberFailure))
+			}
+		default:
+			// Handle other errors
+
+		}
+
+	case pluginChan := <-helper(plugingCtx, cancelFn, plugin):
 		if pluginChan.err != nil {
-			for k := range pluginChan.stats {
+			for k, v := range pluginChan.stats {
 				scenarioSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(float64(CucumberFailure))
+				for _, stats := range v {
+					stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id).Set(float64(stats.Result))
+				}
 			}
 		} else {
 			for k, v := range pluginChan.stats {

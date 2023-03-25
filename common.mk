@@ -1,6 +1,8 @@
 ifeq ($(V),1)
   Q =
-  PROGRESS = --progress plain
+#   unknown flag: --progress
+#   PROGRESS = --progress plain
+  PROGRESS = 
 else
   Q = @
   PROGRESS = 
