@@ -31,7 +31,13 @@ func (rc CucumberResult) String() string {
 	return [...]string{"Failure", "Success", "Not executed"}[rc]
 }
 
-type CucumberStatsSet map[string][]CucumberStats
+type CucumberStatsSet map[string]CucumberStatsItem
+
+type CucumberStatsItem struct {
+	Output string
+	Stats  []CucumberStats
+}
+
 type CucumberStats struct {
 	Id       string
 	Start    time.Time
@@ -41,7 +47,7 @@ type CucumberStats struct {
 
 type CucumberPlugin interface {
 	// Do execute a godog test suite and returns the stats
-	Do(ctx context.Context, cancel context.CancelFunc) (CucumberStatsSet, error)
+	Do(ctx context.Context) (CucumberStatsSet, error)
 	GetScenarioName() (string, error)
 }
 
@@ -163,19 +169,18 @@ func (c *cucumberHandler) ProbesEndpoint(w http.ResponseWriter, r *http.Request)
 }
 
 type PluginResponse struct {
-	stats CucumberStatsSet
-	err   error
+	set CucumberStatsSet
+	err error
 }
 
-func helper(ctx context.Context, cancelFn context.CancelFunc, plugin CucumberPlugin) <-chan PluginResponse {
+func helper(ctx context.Context, plugin CucumberPlugin) <-chan PluginResponse {
 
 	respChan := make(chan PluginResponse, 1)
 	go func() {
-		stats, err := plugin.Do(ctx, cancelFn)
-		// fmt.Printf("[DBG]plugin.Do finished, err: %v\n", err)
+		set, err := plugin.Do(ctx)
 		respChan <- PluginResponse{
-			stats: stats,
-			err:   err,
+			set: set,
+			err: err,
 		}
 	}()
 
@@ -256,19 +261,19 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 			// Handle other errors
 
 		}
-	case pluginChan := <-helper(plugingCtx, cancelFn, plugin):
-		c.addHistory(pluginChan.stats)
+	case pluginChan := <-helper(plugingCtx, plugin):
+		c.addHistory(pluginChan.set)
 		if pluginChan.err != nil {
-			for k, v := range pluginChan.stats {
+			for k, v := range pluginChan.set {
 				scenarioSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(float64(CucumberFailure))
-				for _, stats := range v {
+				for _, stats := range v.Stats {
 					stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id).Set(float64(stats.Result))
 				}
 			}
 		} else {
-			for k, v := range pluginChan.stats {
+			for k, v := range pluginChan.set {
 				isSucceeded := true
-				for _, stats := range v {
+				for _, stats := range v.Stats {
 					stepDurationGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id, stats.Result.String()).Set(stats.Duration.Seconds())
 					stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id).Set(float64(stats.Result))
 					if stats.Result != CucumberSuccess {

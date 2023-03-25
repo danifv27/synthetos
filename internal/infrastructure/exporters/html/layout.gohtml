@@ -42,8 +42,8 @@
                             </thead>
                             <tbody class="table__body">   
                             {{- range $i, $set := . -}}
-                                {{- range $scenario, $stats := $set -}}
-                                    {{- range $v := $stats -}}
+                                {{- range $scenario, $item := $set -}}
+                                    {{- range $v := $item.Stats -}}
                                 <tr class="table__body-row">
                                     <td class="table__body-cell">{{$i}}</td>
                                     <td class="table__body-cell">{{$scenario}}</td>
