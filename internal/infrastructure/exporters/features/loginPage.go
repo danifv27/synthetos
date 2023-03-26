@@ -1,10 +1,10 @@
 package features
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path"
 	"time"
 
@@ -20,7 +20,7 @@ type loginPage struct {
 	logger.Logger
 	featureFolder string
 	ctx           context.Context
-	stats         exporters.CucumberStatsSet
+	statsSet      exporters.CucumberStatsSet
 	auth          struct {
 		id       string
 		password string
@@ -80,7 +80,7 @@ func (pl *loginPage) suiteInit(ctx *godog.TestSuiteContext) {
 
 	ctx.BeforeSuite(func() {
 		// This code will be executed once, before any scenarios are run
-		pl.stats = make(map[string][]exporters.CucumberStats)
+		pl.statsSet = make(map[string]exporters.CucumberStatsItem)
 	})
 }
 
@@ -111,7 +111,9 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 		if name, err := exporters.StringFromContext(c, exporters.ContextKeyScenarioName); err != nil {
 			return c, errortree.Add(rcerror, "step.Before", err)
 		} else {
-			pl.stats[name] = append(pl.stats[name], stat)
+			item := pl.statsSet[name]
+			item.Stats = append(item.Stats, stat)
+			pl.statsSet[name] = item
 		}
 
 		return c, nil
@@ -121,7 +123,7 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 		if name, e := exporters.StringFromContext(c, exporters.ContextKeyScenarioName); e != nil {
 			return c, errortree.Add(rcerror, "step.After", e)
 		} else {
-			stat := pl.stats[name][len(pl.stats[name])-1]
+			stat := pl.statsSet[name].Stats[len(pl.statsSet[name].Stats)-1]
 			stat.Duration = time.Since(stat.Start)
 			if err != nil {
 				stat.Result = exporters.CucumberFailure
@@ -135,7 +137,7 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 					stat.Result = exporters.CucumberNotExecuted
 				}
 			}
-			pl.stats[name][len(pl.stats[name])-1] = stat
+			pl.statsSet[name].Stats[len(pl.statsSet[name].Stats)-1] = stat
 		}
 		return c, nil
 	})
@@ -155,19 +157,22 @@ func (pl *loginPage) GetScenarioName() (string, error) {
 	return exporters.StringFromContext(pl.ctx, exporters.ContextKeyScenarioName)
 }
 
-func (pl *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.CucumberStatsSet, error) {
+func (pl *loginPage) Do(c context.Context) (exporters.CucumberStatsSet, error) {
 	var rcerror error
 	var rc int
 	var godogOpts godog.Options
 
 	pl.ctx = c
+	buf := new(bytes.Buffer)
 	if content, err := exporters.GetFeature(exporters.FeaturesFS, pl.featureFolder); err != nil {
-		return pl.stats, errortree.Add(rcerror, "loginPage.Do", err)
+		return pl.statsSet, errortree.Add(rcerror, "loginPage.Do", err)
 	} else {
+
 		godogOpts = godog.Options{
 			//TODO: Remove colored output after debugging
 			// Output: io.Discard,
-			Output: colors.Colored(os.Stdout),
+			// Output: colors.Colored(os.Stdout),
+			Output: colors.Colored(buf),
 			//pretty, progress, cucumber, events and junit
 			Format:        "pretty",
 			StopOnFailure: true,
@@ -190,16 +195,24 @@ func (pl *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters
 	}()
 	// fmt.Printf("[DBG]Waiting for context done\n")
 	<-done
+	fmt.Println(buf.String())
+	if name, err := pl.GetScenarioName(); err != nil {
+		return pl.statsSet, errortree.Add(rcerror, "loginPage.Do", err)
+	} else {
+		item := pl.statsSet[name]
+		item.Output = buf.String()
+		pl.statsSet[name] = item
+	}
 	// We have to return l.stats always to return the partial errors in case of error
 	switch rc {
 	case 0:
-		return pl.stats, nil
+		return pl.statsSet, nil
 	case 1:
-		return pl.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error  %d: failed test suite", rc))
+		return pl.statsSet, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error  %d: failed test suite", rc))
 	case 2:
-		return pl.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d:command line usage error running test suite", rc))
+		return pl.statsSet, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d:command line usage error running test suite", rc))
 	default:
-		return pl.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d running test suite", rc))
+		return pl.statsSet, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d running test suite", rc))
 	}
 
 	//return l.stats, nil
@@ -245,6 +258,7 @@ func (pl *loginPage) iClickTheLoginButton() error {
 		takeSnapshot(pl.ctx, "iClickTheLoginButton")
 		return errortree.Add(rcerror, "iClickTheLoginButton", err)
 	}
+
 	return nil
 }
 

@@ -163,8 +163,9 @@ func (l *loginPageImpl) doFeature(ctx context.Context, user string, pass string)
 
 	time.Sleep(5 * time.Second)
 	if err = impl.doAzureLogin(ctx); err != nil {
-		return errortree.Add(rcerror, "doFeature.iAmOnTheLoginPage", err)
+		return errortree.Add(rcerror, "doFeature.iEnterMyUsernameAndPassword", err)
 	}
+
 	time.Sleep(5 * time.Second)
 	if err = impl.loadUserAndPasswordWindow(ctx, user, pass); err != nil {
 		return errortree.Add(rcerror, "doFeature.iEnterMyUsernameAndPassword", err)
@@ -181,18 +182,18 @@ func (l *loginPageImpl) doFeature(ctx context.Context, user string, pass string)
 	return nil
 }
 
-func navigate(ctx context.Context) error {
-	var target string
-	var rcerror, err error
+// func navigate(ctx context.Context) error {
+// 	var target string
+// 	var rcerror, err error
 
-	target, err = exporters.StringFromContext(ctx, exporters.ContextKeyTargetUrl)
-	if err != nil || errors.Is(err, context.Canceled) {
-		return errortree.Add(rcerror, "doAzureLogin:extractURL", err)
-	}
-	// Start by navigating to the login page
-	err = chromedp.Run(ctx, chromedp.Navigate(target))
-	if err != nil || errors.Is(err, context.Canceled) {
-		return errortree.Add(rcerror, "doAzureLogin:navigateURL", err)
-	}
-	return nil
-}
+// 	target, err = exporters.StringFromContext(ctx, exporters.ContextKeyTargetUrl)
+// 	if err != nil || errors.Is(err, context.Canceled) {
+// 		return errortree.Add(rcerror, "doAzureLogin:extractURL", err)
+// 	}
+// 	// Start by navigating to the login page
+// 	err = chromedp.Run(ctx, chromedp.Navigate(target))
+// 	if err != nil || errors.Is(err, context.Canceled) {
+// 		return errortree.Add(rcerror, "doAzureLogin:navigateURL", err)
+// 	}
+// 	return nil
+// }
