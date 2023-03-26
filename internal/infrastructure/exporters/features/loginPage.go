@@ -13,6 +13,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"github.com/iancoleman/strcase"
+	"github.com/sethvargo/go-retry"
 	"github.com/speijnik/go-errortree"
 )
 
@@ -239,9 +240,20 @@ func (pl *loginPage) iAmOnTheLoginPage() error {
 func (pl *loginPage) iEnterMyUsernameAndPassword() error {
 	var rcerror error
 
-	time.Sleep(5 * time.Second)
 	impl := loginPageImpl{}
-	if err := impl.loadUserAndPasswordWindow(pl.ctx, pl.auth.id, pl.auth.password); err != nil {
+
+	c := context.Background()
+	b := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxDuration(7*time.Second, b)
+	if err := retry.Do(c, b, func(ct context.Context) error {
+		if err := impl.loadUserAndPasswordWindow(pl.ctx, pl.auth.id, pl.auth.password); err != nil {
+			fmt.Println("[DBG]retry loadUserAndPasswordWindow")
+			// This marks the error as retryable
+			return retry.RetryableError(err)
+		}
+		fmt.Println("[DBG]success loadUserAndPasswordWindow")
+		return nil
+	}); err != nil {
 		takeSnapshot(pl.ctx, "iEnterMyUsernameAndPassword")
 		return errortree.Add(rcerror, "iEnterMyUsernameAndPassword", err)
 	}
@@ -252,9 +264,19 @@ func (pl *loginPage) iEnterMyUsernameAndPassword() error {
 func (pl *loginPage) iClickTheLoginButton() error {
 	var rcerror error
 
-	time.Sleep(5 * time.Second)
 	impl := loginPageImpl{}
-	if err := impl.loadConsentAzurePage(pl.ctx); err != nil {
+	c := context.Background()
+	b := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxDuration(7*time.Second, b)
+	if err := retry.Do(c, b, func(ct context.Context) error {
+		if err := impl.loadConsentAzurePage(pl.ctx); err != nil {
+			fmt.Println("[DBG]retry loadConsentAzurePage")
+			// This marks the error as retryable
+			return retry.RetryableError(err)
+		}
+		fmt.Println("[DBG]success loadConsentAzurePage")
+		return nil
+	}); err != nil {
 		takeSnapshot(pl.ctx, "iClickTheLoginButton")
 		return errortree.Add(rcerror, "iClickTheLoginButton", err)
 	}
@@ -265,9 +287,19 @@ func (pl *loginPage) iClickTheLoginButton() error {
 func (pl *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
 	var rcerror error
 
-	time.Sleep(5 * time.Second)
 	impl := loginPageImpl{}
-	if err := impl.isMainFELoad(pl.ctx); err != nil {
+	c := context.Background()
+	b := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxDuration(7*time.Second, b)
+	if err := retry.Do(c, b, func(ct context.Context) error {
+		if err := impl.isMainFELoad(pl.ctx); err != nil {
+			fmt.Println("[DBG]retry isMainFELoad")
+			// This marks the error as retryable
+			return retry.RetryableError(err)
+		}
+		fmt.Println("[DBG]success isMainFELoad")
+		return nil
+	}); err != nil {
 		takeSnapshot(pl.ctx, "iShouldBeRedirectedToTheDashboardPage")
 		return errortree.Add(rcerror, "iShouldBeRedirectedToTheDashboardPage", err)
 	}

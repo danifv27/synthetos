@@ -7,23 +7,16 @@ import (
 	"strconv"
 
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
-	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
 	"github.com/speijnik/go-errortree"
-)
-
-// FIXME: global variables should not be used
-var (
-	rowNodes []*cdp.Node
-	target   string
 )
 
 type productTabsImpl struct{}
 
 func (pl *productTabsImpl) loadModelProductsPage(ctx context.Context) error {
 	var rcerror, err error
-	var destinationPath = "/products"
-
+	var target string
+	destinationPath := "/products"
 	if target, err = exporters.StringFromContext(ctx, exporters.ContextKeyTargetUrl); err != nil {
 		return errortree.Add(rcerror, "loadProducts:composeURL", err)
 	}
@@ -57,11 +50,12 @@ func (pl *productTabsImpl) loadModelDataInTable(ctx context.Context) error {
 }
 
 func (pl *productTabsImpl) loadArticleDataInfoFromTable(ctx context.Context) error {
-
+	var target string
 	var rcerror, err error
-	// find the first element in the "%s" column
-	var modelNumber = ""
-	var season = ""
+
+	modelNumber := ""
+	season := ""
+
 	err = waitUntilLoads(ctx, `[col-id="mdl.modelNumber"]`)
 	if err != nil {
 		return errortree.Add(rcerror, "isMainFELoad", errors.New("failed to load first element table in main page"))
@@ -84,6 +78,7 @@ func (pl *productTabsImpl) loadArticleDataInfoFromTable(ctx context.Context) err
 	if err = chromedp.Run(ctx, chromedp.Navigate(target+path)); err != nil {
 		return errortree.Add(rcerror, "loadProductDetails:navigate", err)
 	}
+
 	return nil
 }
 

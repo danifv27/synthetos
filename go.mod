@@ -12,6 +12,7 @@ require (
 	github.com/iancoleman/strcase v0.2.0
 	github.com/prometheus/client_golang v1.14.0
 	github.com/robert-nix/ansihtml v1.0.1
+	github.com/sethvargo/go-retry v0.2.4
 	github.com/sirupsen/logrus v1.9.0
 	github.com/speijnik/go-errortree v1.0.1
 	github.com/workanator/go-floc/v3 v3.0.1

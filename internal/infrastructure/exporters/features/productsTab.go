@@ -234,17 +234,18 @@ func (pl *productsTab) iAmLoggedInToCreationPortal() error {
 
 func (pl *productsTab) theUserSwitchesToTheModelViewWithBasicFilter() error {
 	var rcerror error
-	time.Sleep(5 * time.Second)
 
-	ctx := context.Background()
 	impl := productTabsImpl{}
+	c := context.Background()
 	b := retry.NewConstant(500 * time.Millisecond)
 	b = retry.WithMaxDuration(7*time.Second, b)
-	if err := retry.Do(ctx, b, func(ctx context.Context) error {
+	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err := impl.loadModelProductsPage(pl.ctx); err != nil {
+			fmt.Println("[DBG]retry loadModelProductsPage")
 			// This marks the error as retryable
 			return retry.RetryableError(err)
 		}
+		fmt.Println("[DBG]success loadModelProductsPage")
 		return nil
 	}); err != nil {
 		takeSnapshot(pl.ctx, "theUserSwitchesToTheModelViewWithBasicFilter")
@@ -257,9 +258,19 @@ func (pl *productsTab) theUserSwitchesToTheModelViewWithBasicFilter() error {
 func (pl *productsTab) theModelInfoForTheAPPProductShouldBeDisplayed() error {
 	var rcerror error
 
-	time.Sleep(5 * time.Second)
 	impl := productTabsImpl{}
-	if err := impl.loadModelDataInTable(pl.ctx); err != nil {
+	c := context.Background()
+	b := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxDuration(7*time.Second, b)
+	if err := retry.Do(c, b, func(ct context.Context) error {
+		if err := impl.loadModelDataInTable(pl.ctx); err != nil {
+			fmt.Println("[DBG]retry loadModelDataInTable")
+			// This marks the error as retryable
+			return retry.RetryableError(err)
+		}
+		fmt.Println("[DBG]success loadModelDataInTable")
+		return nil
+	}); err != nil {
 		takeSnapshot(pl.ctx, "theModelInfoForTheAPPProductShouldBeDisplayed")
 		return errortree.Add(rcerror, "theModelInfoForTheAPPProductShouldBeDisplayed", err)
 	}
@@ -270,9 +281,19 @@ func (pl *productsTab) theModelInfoForTheAPPProductShouldBeDisplayed() error {
 func (pl *productsTab) theUserClicksOnTheFirstProductInTheTableViewOnProductPage() error {
 	var rcerror error
 
-	time.Sleep(5 * time.Second)
 	impl := productTabsImpl{}
-	if err := impl.loadArticleDataInfoFromTable(pl.ctx); err != nil {
+	c := context.Background()
+	b := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxDuration(7*time.Second, b)
+	if err := retry.Do(c, b, func(ct context.Context) error {
+		if err := impl.loadArticleDataInfoFromTable(pl.ctx); err != nil {
+			fmt.Println("[DBG]retry loadArticleDataInfoFromTable")
+			// This marks the error as retryable
+			return retry.RetryableError(err)
+		}
+		fmt.Println("[DBG]success loadArticleDataInfoFromTable")
+		return nil
+	}); err != nil {
 		takeSnapshot(pl.ctx, "theUserClicksOnTheFirstProductInTheTableViewOnProductPage")
 		return errortree.Add(rcerror, "theUserClicksOnTheFirstProductInTheTableViewOnProductPage", err)
 	}
@@ -282,10 +303,20 @@ func (pl *productsTab) theUserClicksOnTheFirstProductInTheTableViewOnProductPage
 
 func (pl *productsTab) theProductDetailsPageShouldBeLoaded() error {
 	var rcerror error
-	time.Sleep(5 * time.Second)
 
 	impl := productTabsImpl{}
-	if err := impl.checkProductDetailsPage(pl.ctx); err != nil {
+	c := context.Background()
+	b := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxDuration(7*time.Second, b)
+	if err := retry.Do(c, b, func(ct context.Context) error {
+		if err := impl.checkProductDetailsPage(pl.ctx); err != nil {
+			fmt.Println("[DBG]retry checkProductDetailsPage")
+			// This marks the error as retryable
+			return retry.RetryableError(err)
+		}
+		fmt.Println("[DBG]success checkProductDetailsPage")
+		return nil
+	}); err != nil {
 		takeSnapshot(pl.ctx, "theProductDetailsPageShouldBeLoaded")
 		return errortree.Add(rcerror, "theProductDetailsPageShouldBeLoaded", err)
 	}
