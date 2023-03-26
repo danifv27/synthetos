@@ -34,7 +34,7 @@
                                 <tr class="table__head-row">
                                     <th class="table__head-cell">Id</th>
                                     <th class="table__head-cell">Scenario</th>
-                                    <th class="table__head-cell">StepId</th>
+                                    <th class="table__head-cell">Step</th>
                                     <th class="table__head-cell">Start</th>
                                     <th class="table__head-cell">Duration</th>
                                     <th class="table__head-cell">Result</th>
@@ -45,7 +45,7 @@
                                 {{- range $scenario, $item := $set -}}
                                     {{- range $v := $item.Stats -}}
                                 <tr class="table__body-row">
-                                    <td class="table__body-cell">{{$i}}</td>
+                                    <td class="table__body-cell"><a href="./history?id={{$i}}&scenario={{$scenario}}" target="_blank">{{$i}}</a></td>
                                     <td class="table__body-cell">{{$scenario}}</td>
                                     <td class="table__body-cell">{{$v.Id}}</td>
                                     <td class="table__body-cell">{{$v.Start}}</td>

@@ -11,6 +11,7 @@ import (
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
 	"github.com/cucumber/godog"
+	"github.com/cucumber/godog/colors"
 	"github.com/iancoleman/strcase"
 	"github.com/speijnik/go-errortree"
 )
@@ -172,7 +173,7 @@ func (pl *loginPage) Do(c context.Context) (exporters.CucumberStatsSet, error) {
 			//TODO: Remove colored output after debugging
 			// Output: io.Discard,
 			// Output: colors.Colored(os.Stdout),
-			Output: buf,
+			Output: colors.Colored(buf),
 			//pretty, progress, cucumber, events and junit
 			Format:        "pretty",
 			StopOnFailure: true,
@@ -195,6 +196,14 @@ func (pl *loginPage) Do(c context.Context) (exporters.CucumberStatsSet, error) {
 	}()
 	// fmt.Printf("[DBG]Waiting for context done\n")
 	<-done
+	fmt.Printf(buf.String())
+	if name, err := pl.GetScenarioName(); err != nil {
+		return pl.statsSet, errortree.Add(rcerror, "loginPage.Do", err)
+	} else {
+		item := pl.statsSet[name]
+		item.Output = buf.String()
+		pl.statsSet[name] = item
+	}
 	// We have to return l.stats always to return the partial errors in case of error
 	switch rc {
 	case 0:
