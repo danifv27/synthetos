@@ -196,7 +196,7 @@ func (pl *loginPage) Do(c context.Context) (exporters.CucumberStatsSet, error) {
 	}()
 	// fmt.Printf("[DBG]Waiting for context done\n")
 	<-done
-	fmt.Printf(buf.String())
+	fmt.Println(buf.String())
 	if name, err := pl.GetScenarioName(); err != nil {
 		return pl.statsSet, errortree.Add(rcerror, "loginPage.Do", err)
 	} else {

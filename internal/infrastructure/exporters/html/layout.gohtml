@@ -45,7 +45,7 @@
                                 {{- range $scenario, $item := $set -}}
                                     {{- range $v := $item.Stats -}}
                                 <tr class="table__body-row">
-                                    <td class="table__body-cell"><a href="./history?id={{$i}}&scenario={{$scenario}}" target="_blank">{{$i}}</a></td>
+                                    <td class="table__body-cell"><a href="./history?id={{$i}}&scenario={{$scenario}}" target="popup" onclick="window.open('./history?id={{$i}}&scenario={{$scenario}}','popup','width=768 height=640'); return false;">{{$i}}</a></td>
                                     <td class="table__body-cell">{{$scenario}}</td>
                                     <td class="table__body-cell">{{$v.Id}}</td>
                                     <td class="table__body-cell">{{$v.Start}}</td>

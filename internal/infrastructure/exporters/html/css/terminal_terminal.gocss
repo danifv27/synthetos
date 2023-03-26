@@ -1,5 +1,5 @@
 {{define "terminal.css"}}
-<script>
+<style>
 .term-container {
     background: #171717;
     border-radius: 5px;
@@ -60,5 +60,5 @@
 //.term-proportional { }
 //.term-superscript { }
 //.term-subscript { }
-</script>
+</style>
 {{end}}
