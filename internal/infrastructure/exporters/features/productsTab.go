@@ -13,6 +13,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"github.com/iancoleman/strcase"
+	"github.com/sethvargo/go-retry"
 	"github.com/speijnik/go-errortree"
 )
 
@@ -231,12 +232,21 @@ func (pl *productsTab) iAmLoggedInToCreationPortal() error {
 	return nil
 }
 
-// FIXME: use implementation impl:=productTabImpl
 func (pl *productsTab) theUserSwitchesToTheModelViewWithBasicFilter() error {
 	var rcerror error
 	time.Sleep(5 * time.Second)
 
-	if err := pl.loadModelProductsPage(); err != nil {
+	ctx := context.Background()
+	impl := productTabsImpl{}
+	b := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxDuration(7*time.Second, b)
+	if err := retry.Do(ctx, b, func(ctx context.Context) error {
+		if err := impl.loadModelProductsPage(pl.ctx); err != nil {
+			// This marks the error as retryable
+			return retry.RetryableError(err)
+		}
+		return nil
+	}); err != nil {
 		takeSnapshot(pl.ctx, "theUserSwitchesToTheModelViewWithBasicFilter")
 		return errortree.Add(rcerror, "theUserSwitchesToTheModelViewWithBasicFilter", err)
 	}
@@ -244,13 +254,12 @@ func (pl *productsTab) theUserSwitchesToTheModelViewWithBasicFilter() error {
 	return nil
 }
 
-// FIXME: use implementation impl:=productTabImpl
 func (pl *productsTab) theModelInfoForTheAPPProductShouldBeDisplayed() error {
 	var rcerror error
 
 	time.Sleep(5 * time.Second)
-
-	if err := pl.loadModelDataInTable(); err != nil {
+	impl := productTabsImpl{}
+	if err := impl.loadModelDataInTable(pl.ctx); err != nil {
 		takeSnapshot(pl.ctx, "theModelInfoForTheAPPProductShouldBeDisplayed")
 		return errortree.Add(rcerror, "theModelInfoForTheAPPProductShouldBeDisplayed", err)
 	}
@@ -258,12 +267,12 @@ func (pl *productsTab) theModelInfoForTheAPPProductShouldBeDisplayed() error {
 	return nil
 }
 
-// FIXME: use implementation impl:=productTabImpl
 func (pl *productsTab) theUserClicksOnTheFirstProductInTheTableViewOnProductPage() error {
 	var rcerror error
 
 	time.Sleep(5 * time.Second)
-	if err := pl.loadArticleDataInfoFromTable(); err != nil {
+	impl := productTabsImpl{}
+	if err := impl.loadArticleDataInfoFromTable(pl.ctx); err != nil {
 		takeSnapshot(pl.ctx, "theUserClicksOnTheFirstProductInTheTableViewOnProductPage")
 		return errortree.Add(rcerror, "theUserClicksOnTheFirstProductInTheTableViewOnProductPage", err)
 	}
@@ -271,12 +280,12 @@ func (pl *productsTab) theUserClicksOnTheFirstProductInTheTableViewOnProductPage
 	return nil
 }
 
-// FIXME: use implementation impl:=productTabImpl
 func (pl *productsTab) theProductDetailsPageShouldBeLoaded() error {
 	var rcerror error
 	time.Sleep(5 * time.Second)
 
-	if err := pl.checkProductDetailsPage(); err != nil {
+	impl := productTabsImpl{}
+	if err := impl.checkProductDetailsPage(pl.ctx); err != nil {
 		takeSnapshot(pl.ctx, "theProductDetailsPageShouldBeLoaded")
 		return errortree.Add(rcerror, "theProductDetailsPageShouldBeLoaded", err)
 	}
