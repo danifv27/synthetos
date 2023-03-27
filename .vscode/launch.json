@@ -23,7 +23,9 @@
             "env": {
                 "SC_LOGGING_LEVEL": "debug",
                 "SC_TEST_AZURE_PASSWORD": "eIZtF6HG8C43$",
-                "SC_TEST_AZURE_USERNAME":"svc_chromedp_cucu@emea.adsint.biz"
+                "SC_TEST_AZURE_USERNAME":"svc_chromedp_cucu@emea.adsint.biz",
+                "SC_TEST_TIMEOUT": "2m",
+                "SC_TEST_SNAPSHOTS_FOLDER": "/Users/fraildan/tmp/snapshots",
             },
             "args": [
                 "test",

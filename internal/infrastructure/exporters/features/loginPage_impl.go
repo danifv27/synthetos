@@ -14,7 +14,9 @@ import (
 	"github.com/speijnik/go-errortree"
 )
 
-type loginPageImpl struct{}
+type loginPageImpl struct {
+	snapshotsFolder string
+}
 
 func (l *loginPageImpl) loadUserAndPasswordWindow(ctx context.Context, user string, pass string) error {
 	var rcerror error
@@ -53,7 +55,7 @@ func (l *loginPageImpl) loadUserAndPasswordWindow(ctx context.Context, user stri
 	}
 	// Click the "Sign in" button to proceed to the OAuth2 consent page
 	signInButton := `//input[@type='submit']`
-
+	time.Sleep(3 * time.Second)
 	c := context.Background()
 	b := retry.NewConstant(500 * time.Millisecond)
 	b = retry.WithMaxDuration(5*time.Second, b)
@@ -68,7 +70,7 @@ func (l *loginPageImpl) loadUserAndPasswordWindow(ctx context.Context, user stri
 				return retry.RetryableError(err)
 			}
 		}
-		fmt.Println("[DBG]success loadUserAndPasswordWindow:submitPassword")
+		// fmt.Println("[DBG]success loadUserAndPasswordWindow:submitPassword")
 		return nil
 	}); err != nil {
 		return errortree.Add(rcerror, "loadUserAndPasswordWindow:submitPassword", err)
@@ -182,50 +184,50 @@ func (l *loginPageImpl) doFeature(ctx context.Context, user string, pass string)
 	b = retry.WithMaxDuration(7*time.Second, b)
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err = impl.doAzureLogin(ctx); err != nil {
-			fmt.Println("[DBG]retry doAzureLogin")
+			// fmt.Println("[DBG]retry doAzureLogin")
+			takeSnapshot(ctx, l.snapshotsFolder, "iEnterMyUsernameAndPassword")
 			// This marks the error as retryable
 			return retry.RetryableError(err)
 		}
-		fmt.Println("[DBG]success doAzureLogin")
+		// fmt.Println("[DBG]success doAzureLogin")
 		return nil
 	}); err != nil {
-		takeSnapshot(ctx, "iEnterMyUsernameAndPassword")
 		return errortree.Add(rcerror, "doFeature.iEnterMyUsernameAndPassword", err)
 	}
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err = impl.loadUserAndPasswordWindow(ctx, user, pass); err != nil {
 			// This marks the error as retryable
-			fmt.Println("[DBG]retry loadUserAndPasswordWindow")
+			// fmt.Println("[DBG]retry loadUserAndPasswordWindow")
+			takeSnapshot(ctx, l.snapshotsFolder, "iEnterMyUsernameAndPassword")
 			return retry.RetryableError(err)
 		}
-		fmt.Println("[DBG]success loadUserAndPasswordWindow")
+		// fmt.Println("[DBG]success loadUserAndPasswordWindow")
 		return nil
 	}); err != nil {
-		takeSnapshot(ctx, "iEnterMyUsernameAndPassword")
 		return errortree.Add(rcerror, "doFeature.iEnterMyUsernameAndPassword", err)
 	}
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err = impl.loadConsentAzurePage(ctx); err != nil {
 			// This marks the error as retryable
-			fmt.Println("[DBG]retry loadConsentAzurePage")
+			// fmt.Println("[DBG]retry loadConsentAzurePage")
+			takeSnapshot(ctx, l.snapshotsFolder, "iClickTheLoginButton")
 			return retry.RetryableError(err)
 		}
-		fmt.Println("[DBG]success loadConsentAzurePage")
+		// fmt.Println("[DBG]success loadConsentAzurePage")
 		return nil
 	}); err != nil {
-		takeSnapshot(ctx, "iClickTheLoginButton")
 		return errortree.Add(rcerror, "doFeature.iClickTheLoginButton", err)
 	}
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err := impl.isMainFELoad(ctx); err != nil {
 			// This marks the error as retryable
-			fmt.Println("[DBG]retry isMainFELoad")
+			// fmt.Println("[DBG]retry isMainFELoad")
+			takeSnapshot(ctx, l.snapshotsFolder, "iShouldBeRedirectedToTheDashboardPage")
 			return retry.RetryableError(err)
 		}
-		fmt.Println("[DBG]success isMainFELoad")
+		// fmt.Println("[DBG]success isMainFELoad")
 		return nil
 	}); err != nil {
-		takeSnapshot(ctx, "iShouldBeRedirectedToTheDashboardPage")
 		return errortree.Add(rcerror, "doFeature.iShouldBeRedirectedToTheDashboardPage", err)
 	}
 

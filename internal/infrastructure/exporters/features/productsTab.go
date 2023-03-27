@@ -26,6 +26,7 @@ type productsTab struct {
 		id       string
 		password string
 	}
+	snapshotsFolder string
 }
 
 func NewProductsTabFeature(p string, opts ...exporters.ExporterOption) (exporters.CucumberPlugin, error) {
@@ -42,6 +43,22 @@ func NewProductsTabFeature(p string, opts ...exporters.ExporterOption) (exporter
 	}
 
 	return &l, nil
+}
+
+func WithProductsTabSnapshotFolder(path string) exporters.ExporterOption {
+
+	return exporters.ExportOptionFn(func(i interface{}) error {
+		var rcerror error
+		var pl *productsTab
+		var ok bool
+
+		if pl, ok = i.(*productsTab); ok {
+			pl.snapshotsFolder = path
+			return nil
+		}
+
+		return errortree.Add(rcerror, "WithProductsTabSnapshotFolder", errors.New("type mismatch, productsTab expected"))
+	})
 }
 
 func WithProductsTabLogger(l logger.Logger) exporters.ExporterOption {
@@ -242,13 +259,13 @@ func (pl *productsTab) theUserSwitchesToTheModelViewWithBasicFilter() error {
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err := impl.loadModelProductsPage(pl.ctx); err != nil {
 			fmt.Println("[DBG]retry loadModelProductsPage")
+			takeSnapshot(pl.ctx, pl.snapshotsFolder, "theUserSwitchesToTheModelViewWithBasicFilter")
 			// This marks the error as retryable
 			return retry.RetryableError(err)
 		}
-		fmt.Println("[DBG]success loadModelProductsPage")
+		// fmt.Println("[DBG]success loadModelProductsPage")
 		return nil
 	}); err != nil {
-		takeSnapshot(pl.ctx, "theUserSwitchesToTheModelViewWithBasicFilter")
 		return errortree.Add(rcerror, "theUserSwitchesToTheModelViewWithBasicFilter", err)
 	}
 
@@ -265,13 +282,13 @@ func (pl *productsTab) theModelInfoForTheAPPProductShouldBeDisplayed() error {
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err := impl.loadModelDataInTable(pl.ctx); err != nil {
 			fmt.Println("[DBG]retry loadModelDataInTable")
+			takeSnapshot(pl.ctx, pl.snapshotsFolder, "theModelInfoForTheAPPProductShouldBeDisplayed")
 			// This marks the error as retryable
 			return retry.RetryableError(err)
 		}
-		fmt.Println("[DBG]success loadModelDataInTable")
+		// fmt.Println("[DBG]success loadModelDataInTable")
 		return nil
 	}); err != nil {
-		takeSnapshot(pl.ctx, "theModelInfoForTheAPPProductShouldBeDisplayed")
 		return errortree.Add(rcerror, "theModelInfoForTheAPPProductShouldBeDisplayed", err)
 	}
 
@@ -288,13 +305,13 @@ func (pl *productsTab) theUserClicksOnTheFirstProductInTheTableViewOnProductPage
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err := impl.loadArticleDataInfoFromTable(pl.ctx); err != nil {
 			fmt.Println("[DBG]retry loadArticleDataInfoFromTable")
+			takeSnapshot(pl.ctx, pl.snapshotsFolder, "theUserClicksOnTheFirstProductInTheTableViewOnProductPage")
 			// This marks the error as retryable
 			return retry.RetryableError(err)
 		}
-		fmt.Println("[DBG]success loadArticleDataInfoFromTable")
+		// fmt.Println("[DBG]success loadArticleDataInfoFromTable")
 		return nil
 	}); err != nil {
-		takeSnapshot(pl.ctx, "theUserClicksOnTheFirstProductInTheTableViewOnProductPage")
 		return errortree.Add(rcerror, "theUserClicksOnTheFirstProductInTheTableViewOnProductPage", err)
 	}
 
@@ -311,13 +328,13 @@ func (pl *productsTab) theProductDetailsPageShouldBeLoaded() error {
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err := impl.checkProductDetailsPage(pl.ctx); err != nil {
 			fmt.Println("[DBG]retry checkProductDetailsPage")
+			takeSnapshot(pl.ctx, pl.snapshotsFolder, "theProductDetailsPageShouldBeLoaded")
 			// This marks the error as retryable
 			return retry.RetryableError(err)
 		}
-		fmt.Println("[DBG]success checkProductDetailsPage")
+		// fmt.Println("[DBG]success checkProductDetailsPage")
 		return nil
 	}); err != nil {
-		takeSnapshot(pl.ctx, "theProductDetailsPageShouldBeLoaded")
 		return errortree.Add(rcerror, "theProductDetailsPageShouldBeLoaded", err)
 	}
 

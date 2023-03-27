@@ -26,6 +26,7 @@ type loginPage struct {
 		id       string
 		password string
 	}
+	snapshotsFolder string
 }
 
 func NewLoginPageFeature(p string, opts ...exporters.ExporterOption) (exporters.CucumberPlugin, error) {
@@ -42,6 +43,22 @@ func NewLoginPageFeature(p string, opts ...exporters.ExporterOption) (exporters.
 	}
 
 	return &l, nil
+}
+
+func WithLoginPageSnapshotFolder(path string) exporters.ExporterOption {
+
+	return exporters.ExportOptionFn(func(i interface{}) error {
+		var rcerror error
+		var pl *loginPage
+		var ok bool
+
+		if pl, ok = i.(*loginPage); ok {
+			pl.snapshotsFolder = path
+			return nil
+		}
+
+		return errortree.Add(rcerror, "WithLoginPageSnapshotFolder", errors.New("type mismatch, loginPage expected"))
+	})
 }
 
 func WithLoginPageLogger(l logger.Logger) exporters.ExporterOption {
@@ -222,17 +239,20 @@ func (pl *loginPage) Do(c context.Context) (exporters.CucumberStatsSet, error) {
 func (pl *loginPage) iAmOnTheLoginPage() error {
 	var rcerror error
 
-	pl.Logger.WithFields(logger.Fields{
-		"name": "I am on the login page",
-	}).Debug("Executing step")
-	impl := loginPageImpl{}
+	// pl.Logger.WithFields(logger.Fields{
+	// 	"name": "I am on the login page",
+	// }).Debug("Executing step")
+	impl := loginPageImpl{
+		snapshotsFolder: pl.snapshotsFolder,
+	}
 	if err := impl.doAzureLogin(pl.ctx); err != nil {
-		takeSnapshot(pl.ctx, "iAmOnTheLoginPage")
+		takeSnapshot(pl.ctx, pl.snapshotsFolder, "iAmOnTheLoginPage")
 		return errortree.Add(rcerror, "iAmOnTheLoginPage", err)
 	}
-	pl.Logger.WithFields(logger.Fields{
-		"name": "I am on the login page",
-	}).Debug("Step done")
+	// takeSnapshot(pl.ctx, pl.snapshotsFolder, "iAmOnTheLoginPage_success")
+	// pl.Logger.WithFields(logger.Fields{
+	// 	"name": "I am on the login page",
+	// }).Debug("Step done")
 
 	return nil
 }
@@ -240,21 +260,23 @@ func (pl *loginPage) iAmOnTheLoginPage() error {
 func (pl *loginPage) iEnterMyUsernameAndPassword() error {
 	var rcerror error
 
-	impl := loginPageImpl{}
-
+	impl := loginPageImpl{
+		snapshotsFolder: pl.snapshotsFolder,
+	}
 	c := context.Background()
 	b := retry.NewConstant(500 * time.Millisecond)
 	b = retry.WithMaxDuration(7*time.Second, b)
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err := impl.loadUserAndPasswordWindow(pl.ctx, pl.auth.id, pl.auth.password); err != nil {
-			fmt.Println("[DBG]retry loadUserAndPasswordWindow")
+			// fmt.Println("[DBG]retry loadUserAndPasswordWindow")
+			takeSnapshot(pl.ctx, pl.snapshotsFolder, "iEnterMyUsernameAndPassword")
 			// This marks the error as retryable
 			return retry.RetryableError(err)
 		}
-		fmt.Println("[DBG]success loadUserAndPasswordWindow")
+		// fmt.Println("[DBG]success loadUserAndPasswordWindow")
+		// takeSnapshot(pl.ctx, pl.snapshotsFolder, "loadUserAndPasswordWindow_success")
 		return nil
 	}); err != nil {
-		takeSnapshot(pl.ctx, "iEnterMyUsernameAndPassword")
 		return errortree.Add(rcerror, "iEnterMyUsernameAndPassword", err)
 	}
 
@@ -264,20 +286,23 @@ func (pl *loginPage) iEnterMyUsernameAndPassword() error {
 func (pl *loginPage) iClickTheLoginButton() error {
 	var rcerror error
 
-	impl := loginPageImpl{}
+	impl := loginPageImpl{
+		snapshotsFolder: pl.snapshotsFolder,
+	}
 	c := context.Background()
 	b := retry.NewConstant(500 * time.Millisecond)
 	b = retry.WithMaxDuration(7*time.Second, b)
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err := impl.loadConsentAzurePage(pl.ctx); err != nil {
-			fmt.Println("[DBG]retry loadConsentAzurePage")
+			// fmt.Println("[DBG]retry loadConsentAzurePage")
+			takeSnapshot(pl.ctx, pl.snapshotsFolder, "iClickTheLoginButton")
 			// This marks the error as retryable
 			return retry.RetryableError(err)
 		}
-		fmt.Println("[DBG]success loadConsentAzurePage")
+		// fmt.Println("[DBG]success loadConsentAzurePage")
+		// takeSnapshot(pl.ctx, pl.snapshotsFolder, "loadConsentAzurePage_success")
 		return nil
 	}); err != nil {
-		takeSnapshot(pl.ctx, "iClickTheLoginButton")
 		return errortree.Add(rcerror, "iClickTheLoginButton", err)
 	}
 
@@ -287,21 +312,25 @@ func (pl *loginPage) iClickTheLoginButton() error {
 func (pl *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
 	var rcerror error
 
-	impl := loginPageImpl{}
+	impl := loginPageImpl{
+		snapshotsFolder: pl.snapshotsFolder,
+	}
 	c := context.Background()
 	b := retry.NewConstant(500 * time.Millisecond)
 	b = retry.WithMaxDuration(7*time.Second, b)
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err := impl.isMainFELoad(pl.ctx); err != nil {
-			fmt.Println("[DBG]retry isMainFELoad")
+			// fmt.Println("[DBG]retry isMainFELoad")
+			takeSnapshot(pl.ctx, pl.snapshotsFolder, "iShouldBeRedirectedToTheDashboardPage")
 			// This marks the error as retryable
 			return retry.RetryableError(err)
 		}
-		fmt.Println("[DBG]success isMainFELoad")
+		// fmt.Println("[DBG]success isMainFELoad")
+		takeSnapshot(pl.ctx, pl.snapshotsFolder, "isMainFELoad_success")
 		return nil
 	}); err != nil {
-		takeSnapshot(pl.ctx, "iShouldBeRedirectedToTheDashboardPage")
 		return errortree.Add(rcerror, "iShouldBeRedirectedToTheDashboardPage", err)
 	}
+
 	return nil
 }
