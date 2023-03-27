@@ -7,21 +7,22 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/chromedp/chromedp"
 	"github.com/speijnik/go-errortree"
 )
 
 func takeSnapshot(ctx context.Context, folder string, stepName string) error {
-
 	var rcerror, err error
-	// take screenshot
 	var buf []byte
+
 	if err = chromedp.Run(ctx, chromedp.CaptureScreenshot(&buf)); err != nil && !errors.Is(err, context.DeadlineExceeded) {
 		return errortree.Add(rcerror, "failed to take snapshot", err)
 	}
 	// save screenshot to file
-	if err = os.WriteFile(fmt.Sprintf("%s.png", path.Join(folder, stepName)), buf, 0644); err != nil {
+	fileName := fmt.Sprintf("%s-%s.png", time.Now().Format("20060102150405"), stepName)
+	if err = os.WriteFile(path.Join(folder, fileName), buf, 0644); err != nil {
 		return errortree.Add(rcerror, "failed to save snapshot", err)
 	}
 

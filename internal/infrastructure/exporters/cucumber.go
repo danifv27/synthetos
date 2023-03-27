@@ -93,6 +93,7 @@ func WithCucumberOptions(c *exporters.CucumberExporter, opts ...ExporterOption) 
 	return nil
 }
 
+// TODO: add tiemeout per target
 func WithCucumberTimeout(t time.Duration) ExporterOption {
 
 	return ExportOptionFn(func(i interface{}) error {
@@ -161,6 +162,7 @@ func (c *cucumberHandler) registerCucumberPlugin(k string, v CucumberPlugin) err
 
 func (c *cucumberHandler) ProbesEndpoint(w http.ResponseWriter, r *http.Request) {
 
+	//FIXME: timeout is not the metrics timeout, it's the handle
 	ctx, cancel := context.WithTimeout(r.Context(), c.timeout)
 	defer cancel()
 	reqWithTimeout := r.WithContext(ctx)
@@ -227,6 +229,7 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 	registry.MustRegister(scenarioSuccessGaugeVec)
 	registry.MustRegister(stepSuccessGaugeVec)
 	registry.MustRegister(stepDurationGaugeVec)
+	//FIXME: add context withTimeout to avoid endless requests
 	ctx, cancelFn := context.WithCancel(r.Context())
 	ct := context.WithValue(ctx, ContextKeyTargetUrl, target)
 	defer cancelFn()

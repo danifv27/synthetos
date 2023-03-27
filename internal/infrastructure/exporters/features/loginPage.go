@@ -187,7 +187,7 @@ func (pl *loginPage) Do(c context.Context) (exporters.CucumberStatsSet, error) {
 	} else {
 
 		godogOpts = godog.Options{
-			//TODO: Remove colored output after debugging
+
 			// Output: io.Discard,
 			// Output: colors.Colored(os.Stdout),
 			Output: colors.Colored(buf),
@@ -326,7 +326,7 @@ func (pl *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
 			return retry.RetryableError(err)
 		}
 		// fmt.Println("[DBG]success isMainFELoad")
-		takeSnapshot(pl.ctx, pl.snapshotsFolder, "isMainFELoad_success")
+		// takeSnapshot(pl.ctx, pl.snapshotsFolder, "isMainFELoad_success")
 		return nil
 	}); err != nil {
 		return errortree.Add(rcerror, "iShouldBeRedirectedToTheDashboardPage", err)

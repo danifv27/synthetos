@@ -20,7 +20,7 @@ ARG GROUP_NAME=adidas
 #    adduser --shell /sbin/nologin --disabled-password \
 #    --no-create-home --uid $USER_ID --ingroup $GROUP_NAME $USER_NAME
 
-RUN mkdir -p /app/bin; mkdir -p /app/config
+RUN mkdir -p /app/{bin,config,snapshots,features}
 
 #Add delve to current build
 COPY --from=build-env /go/bin/dlv /usr/local/bin

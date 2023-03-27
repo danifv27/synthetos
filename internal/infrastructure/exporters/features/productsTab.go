@@ -186,9 +186,7 @@ func (pl *productsTab) Do(c context.Context) (exporters.CucumberStatsSet, error)
 	if content, err := exporters.GetFeature(exporters.FeaturesFS, pl.featureFolder); err != nil {
 		return pl.statsSet, errortree.Add(rcerror, "productsTab.Do", err)
 	} else {
-
 		godogOpts = godog.Options{
-			//TODO: Remove colored output after debugging
 			// Output: io.Discard,
 			// Output: colors.Colored(os.Stdout),
 			Output: colors.Colored(buf),
