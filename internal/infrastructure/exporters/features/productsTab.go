@@ -256,7 +256,7 @@ func (pl *productsTab) theUserSwitchesToTheModelViewWithBasicFilter() error {
 	b = retry.WithMaxDuration(7*time.Second, b)
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err := impl.loadModelProductsPage(pl.ctx); err != nil {
-			fmt.Println("[DBG]retry loadModelProductsPage")
+			// fmt.Println("[DBG]retry loadModelProductsPage")
 			takeSnapshot(pl.ctx, pl.snapshotsFolder, "theUserSwitchesToTheModelViewWithBasicFilter")
 			// This marks the error as retryable
 			return retry.RetryableError(err)
@@ -279,7 +279,7 @@ func (pl *productsTab) theModelInfoForTheAPPProductShouldBeDisplayed() error {
 	b = retry.WithMaxDuration(7*time.Second, b)
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err := impl.loadModelDataInTable(pl.ctx); err != nil {
-			fmt.Println("[DBG]retry loadModelDataInTable")
+			// fmt.Println("[DBG]retry loadModelDataInTable")
 			takeSnapshot(pl.ctx, pl.snapshotsFolder, "theModelInfoForTheAPPProductShouldBeDisplayed")
 			// This marks the error as retryable
 			return retry.RetryableError(err)
@@ -302,7 +302,7 @@ func (pl *productsTab) theUserClicksOnTheFirstProductInTheTableViewOnProductPage
 	b = retry.WithMaxDuration(7*time.Second, b)
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err := impl.loadArticleDataInfoFromTable(pl.ctx); err != nil {
-			fmt.Println("[DBG]retry loadArticleDataInfoFromTable")
+			// fmt.Println("[DBG]retry loadArticleDataInfoFromTable")
 			takeSnapshot(pl.ctx, pl.snapshotsFolder, "theUserClicksOnTheFirstProductInTheTableViewOnProductPage")
 			// This marks the error as retryable
 			return retry.RetryableError(err)
@@ -325,7 +325,7 @@ func (pl *productsTab) theProductDetailsPageShouldBeLoaded() error {
 	b = retry.WithMaxDuration(7*time.Second, b)
 	if err := retry.Do(c, b, func(ct context.Context) error {
 		if err := impl.checkProductDetailsPage(pl.ctx); err != nil {
-			fmt.Println("[DBG]retry checkProductDetailsPage")
+			// fmt.Println("[DBG]retry checkProductDetailsPage")
 			takeSnapshot(pl.ctx, pl.snapshotsFolder, "theProductDetailsPageShouldBeLoaded")
 			// This marks the error as retryable
 			return retry.RetryableError(err)

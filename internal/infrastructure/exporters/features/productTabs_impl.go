@@ -55,10 +55,11 @@ func (pl *productTabsImpl) loadArticleDataInfoFromTable(ctx context.Context) err
 
 	modelNumber := ""
 	season := ""
-
-	err = waitUntilLoads(ctx, `[col-id="mdl.modelNumber"]`)
-	if err != nil {
-		return errortree.Add(rcerror, "isMainFELoad", errors.New("failed to load first element table in main page"))
+	if target, err = exporters.StringFromContext(ctx, exporters.ContextKeyTargetUrl); err != nil {
+		return errortree.Add(rcerror, "loadArticleDataInfoFromTable:composeURL", err)
+	}
+	if err = waitUntilLoads(ctx, `[col-id="mdl.modelNumber"]`); err != nil {
+		return errortree.Add(rcerror, "loadArticleDataInfoFromTable", errors.New("failed waiting for modelNumber"))
 	}
 	err = chromedp.Run(ctx, chromedp.Evaluate(`document.querySelectorAll('[col-id="mdl.modelNumber"]')[1].textContent !== null ? document.querySelectorAll('[col-id="mdl.modelNumber"]')[1].textContent : null`, &modelNumber))
 	if err != nil {
