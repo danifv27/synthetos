@@ -22,8 +22,9 @@ type ExporterCmd struct {
 }
 
 type ExporterFlags struct {
-	FeaturesFolder string        `help:"path to gherkin features folder" prefix:"test." hidden:"" default:"./features" env:"SC_TEST_FEATURES_FOLDER"`
-	Timeout        time.Duration `help:"maximum amount of time that we should wait for a step or scenario to complete before timing out and marking the test as failed" prefix:"test." default:"1m" env:"SC_TEST_TIMEOUT"`
+	FeaturesFolder  string        `help:"path to gherkin features folder" prefix:"test." hidden:"" default:"./features" env:"SC_TEST_FEATURES_FOLDER"`
+	SnapshotsFolder string        `help:"path to chromedp snapshots folder" prefix:"test." hidden:"" default:"./snapshots" env:"SC_TEST_SNAPSHOTS_FOLDER"`
+	Timeout         time.Duration `help:"maximum amount of time that we should wait for a step or scenario to complete before timing out and marking the test as failed" prefix:"test." default:"1m" env:"SC_TEST_TIMEOUT"`
 	// TargetURL      string        `help:"URL to check against" prefix:"test." env:"SC_TEST_TARGET_URL"`
 	Auth struct {
 		Id       string `help:"name used for authentication" prefix:"test." env:"SC_TEST_AZURE_USERNAME" hidden:""`
@@ -63,6 +64,7 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 	if login, err = ifeatures.NewLoginPageFeature(cli.Test.Flags.FeaturesFolder,
 		ifeatures.WithLoginPageAuth(cli.Test.Flags.Auth.Id, cli.Test.Flags.Auth.Password),
 		ifeatures.WithLoginPageLogger(c.Apps.Logger),
+		ifeatures.WithLoginPageSnapshotFolder(cli.Test.Flags.SnapshotsFolder),
 	); err != nil {
 		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeExporterCmd", e)
@@ -73,6 +75,7 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 	if products, err = ifeatures.NewProductsTabFeature(cli.Test.Flags.FeaturesFolder,
 		ifeatures.WithProductsTabAuth(cli.Test.Flags.Auth.Id, cli.Test.Flags.Auth.Password),
 		ifeatures.WithProductsTabLogger(c.Apps.Logger),
+		ifeatures.WithProductsTabSnapshotFolder(cli.Test.Flags.SnapshotsFolder),
 	); err != nil {
 		if e := SetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeExporterCmd", e)
@@ -84,6 +87,7 @@ func initializeExporterCmd(ctx floc.Context, ctrl floc.Control) error {
 		infrastructure.WithHealthchecker(cli.Test.Flags.Probes.RootPrefix),
 		infrastructure.WithCucumberExporter(
 			iexporters.WithCucumberRootPrefix(cli.Test.Flags.Metrics.RootPrefix),
+			iexporters.WithCucumberHistoryEndpoint(cli.Test.Flags.Metrics.RootPrefix),
 			iexporters.WithCucumberTimeout(cli.Test.Flags.Timeout),
 			iexporters.WithCucumberPlugin("loginPage", login),
 			iexporters.WithCucumberPlugin("productsTab", products),

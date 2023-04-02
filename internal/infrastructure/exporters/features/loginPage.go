@@ -1,10 +1,10 @@
 package features
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path"
 	"time"
 
@@ -13,6 +13,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"github.com/iancoleman/strcase"
+	"github.com/sethvargo/go-retry"
 	"github.com/speijnik/go-errortree"
 )
 
@@ -20,11 +21,12 @@ type loginPage struct {
 	logger.Logger
 	featureFolder string
 	ctx           context.Context
-	stats         exporters.CucumberStatsSet
+	statsSet      exporters.CucumberStatsSet
 	auth          struct {
 		id       string
 		password string
 	}
+	snapshotsFolder string
 }
 
 func NewLoginPageFeature(p string, opts ...exporters.ExporterOption) (exporters.CucumberPlugin, error) {
@@ -41,6 +43,22 @@ func NewLoginPageFeature(p string, opts ...exporters.ExporterOption) (exporters.
 	}
 
 	return &l, nil
+}
+
+func WithLoginPageSnapshotFolder(path string) exporters.ExporterOption {
+
+	return exporters.ExportOptionFn(func(i interface{}) error {
+		var rcerror error
+		var pl *loginPage
+		var ok bool
+
+		if pl, ok = i.(*loginPage); ok {
+			pl.snapshotsFolder = path
+			return nil
+		}
+
+		return errortree.Add(rcerror, "WithLoginPageSnapshotFolder", errors.New("type mismatch, loginPage expected"))
+	})
 }
 
 func WithLoginPageLogger(l logger.Logger) exporters.ExporterOption {
@@ -80,7 +98,7 @@ func (pl *loginPage) suiteInit(ctx *godog.TestSuiteContext) {
 
 	ctx.BeforeSuite(func() {
 		// This code will be executed once, before any scenarios are run
-		pl.stats = make(map[string][]exporters.CucumberStats)
+		pl.statsSet = make(map[string]exporters.CucumberStatsItem)
 	})
 }
 
@@ -111,7 +129,9 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 		if name, err := exporters.StringFromContext(c, exporters.ContextKeyScenarioName); err != nil {
 			return c, errortree.Add(rcerror, "step.Before", err)
 		} else {
-			pl.stats[name] = append(pl.stats[name], stat)
+			item := pl.statsSet[name]
+			item.Stats = append(item.Stats, stat)
+			pl.statsSet[name] = item
 		}
 
 		return c, nil
@@ -121,7 +141,7 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 		if name, e := exporters.StringFromContext(c, exporters.ContextKeyScenarioName); e != nil {
 			return c, errortree.Add(rcerror, "step.After", e)
 		} else {
-			stat := pl.stats[name][len(pl.stats[name])-1]
+			stat := pl.statsSet[name].Stats[len(pl.statsSet[name].Stats)-1]
 			stat.Duration = time.Since(stat.Start)
 			if err != nil {
 				stat.Result = exporters.CucumberFailure
@@ -135,7 +155,7 @@ func (pl *loginPage) scenarioInit(ctx *godog.ScenarioContext) {
 					stat.Result = exporters.CucumberNotExecuted
 				}
 			}
-			pl.stats[name][len(pl.stats[name])-1] = stat
+			pl.statsSet[name].Stats[len(pl.statsSet[name].Stats)-1] = stat
 		}
 		return c, nil
 	})
@@ -155,19 +175,22 @@ func (pl *loginPage) GetScenarioName() (string, error) {
 	return exporters.StringFromContext(pl.ctx, exporters.ContextKeyScenarioName)
 }
 
-func (pl *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters.CucumberStatsSet, error) {
+func (pl *loginPage) Do(c context.Context) (exporters.CucumberStatsSet, error) {
 	var rcerror error
 	var rc int
 	var godogOpts godog.Options
 
 	pl.ctx = c
+	buf := new(bytes.Buffer)
 	if content, err := exporters.GetFeature(exporters.FeaturesFS, pl.featureFolder); err != nil {
-		return pl.stats, errortree.Add(rcerror, "loginPage.Do", err)
+		return pl.statsSet, errortree.Add(rcerror, "loginPage.Do", err)
 	} else {
+
 		godogOpts = godog.Options{
-			//TODO: Remove colored output after debugging
+
 			// Output: io.Discard,
-			Output: colors.Colored(os.Stdout),
+			// Output: colors.Colored(os.Stdout),
+			Output: colors.Colored(buf),
 			//pretty, progress, cucumber, events and junit
 			Format:        "pretty",
 			StopOnFailure: true,
@@ -190,16 +213,24 @@ func (pl *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters
 	}()
 	// fmt.Printf("[DBG]Waiting for context done\n")
 	<-done
+	fmt.Println(buf.String())
+	if name, err := pl.GetScenarioName(); err != nil {
+		return pl.statsSet, errortree.Add(rcerror, "loginPage.Do", err)
+	} else {
+		item := pl.statsSet[name]
+		item.Output = buf.String()
+		pl.statsSet[name] = item
+	}
 	// We have to return l.stats always to return the partial errors in case of error
 	switch rc {
 	case 0:
-		return pl.stats, nil
+		return pl.statsSet, nil
 	case 1:
-		return pl.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error  %d: failed test suite", rc))
+		return pl.statsSet, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error  %d: failed test suite", rc))
 	case 2:
-		return pl.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d:command line usage error running test suite", rc))
+		return pl.statsSet, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d:command line usage error running test suite", rc))
 	default:
-		return pl.stats, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d running test suite", rc))
+		return pl.statsSet, errortree.Add(rcerror, "loginPage.Do", fmt.Errorf("error %d running test suite", rc))
 	}
 
 	//return l.stats, nil
@@ -208,17 +239,20 @@ func (pl *loginPage) Do(c context.Context, cancel context.CancelFunc) (exporters
 func (pl *loginPage) iAmOnTheLoginPage() error {
 	var rcerror error
 
-	pl.Logger.WithFields(logger.Fields{
-		"name": "I am on the login page",
-	}).Debug("Executing step")
-	impl := loginPageImpl{}
+	// pl.Logger.WithFields(logger.Fields{
+	// 	"name": "I am on the login page",
+	// }).Debug("Executing step")
+	impl := loginPageImpl{
+		snapshotsFolder: pl.snapshotsFolder,
+	}
 	if err := impl.doAzureLogin(pl.ctx); err != nil {
-		takeSnapshot(pl.ctx, "iAmOnTheLoginPage")
+		takeSnapshot(pl.ctx, pl.snapshotsFolder, "iAmOnTheLoginPage")
 		return errortree.Add(rcerror, "iAmOnTheLoginPage", err)
 	}
-	pl.Logger.WithFields(logger.Fields{
-		"name": "I am on the login page",
-	}).Debug("Step done")
+	// takeSnapshot(pl.ctx, pl.snapshotsFolder, "iAmOnTheLoginPage_success")
+	// pl.Logger.WithFields(logger.Fields{
+	// 	"name": "I am on the login page",
+	// }).Debug("Step done")
 
 	return nil
 }
@@ -226,10 +260,23 @@ func (pl *loginPage) iAmOnTheLoginPage() error {
 func (pl *loginPage) iEnterMyUsernameAndPassword() error {
 	var rcerror error
 
-	time.Sleep(5 * time.Second)
-	impl := loginPageImpl{}
-	if err := impl.loadUserAndPasswordWindow(pl.ctx, pl.auth.id, pl.auth.password); err != nil {
-		takeSnapshot(pl.ctx, "iEnterMyUsernameAndPassword")
+	impl := loginPageImpl{
+		snapshotsFolder: pl.snapshotsFolder,
+	}
+	c := context.Background()
+	b := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxDuration(7*time.Second, b)
+	if err := retry.Do(c, b, func(ct context.Context) error {
+		if err := impl.loadUserAndPasswordWindow(pl.ctx, pl.auth.id, pl.auth.password); err != nil {
+			// fmt.Println("[DBG]retry loadUserAndPasswordWindow")
+			takeSnapshot(pl.ctx, pl.snapshotsFolder, "iEnterMyUsernameAndPassword")
+			// This marks the error as retryable
+			return retry.RetryableError(err)
+		}
+		// fmt.Println("[DBG]success loadUserAndPasswordWindow")
+		// takeSnapshot(pl.ctx, pl.snapshotsFolder, "loadUserAndPasswordWindow_success")
+		return nil
+	}); err != nil {
 		return errortree.Add(rcerror, "iEnterMyUsernameAndPassword", err)
 	}
 
@@ -239,23 +286,51 @@ func (pl *loginPage) iEnterMyUsernameAndPassword() error {
 func (pl *loginPage) iClickTheLoginButton() error {
 	var rcerror error
 
-	time.Sleep(5 * time.Second)
-	impl := loginPageImpl{}
-	if err := impl.loadConsentAzurePage(pl.ctx); err != nil {
-		takeSnapshot(pl.ctx, "iClickTheLoginButton")
+	impl := loginPageImpl{
+		snapshotsFolder: pl.snapshotsFolder,
+	}
+	c := context.Background()
+	b := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxDuration(7*time.Second, b)
+	if err := retry.Do(c, b, func(ct context.Context) error {
+		if err := impl.loadConsentAzurePage(pl.ctx); err != nil {
+			// fmt.Println("[DBG]retry loadConsentAzurePage")
+			takeSnapshot(pl.ctx, pl.snapshotsFolder, "iClickTheLoginButton")
+			// This marks the error as retryable
+			return retry.RetryableError(err)
+		}
+		// fmt.Println("[DBG]success loadConsentAzurePage")
+		// takeSnapshot(pl.ctx, pl.snapshotsFolder, "loadConsentAzurePage_success")
+		return nil
+	}); err != nil {
 		return errortree.Add(rcerror, "iClickTheLoginButton", err)
 	}
+
 	return nil
 }
 
 func (pl *loginPage) iShouldBeRedirectedToTheDashboardPage() error {
 	var rcerror error
 
-	time.Sleep(5 * time.Second)
-	impl := loginPageImpl{}
-	if err := impl.isMainFELoad(pl.ctx); err != nil {
-		takeSnapshot(pl.ctx, "iShouldBeRedirectedToTheDashboardPage")
+	impl := loginPageImpl{
+		snapshotsFolder: pl.snapshotsFolder,
+	}
+	c := context.Background()
+	b := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxDuration(7*time.Second, b)
+	if err := retry.Do(c, b, func(ct context.Context) error {
+		if err := impl.isMainFELoad(pl.ctx); err != nil {
+			// fmt.Println("[DBG]retry isMainFELoad")
+			takeSnapshot(pl.ctx, pl.snapshotsFolder, "iShouldBeRedirectedToTheDashboardPage")
+			// This marks the error as retryable
+			return retry.RetryableError(err)
+		}
+		// fmt.Println("[DBG]success isMainFELoad")
+		// takeSnapshot(pl.ctx, pl.snapshotsFolder, "isMainFELoad_success")
+		return nil
+	}); err != nil {
 		return errortree.Add(rcerror, "iShouldBeRedirectedToTheDashboardPage", err)
 	}
+
 	return nil
 }

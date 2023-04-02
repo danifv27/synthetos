@@ -2,44 +2,47 @@ package features
 
 import (
 	"context"
-	"io/ioutil"
+	"errors"
+	"fmt"
+	"os"
+	"path"
 	"strings"
+	"time"
 
 	"github.com/chromedp/chromedp"
 	"github.com/speijnik/go-errortree"
 )
 
-func takeSnapshot(ctx context.Context, stepName string) error {
-
-	var rcerror error
-	// take screenshot
+func takeSnapshot(ctx context.Context, folder string, stepName string) error {
+	var rcerror, err error
 	var buf []byte
-	err := chromedp.Run(ctx,
-		chromedp.CaptureScreenshot(&buf),
-	)
-	if err != nil {
+
+	if err = chromedp.Run(ctx, chromedp.CaptureScreenshot(&buf)); err != nil && !errors.Is(err, context.DeadlineExceeded) {
 		return errortree.Add(rcerror, "failed to take snapshot", err)
 	}
-
 	// save screenshot to file
-	err = ioutil.WriteFile("/app/bin/features/snapshots/"+stepName+".png", buf, 0644)
-	if err != nil {
+	fileName := fmt.Sprintf("%s-%s.png", time.Now().Format("20060102150405"), stepName)
+	if err = os.WriteFile(path.Join(folder, fileName), buf, 0644); err != nil {
 		return errortree.Add(rcerror, "failed to save snapshot", err)
 	}
+
 	return nil
 }
 
 func getSeasonFrom(season string) string {
 	var seasonNumber string
+
 	numStr := season[len(season)-2:]
 	if strings.Contains(season, "SS") {
 		seasonNumber = "20" + numStr + "1"
 	} else {
 		seasonNumber = "20" + numStr + "0"
 	}
+
 	return seasonNumber
 }
 
+// FIXME: this wait would last forever
 func waitUntilLoads(ctx context.Context, elementQuery string) error {
 	var rcerror error
 	for {

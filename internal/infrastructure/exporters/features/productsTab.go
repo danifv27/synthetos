@@ -1,10 +1,10 @@
 package features
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path"
 	"time"
 
@@ -13,6 +13,7 @@ import (
 	"github.com/cucumber/godog"
 	"github.com/cucumber/godog/colors"
 	"github.com/iancoleman/strcase"
+	"github.com/sethvargo/go-retry"
 	"github.com/speijnik/go-errortree"
 )
 
@@ -20,11 +21,12 @@ type productsTab struct {
 	logger.Logger
 	featureFolder string
 	ctx           context.Context
-	stats         exporters.CucumberStatsSet
+	statsSet      exporters.CucumberStatsSet
 	auth          struct {
 		id       string
 		password string
 	}
+	snapshotsFolder string
 }
 
 func NewProductsTabFeature(p string, opts ...exporters.ExporterOption) (exporters.CucumberPlugin, error) {
@@ -41,6 +43,22 @@ func NewProductsTabFeature(p string, opts ...exporters.ExporterOption) (exporter
 	}
 
 	return &l, nil
+}
+
+func WithProductsTabSnapshotFolder(path string) exporters.ExporterOption {
+
+	return exporters.ExportOptionFn(func(i interface{}) error {
+		var rcerror error
+		var pl *productsTab
+		var ok bool
+
+		if pl, ok = i.(*productsTab); ok {
+			pl.snapshotsFolder = path
+			return nil
+		}
+
+		return errortree.Add(rcerror, "WithProductsTabSnapshotFolder", errors.New("type mismatch, productsTab expected"))
+	})
 }
 
 func WithProductsTabLogger(l logger.Logger) exporters.ExporterOption {
@@ -80,7 +98,7 @@ func (pl *productsTab) suiteInit(ctx *godog.TestSuiteContext) {
 
 	ctx.BeforeSuite(func() {
 		// This code will be executed once, before any scenarios are run
-		pl.stats = make(map[string][]exporters.CucumberStats)
+		pl.statsSet = make(map[string]exporters.CucumberStatsItem)
 	})
 }
 
@@ -111,7 +129,9 @@ func (pl *productsTab) scenarioInit(ctx *godog.ScenarioContext) {
 		if name, err := exporters.StringFromContext(c, exporters.ContextKeyScenarioName); err != nil {
 			return c, errortree.Add(rcerror, "step.Before", err)
 		} else {
-			pl.stats[name] = append(pl.stats[name], stat)
+			item := pl.statsSet[name]
+			item.Stats = append(item.Stats, stat)
+			pl.statsSet[name] = item
 		}
 
 		return c, nil
@@ -121,7 +141,7 @@ func (pl *productsTab) scenarioInit(ctx *godog.ScenarioContext) {
 		if name, e := exporters.StringFromContext(c, exporters.ContextKeyScenarioName); e != nil {
 			return c, errortree.Add(rcerror, "step.After", e)
 		} else {
-			stat := pl.stats[name][len(pl.stats[name])-1]
+			stat := pl.statsSet[name].Stats[len(pl.statsSet[name].Stats)-1]
 			stat.Duration = time.Since(stat.Start)
 			if err != nil {
 				stat.Result = exporters.CucumberFailure
@@ -135,7 +155,7 @@ func (pl *productsTab) scenarioInit(ctx *godog.ScenarioContext) {
 					stat.Result = exporters.CucumberNotExecuted
 				}
 			}
-			pl.stats[name][len(pl.stats[name])-1] = stat
+			pl.statsSet[name].Stats[len(pl.statsSet[name].Stats)-1] = stat
 		}
 		return c, nil
 	})
@@ -156,19 +176,20 @@ func (pl *productsTab) GetScenarioName() (string, error) {
 	return exporters.StringFromContext(pl.ctx, exporters.ContextKeyScenarioName)
 }
 
-func (pl *productsTab) Do(c context.Context, cancel context.CancelFunc) (exporters.CucumberStatsSet, error) {
+func (pl *productsTab) Do(c context.Context) (exporters.CucumberStatsSet, error) {
 	var rcerror error
 	var rc int
 	var godogOpts godog.Options
 
 	pl.ctx = c
+	buf := new(bytes.Buffer)
 	if content, err := exporters.GetFeature(exporters.FeaturesFS, pl.featureFolder); err != nil {
-		return pl.stats, errortree.Add(rcerror, "loginPage.Do", err)
+		return pl.statsSet, errortree.Add(rcerror, "productsTab.Do", err)
 	} else {
 		godogOpts = godog.Options{
-			//TODO: Remove colored output after debugging
 			// Output: io.Discard,
-			Output: colors.Colored(os.Stdout),
+			// Output: colors.Colored(os.Stdout),
+			Output: colors.Colored(buf),
 			//pretty, progress, cucumber, events and junit
 			Format:        "pretty",
 			StopOnFailure: true,
@@ -191,16 +212,24 @@ func (pl *productsTab) Do(c context.Context, cancel context.CancelFunc) (exporte
 	}()
 	// fmt.Printf("[DBG]Waiting for context done\n")
 	<-done
+	fmt.Println(buf.String())
+	if name, err := pl.GetScenarioName(); err != nil {
+		return pl.statsSet, errortree.Add(rcerror, "loginPage.Do", err)
+	} else {
+		item := pl.statsSet[name]
+		item.Output = buf.String()
+		pl.statsSet[name] = item
+	}
 	// We have to return l.stats always to return the partial errors in case of error
 	switch rc {
 	case 0:
-		return pl.stats, nil
+		return pl.statsSet, nil
 	case 1:
-		return pl.stats, errortree.Add(rcerror, "productsTab.Do", fmt.Errorf("error  %d: failed test suite", rc))
+		return pl.statsSet, errortree.Add(rcerror, "productsTab.Do", fmt.Errorf("error  %d: failed test suite", rc))
 	case 2:
-		return pl.stats, errortree.Add(rcerror, "productsTab.Do", fmt.Errorf("error %d:command line usage error running test suite", rc))
+		return pl.statsSet, errortree.Add(rcerror, "productsTab.Do", fmt.Errorf("error %d:command line usage error running test suite", rc))
 	default:
-		return pl.stats, errortree.Add(rcerror, "productsTab.Do", fmt.Errorf("error %d running test suite", rc))
+		return pl.statsSet, errortree.Add(rcerror, "productsTab.Do", fmt.Errorf("error %d running test suite", rc))
 	}
 
 	//return l.stats, nil
@@ -211,8 +240,7 @@ func (pl *productsTab) iAmLoggedInToCreationPortal() error {
 
 	impl := loginPageImpl{}
 
-	err := impl.doFeature(pl.ctx, pl.auth.id, pl.auth.password)
-	if err != nil {
+	if err := impl.doFeature(pl.ctx, pl.auth.id, pl.auth.password); err != nil {
 		return errortree.Add(rcerror, "iAmLoggedInToCreationPortal", err)
 	}
 
@@ -221,10 +249,21 @@ func (pl *productsTab) iAmLoggedInToCreationPortal() error {
 
 func (pl *productsTab) theUserSwitchesToTheModelViewWithBasicFilter() error {
 	var rcerror error
-	time.Sleep(5 * time.Second)
 
-	err := pl.loadModelProductsPage()
-	if err != nil {
+	impl := productTabsImpl{}
+	c := context.Background()
+	b := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxDuration(7*time.Second, b)
+	if err := retry.Do(c, b, func(ct context.Context) error {
+		if err := impl.loadModelProductsPage(pl.ctx); err != nil {
+			// fmt.Println("[DBG]retry loadModelProductsPage")
+			takeSnapshot(pl.ctx, pl.snapshotsFolder, "theUserSwitchesToTheModelViewWithBasicFilter")
+			// This marks the error as retryable
+			return retry.RetryableError(err)
+		}
+		// fmt.Println("[DBG]success loadModelProductsPage")
+		return nil
+	}); err != nil {
 		return errortree.Add(rcerror, "theUserSwitchesToTheModelViewWithBasicFilter", err)
 	}
 
@@ -234,10 +273,20 @@ func (pl *productsTab) theUserSwitchesToTheModelViewWithBasicFilter() error {
 func (pl *productsTab) theModelInfoForTheAPPProductShouldBeDisplayed() error {
 	var rcerror error
 
-	time.Sleep(5 * time.Second)
-
-	err := pl.loadModelDataInTable()
-	if err != nil {
+	impl := productTabsImpl{}
+	c := context.Background()
+	b := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxDuration(7*time.Second, b)
+	if err := retry.Do(c, b, func(ct context.Context) error {
+		if err := impl.loadModelDataInTable(pl.ctx); err != nil {
+			// fmt.Println("[DBG]retry loadModelDataInTable")
+			takeSnapshot(pl.ctx, pl.snapshotsFolder, "theModelInfoForTheAPPProductShouldBeDisplayed")
+			// This marks the error as retryable
+			return retry.RetryableError(err)
+		}
+		// fmt.Println("[DBG]success loadModelDataInTable")
+		return nil
+	}); err != nil {
 		return errortree.Add(rcerror, "theModelInfoForTheAPPProductShouldBeDisplayed", err)
 	}
 
@@ -247,9 +296,20 @@ func (pl *productsTab) theModelInfoForTheAPPProductShouldBeDisplayed() error {
 func (pl *productsTab) theUserClicksOnTheFirstProductInTheTableViewOnProductPage() error {
 	var rcerror error
 
-	time.Sleep(5 * time.Second)
-	err := pl.loadArticleDataInfoFromTable()
-	if err != nil {
+	impl := productTabsImpl{}
+	c := context.Background()
+	b := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxDuration(7*time.Second, b)
+	if err := retry.Do(c, b, func(ct context.Context) error {
+		if err := impl.loadArticleDataInfoFromTable(pl.ctx); err != nil {
+			// fmt.Println("[DBG]retry loadArticleDataInfoFromTable")
+			takeSnapshot(pl.ctx, pl.snapshotsFolder, "theUserClicksOnTheFirstProductInTheTableViewOnProductPage")
+			// This marks the error as retryable
+			return retry.RetryableError(err)
+		}
+		// fmt.Println("[DBG]success loadArticleDataInfoFromTable")
+		return nil
+	}); err != nil {
 		return errortree.Add(rcerror, "theUserClicksOnTheFirstProductInTheTableViewOnProductPage", err)
 	}
 
@@ -258,10 +318,21 @@ func (pl *productsTab) theUserClicksOnTheFirstProductInTheTableViewOnProductPage
 
 func (pl *productsTab) theProductDetailsPageShouldBeLoaded() error {
 	var rcerror error
-	time.Sleep(5 * time.Second)
 
-	err := pl.checkProductDetailsPage()
-	if err != nil {
+	impl := productTabsImpl{}
+	c := context.Background()
+	b := retry.NewConstant(500 * time.Millisecond)
+	b = retry.WithMaxDuration(7*time.Second, b)
+	if err := retry.Do(c, b, func(ct context.Context) error {
+		if err := impl.checkProductDetailsPage(pl.ctx); err != nil {
+			// fmt.Println("[DBG]retry checkProductDetailsPage")
+			takeSnapshot(pl.ctx, pl.snapshotsFolder, "theProductDetailsPageShouldBeLoaded")
+			// This marks the error as retryable
+			return retry.RetryableError(err)
+		}
+		// fmt.Println("[DBG]success checkProductDetailsPage")
+		return nil
+	}); err != nil {
 		return errortree.Add(rcerror, "theProductDetailsPageShouldBeLoaded", err)
 	}
 

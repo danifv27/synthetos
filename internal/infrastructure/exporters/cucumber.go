@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"path"
 	"sync"
@@ -30,7 +31,13 @@ func (rc CucumberResult) String() string {
 	return [...]string{"Failure", "Success", "Not executed"}[rc]
 }
 
-type CucumberStatsSet map[string][]CucumberStats
+type CucumberStatsSet map[string]CucumberStatsItem
+
+type CucumberStatsItem struct {
+	Output string
+	Stats  []CucumberStats
+}
+
 type CucumberStats struct {
 	Id       string
 	Start    time.Time
@@ -38,15 +45,9 @@ type CucumberStats struct {
 	Result   CucumberResult
 }
 
-// type CucumberStatsSet struct {
-// Feature   CucumberStats
-// Scenarios CucumberScenariosStats
-// Steps     CucumberStepsStats
-// }
-
 type CucumberPlugin interface {
 	// Do execute a godog test suite and returns the stats
-	Do(ctx context.Context, cancel context.CancelFunc) (CucumberStatsSet, error)
+	Do(ctx context.Context) (CucumberStatsSet, error)
 	GetScenarioName() (string, error)
 }
 
@@ -56,6 +57,8 @@ type cucumberHandler struct {
 	pluginMutex sync.RWMutex
 	PluginSet   map[string]CucumberPlugin
 	timeout     time.Duration
+	templates   map[string]*template.Template
+	history     historyBuffer
 }
 
 // NewCucumberExporter creates a new CucumberExporter
@@ -90,6 +93,7 @@ func WithCucumberOptions(c *exporters.CucumberExporter, opts ...ExporterOption) 
 	return nil
 }
 
+// TODO: add tiemeout per target
 func WithCucumberTimeout(t time.Duration) ExporterOption {
 
 	return ExportOptionFn(func(i interface{}) error {
@@ -158,6 +162,7 @@ func (c *cucumberHandler) registerCucumberPlugin(k string, v CucumberPlugin) err
 
 func (c *cucumberHandler) ProbesEndpoint(w http.ResponseWriter, r *http.Request) {
 
+	//FIXME: timeout is not the metrics timeout, it's the handle
 	ctx, cancel := context.WithTimeout(r.Context(), c.timeout)
 	defer cancel()
 	reqWithTimeout := r.WithContext(ctx)
@@ -165,19 +170,18 @@ func (c *cucumberHandler) ProbesEndpoint(w http.ResponseWriter, r *http.Request)
 }
 
 type PluginResponse struct {
-	stats CucumberStatsSet
-	err   error
+	set CucumberStatsSet
+	err error
 }
 
-func helper(ctx context.Context, cancelFn context.CancelFunc, plugin CucumberPlugin) <-chan PluginResponse {
+func helper(ctx context.Context, plugin CucumberPlugin) <-chan PluginResponse {
 
 	respChan := make(chan PluginResponse, 1)
 	go func() {
-		stats, err := plugin.Do(ctx, cancelFn)
-		// fmt.Printf("[DBG]plugin.Do finished, err: %v\n", err)
+		set, err := plugin.Do(ctx)
 		respChan <- PluginResponse{
-			stats: stats,
-			err:   err,
+			set: set,
+			err: err,
 		}
 	}()
 
@@ -225,6 +229,7 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 	registry.MustRegister(scenarioSuccessGaugeVec)
 	registry.MustRegister(stepSuccessGaugeVec)
 	registry.MustRegister(stepDurationGaugeVec)
+	//FIXME: add context withTimeout to avoid endless requests
 	ctx, cancelFn := context.WithCancel(r.Context())
 	ct := context.WithValue(ctx, ContextKeyTargetUrl, target)
 	defer cancelFn()
@@ -237,6 +242,7 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 	actx, _ := chromedp.NewExecAllocator(ct, opts...)
 	plugingCtx, _ := chromedp.NewContext(actx)
 
+	//FIXME: Add some values to history ring buffer when context fails
 	select {
 	case <-plugingCtx.Done():
 		// Extract the reason for cancellation
@@ -258,19 +264,19 @@ func (c *cucumberHandler) handle(w http.ResponseWriter, r *http.Request, plugins
 			// Handle other errors
 
 		}
-
-	case pluginChan := <-helper(plugingCtx, cancelFn, plugin):
+	case pluginChan := <-helper(plugingCtx, plugin):
+		c.addHistory(pluginChan.set)
 		if pluginChan.err != nil {
-			for k, v := range pluginChan.stats {
+			for k, v := range pluginChan.set {
 				scenarioSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k).Set(float64(CucumberFailure))
-				for _, stats := range v {
+				for _, stats := range v.Stats {
 					stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id).Set(float64(stats.Result))
 				}
 			}
 		} else {
-			for k, v := range pluginChan.stats {
+			for k, v := range pluginChan.set {
 				isSucceeded := true
-				for _, stats := range v {
+				for _, stats := range v.Stats {
 					stepDurationGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id, stats.Result.String()).Set(stats.Duration.Seconds())
 					stepSuccessGaugeVec.WithLabelValues(strcase.ToCamel(featureName), k, stats.Id).Set(float64(stats.Result))
 					if stats.Result != CucumberSuccess {

@@ -22,9 +22,10 @@
             "program": "${workspaceFolder}/cmd/uxperi",
             "env": {
                 "SC_LOGGING_LEVEL": "debug",
-                "SC_TEST_FEATURES_FOLDER": "/Users/andreain/IdeaProjects/devops-projects/cmo-atlas/internal/infrastructure/exporters/features",
-                "SC_TEST_AZURE_PASSWORD": "",
-                "SC_TEST_AZURE_USERNAME":"svc_chromedp_cucu@emea.adsint.biz"
+                "SC_TEST_AZURE_PASSWORD": "eIZtF6HG8C43$",
+                "SC_TEST_AZURE_USERNAME":"svc_chromedp_cucu@emea.adsint.biz",
+                "SC_TEST_TIMEOUT": "2m",
+                "SC_TEST_SNAPSHOTS_FOLDER": "/Users/fraildan/tmp/snapshots",
             },
             "args": [
                 "test",

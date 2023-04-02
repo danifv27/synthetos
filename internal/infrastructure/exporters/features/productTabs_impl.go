@@ -1,47 +1,42 @@
 package features
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
 
 	"fry.org/cmo/cli/internal/infrastructure/exporters"
-	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
 	"github.com/speijnik/go-errortree"
 )
 
-var (
-	rowNodes []*cdp.Node
-	target   string
-)
-
 type productTabsImpl struct{}
 
-func (pl *productsTab) loadModelProductsPage() error {
+func (pl *productTabsImpl) loadModelProductsPage(ctx context.Context) error {
 	var rcerror, err error
-	var destinationPath = "/products"
-
-	if target, err = exporters.StringFromContext(pl.ctx, exporters.ContextKeyTargetUrl); err != nil {
+	var target string
+	destinationPath := "/products"
+	if target, err = exporters.StringFromContext(ctx, exporters.ContextKeyTargetUrl); err != nil {
 		return errortree.Add(rcerror, "loadProducts:composeURL", err)
 	}
 	// Start by navigating to the products - article page
-	if err = chromedp.Run(pl.ctx, chromedp.Navigate(target+destinationPath)); err != nil {
+	if err = chromedp.Run(ctx, chromedp.Navigate(target+destinationPath)); err != nil {
 		return errortree.Add(rcerror, "loadProducts:navigate", err)
 	}
 
 	return nil
 }
 
-func (pl *productsTab) loadModelDataInTable() error {
+func (pl *productTabsImpl) loadModelDataInTable(ctx context.Context) error {
 	var rcerror, err error
 	// select all the rows in the table
 	var rowCount = ""
-	err = waitUntilLoads(pl.ctx, `.ag-root`)
+	err = waitUntilLoads(ctx, `.ag-root`)
 	if err != nil {
 		return errortree.Add(rcerror, "isMainFELoad", errors.New("failed to load main table element in main page"))
 	}
-	err = chromedp.Run(pl.ctx, chromedp.Evaluate(`document.querySelector('.ag-root').getAttribute('aria-rowcount') !== null ? document.querySelector('.ag-root').getAttribute('aria-rowcount') : null`, &rowCount))
+	err = chromedp.Run(ctx, chromedp.Evaluate(`document.querySelector('.ag-root').getAttribute('aria-rowcount') !== null ? document.querySelector('.ag-root').getAttribute('aria-rowcount') : null`, &rowCount))
 	if err != nil {
 		if rowCount == "" {
 			return errortree.Add(rcerror, "loadArticleDataInTable:loadTableInfo", errors.New("table products element not found in page"))
@@ -54,23 +49,25 @@ func (pl *productsTab) loadModelDataInTable() error {
 	return nil
 }
 
-func (pl *productsTab) loadArticleDataInfoFromTable() error {
-
+func (pl *productTabsImpl) loadArticleDataInfoFromTable(ctx context.Context) error {
+	var target string
 	var rcerror, err error
-	// find the first element in the "%s" column
-	var modelNumber = ""
-	var season = ""
-	err = waitUntilLoads(pl.ctx, `[col-id="mdl.modelNumber"]`)
-	if err != nil {
-		return errortree.Add(rcerror, "isMainFELoad", errors.New("failed to load first element table in main page"))
+
+	modelNumber := ""
+	season := ""
+	if target, err = exporters.StringFromContext(ctx, exporters.ContextKeyTargetUrl); err != nil {
+		return errortree.Add(rcerror, "loadArticleDataInfoFromTable:composeURL", err)
 	}
-	err = chromedp.Run(pl.ctx, chromedp.Evaluate(`document.querySelectorAll('[col-id="mdl.modelNumber"]')[1].textContent !== null ? document.querySelectorAll('[col-id="mdl.modelNumber"]')[1].textContent : null`, &modelNumber))
+	if err = waitUntilLoads(ctx, `[col-id="mdl.modelNumber"]`); err != nil {
+		return errortree.Add(rcerror, "loadArticleDataInfoFromTable", errors.New("failed waiting for modelNumber"))
+	}
+	err = chromedp.Run(ctx, chromedp.Evaluate(`document.querySelectorAll('[col-id="mdl.modelNumber"]')[1].textContent !== null ? document.querySelectorAll('[col-id="mdl.modelNumber"]')[1].textContent : null`, &modelNumber))
 	if err != nil {
 		if modelNumber == "" {
 			return errortree.Add(rcerror, "loadArticleDataInfoFromTable:getModelNumberElement", errors.New("modelNumber not found in page"))
 		}
 	}
-	err = chromedp.Run(pl.ctx, chromedp.Evaluate(`document.querySelectorAll('[col-id="mdl.season"]')[1].textContent !== null ? document.querySelectorAll('[col-id="mdl.season"]')[1].textContent : null`, &season))
+	err = chromedp.Run(ctx, chromedp.Evaluate(`document.querySelectorAll('[col-id="mdl.season"]')[1].textContent !== null ? document.querySelectorAll('[col-id="mdl.season"]')[1].textContent : null`, &season))
 	if err != nil {
 		if season == "" {
 			return errortree.Add(rcerror, "loadArticleDataInfoFromTable:getArticleNumberElement", errors.New("season not found in page"))
@@ -79,20 +76,21 @@ func (pl *productsTab) loadArticleDataInfoFromTable() error {
 
 	//Last, navigate into details page
 	path := fmt.Sprintf("/product/%s/%s", modelNumber, getSeasonFrom(season))
-	if err = chromedp.Run(pl.ctx, chromedp.Navigate(target+path)); err != nil {
+	if err = chromedp.Run(ctx, chromedp.Navigate(target+path)); err != nil {
 		return errortree.Add(rcerror, "loadProductDetails:navigate", err)
 	}
+
 	return nil
 }
 
-func (pl *productsTab) checkProductDetailsPage() error {
+func (pl *productTabsImpl) checkProductDetailsPage(ctx context.Context) error {
 	var rcerror, err error
 	var modelDetails = ""
-	err = waitUntilLoads(pl.ctx, `.product-details-header h4`)
+	err = waitUntilLoads(ctx, `.product-details-header h4`)
 	if err != nil {
 		return errortree.Add(rcerror, "isMainFELoad", errors.New("failed to load product details page"))
 	}
-	err = chromedp.Run(pl.ctx, chromedp.Evaluate(`document.querySelector('.product-details-header h4').textContent !== null ? document.querySelector('.product-details-header h4').textContent : null`, &modelDetails))
+	err = chromedp.Run(ctx, chromedp.Evaluate(`document.querySelector('.product-details-header h4').textContent !== null ? document.querySelector('.product-details-header h4').textContent : null`, &modelDetails))
 	if err != nil {
 		if modelDetails == "" {
 			return errortree.Add(rcerror, "checkProductDetailsPage:getDetails", errors.New("model information not found in page"))
