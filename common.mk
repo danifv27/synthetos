@@ -108,7 +108,7 @@ package: ## Create a docker image of the project
 		--label 'org.label-schema.version=$(VERSION)' \
 		--label 'org.label-schema.name=$(BIN)', \
 		--label 'org.label-schema.build-date=$(BUILD_DATE)' \
-		--label 'org.label-schema.vendor=fry-systems' \
+		--label 'org.label-schema.vendor=adidas' \
 		$(PROGRESS) $(DOCKER_TARGET) \
 		-t $(IMAGE_NAME_LC):local -f $(DOCKERFILE) $(TOP_LEVEL)
 
