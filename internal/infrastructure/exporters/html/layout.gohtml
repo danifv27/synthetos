@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html class="yarn">
+    <head>
+        <title>Dashboard</title>
+        {{- block "base" . -}}{{- end -}}
+        {{- block "colors" . -}}{{- end -}}
+        {{- block "components" . -}}{{- end -}}
+        {{- block "core" . -}}{{- end -}}
+        {{- block "grid" . -}}{{- end -}}
+        {{- block "layout" . -}}{{- end -}}
+        {{- block "print" . -}}{{- end -}}
+        {{- block "utils" . -}}{{- end -}}
+    </head>
+    <body>
+        <div class="page-container">
+            <header class="header yarn-theme--dark header-container">
+                <nav class="header__container">
+                    <div class="header__left">
+                        <div class="header__brand">
+                            <svg class="icon yarn-svg-icon yarn-svg-icon--md header__icon">
+                                <use xlink:href="#icon-products"></use>
+                            </svg>
+                            <span class="header__headline">Dashboard</span>
+                        </div>
+                    </div>
+                    <div class="header__right"></div>
+                </nav>
+            </header>
+            <main class="main">
+                <div class="container">
+                    <div class="">
+                        <table class="table">
+                            <thead class="">
+                                <tr class="table__head-row">
+                                    <th class="table__head-cell">Id</th>
+                                    <th class="table__head-cell">Scenario</th>
+                                    <th class="table__head-cell">Step</th>
+                                    <th class="table__head-cell">Start</th>
+                                    <th class="table__head-cell">Duration</th>
+                                    <th class="table__head-cell">Result</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table__body">   
+                            {{- range $i, $set := . -}}
+                                {{- range $scenario, $item := $set -}}
+                                    {{- range $v := $item.Stats -}}
+                                <tr class="table__body-row">
+                                    <td class="table__body-cell"><a href="./history?id={{$i}}&scenario={{$scenario}}" target="popup" onclick="window.open('./history?id={{$i}}&scenario={{$scenario}}','popup','width=768 height=640'); return false;">{{$i}}</a></td>
+                                    <td class="table__body-cell">{{$scenario}}</td>
+                                    <td class="table__body-cell">{{$v.Id}}</td>
+                                    <td class="table__body-cell">{{$v.Start}}</td>
+                                    <td class="table__body-cell">{{$v.Duration}}</td>
+                                    <td class="table__body-cell">{{$v.Result}}</td>
+                                </tr>
+                                    {{- end}}
+                                {{- end}}
+                            {{- end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </body>
+</html>
