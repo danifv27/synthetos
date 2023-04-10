@@ -1,0 +1,37 @@
+{
+    "configurations": [
+        {
+            "name": "Version",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/uxperi",
+            "env": {
+                "SC_LOGGING_LEVEL": "debug",
+            },
+            "args": [
+                "version"
+            ],
+            "showLog": true
+        },
+        {
+            "name": "Test",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/uxperi",
+            "env": {
+                "SC_LOGGING_LEVEL": "debug",
+                "SC_TEST_AZURE_PASSWORD": "dummyPwd",
+                "SC_TEST_AZURE_USERNAME":"danifv27@fry-systems.com",
+                "SC_TEST_TIMEOUT": "2m",
+                "SC_TEST_SNAPSHOTS_FOLDER": "/home/dfraile/tmp/snapshots",
+            },
+            "args": [
+                "test",
+                "--probes.enable"
+            ],
+            "showLog": true
+        }
+    ]
+}

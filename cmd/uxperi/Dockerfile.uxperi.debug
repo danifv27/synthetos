@@ -1,0 +1,52 @@
+# build stage
+FROM golang:1.20.2-alpine3.16 AS build-env
+
+RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv@v1.8.3
+RUN apk update && apk add --no-cache git make bash
+
+COPY . /src
+RUN cd /src/cmd/uxperi && DEBUG=true make build-linux-amd64
+
+# final stage
+FROM alpine:3.16
+
+USER root
+
+ARG USER_ID=65535
+ARG GROUP_ID=65535
+ARG USER_NAME=uxperi
+ARG GROUP_NAME=uxperi
+
+RUN apk update && \
+    apk add --no-cache \
+        chromium \
+        nss \
+        freetype \
+        freetype-dev \
+        harfbuzz \
+        ca-certificates \
+        ttf-freefont
+ENV CHROME_BIN=/usr/bin/chromium-browser
+
+RUN addgroup -g $GROUP_ID $GROUP_NAME && \
+    adduser --shell /sbin/nologin --disabled-password \
+    --no-create-home --uid $USER_ID --ingroup $GROUP_NAME $USER_NAME
+
+RUN mkdir -p /app/bin; mkdir -p /app/config; mkdir -p /app/features; mkdir -p /app/snapshots
+
+#Add delve to current build
+COPY --from=build-env /go/bin/dlv /usr/local/bin
+COPY --from=build-env /src/output/linux/amd64/bin/uxperi /app/bin/uxperi
+
+RUN chown $USER_ID:$GROUP_ID -R /app
+
+WORKDIR /app
+
+# Use an unprivileged user.
+USER $USER_ID
+
+# executable
+ENTRYPOINT [ "/usr/local/bin/dlv", "--listen=:40000", "--headless=true", "--api-version=2", "exec", "/app/bin/uxperi" ]
+# arguments that can be overridden
+CMD ["version"]
+
