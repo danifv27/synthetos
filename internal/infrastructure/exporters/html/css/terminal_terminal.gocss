@@ -1,0 +1,64 @@
+{{define "terminal.css"}}
+<style>
+.term-container {
+    background: #171717;
+    border-radius: 5px;
+    color: white;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    font-family: "SFMono-Regular", Monaco, Menlo, Consolas, "Liberation Mono", Courier, monospace;
+    font-size: 12px;
+    line-height: 20px;
+    padding: 14px 18px;
+    white-space: pre-wrap;
+}
+
+.term-container img { 
+    max-width: 100%;
+}
+
+.term-bold{ font-weight:bold; } /* don't bold beccause it looks weird */
+.term-faint{ color: #838887; } /* faint (decreased intensity) - same as gray really */
+.term-italic{ font-style: italic; } /* italic */
+.term-underline{ text-decoration: underline; } /* underline */
+.term-slow-blink{ animation: blink-animation 1s steps(3, start) infinite; } /* blink */
+.term-strikethrough{ text-decoration: line-through; } /* crossed-out */
+
+.term-fg-black{ color: #666666; } /* black (but we can't use black, so a diff color) */
+.term-fg-red{ color: #ff7070; } /* red */
+.term-fg-green{ color: #b0f986; } /* green */
+.term-fg-yellow{ color: #c6c502; } /* yellow */
+.term-fg-blue{ color: #8db7e0; } /* blue */
+.term-fg-magenta{ color: #f271fb; } /* magenta */
+.term-fg-cyan{ color: #6bf7ff; } /* cyan */
+.term-fg-white{ color: #ffffff; } /* white */
+
+.term-bg-black{ color: #666666; } /* black (but we can't use black, so a diff color) */
+.term-bg-red{ color: #ff4343; } /* red */
+.term-bg-green{ color: #99ff5f; } /* green */
+.term-bg-yellow{ color: #c6c502; } /* yellow */
+.term-bg-blue{ color: #8db7e0; } /* blue */
+.term-bg-magenta{ color: #f271fb; } /* magenta */
+.term-bg-cyan{ color: #6bf7ff; } /* cyan */
+.term-bg-white{ color: #676767; } /* gray */
+
+.term-bright-black { color: #5ef765; }
+.term-bright-red { color: #ff3333; } /* red */
+.term-bright-green { color: #00FF00; } /* green */
+.term-bright-yellow { color: #fffc67; } /* yellow */
+.term-bright-blue { color: #6871ff; } /* blue */
+.term-bright-magenta { color: #ff76ff; } /* magenta */
+.term-bright-cyan { color: #60fcff; } /* cyan */
+.term-bright-white { color: #838887; } /* grey */
+
+//.term-fraktur { }
+//.term-underline { }
+//.term-overline { }
+//.term-fast-blink { }
+//.term-invert { }
+//.term-hide { }
+//.term-proportional { }
+//.term-superscript { }
+//.term-subscript { }
+</style>
+{{end}}
