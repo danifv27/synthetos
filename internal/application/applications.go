@@ -12,6 +12,7 @@
 package application
 
 import (
+	"fry.org/cmo/cli/internal/application/actions"
 	"fry.org/cmo/cli/internal/application/healthchecker"
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/application/printer"
@@ -37,7 +38,7 @@ type Queries struct {
 
 // Commands operations that accept data to make a change or trigger an action
 type Commands struct {
-	PrintVersion PrintVersionCommandHandler
+	PrintVersion actions.PrintVersionCommandHandler
 }
 
 // Applications contains all exposed services of the application layer
@@ -102,7 +103,7 @@ func WithPrintVersionCommand(v version.Version, p printer.Printer) ApplicationOp
 
 	return ApplicationOptionFunc(func(a *Applications) error {
 
-		a.Commands.PrintVersion = NewPrintVersionCommandHandler(v, p)
+		a.Commands.PrintVersion = actions.NewPrintVersionCommandHandler(v, p)
 
 		return nil
 	})

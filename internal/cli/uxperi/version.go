@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"fry.org/cmo/cli/internal/application"
+	"fry.org/cmo/cli/internal/application/actions"
 	"fry.org/cmo/cli/internal/cli/common"
 	"fry.org/cmo/cli/internal/infrastructure"
 	"github.com/speijnik/go-errortree"
@@ -80,7 +81,7 @@ func versionPrintJob(ctx floc.Context, ctrl floc.Control) error {
 		UxperiSetRCErrorTree(ctx, "versionPrintJob", err)
 		return err
 	}
-	req := application.PrintVersionRequest{
+	req := actions.PrintVersionRequest{
 		Format: cli.Version.Flags.Output,
 	}
 	if err = c.Apps.Commands.PrintVersion.Handle(req); err != nil {

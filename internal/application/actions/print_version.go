@@ -1,4 +1,4 @@
-package application
+package actions
 
 import (
 	"fry.org/cmo/cli/internal/application/printer"
