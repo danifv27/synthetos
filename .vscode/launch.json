@@ -15,6 +15,26 @@
             "showLog": true
         },
         {
+            "name": "kms list fortanix group",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/secretum",
+            "env": {
+                "SC_LOGGING_LEVEL": "debug",
+                "SC_KMS_LIST_FORTANIX_ACCESS_KEY": "dummyAccessKey",
+                "SC_KMS_LIST_FORTANIX_SECRET_KEY": "dummySecretKey"
+            },
+            "args": [
+                "kms",
+                "--probes.enable",
+                "list",
+                "fortanix",
+                "groups"
+            ],
+            "showLog": true
+        },
+        {
             "name": "Test",
             "type": "go",
             "request": "launch",
