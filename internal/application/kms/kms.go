@@ -8,3 +8,5 @@ type KeyManager interface {
 	List(ctx context.Context) error
 	Decrypt(ctx context.Context) error
 }
+
+type Group struct{}
