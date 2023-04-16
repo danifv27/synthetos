@@ -112,5 +112,6 @@ func (cmd *KmsListFortanixGroupsCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *er
 			}
 		},
 	)
+
 	return nil
 }

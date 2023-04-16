@@ -22,7 +22,8 @@
             "program": "${workspaceFolder}/cmd/secretum",
             "env": {
                 "SC_LOGGING_LEVEL": "debug",
-                "SC_KMS_LIST_FORTANIX_API_KEY": "dummyAccessKey",
+                "SC_KMS_LIST_FORTANIX_API_KEY": "ZDQ1Y2Y3MDMtYzVlOC00MGUyLWFkMTItMGU4YjBkZjViMjUwOnNsczhRUzBOd3d6UnlhU0x2OC1JMmdoN1RhWXIzLXJvNnN2Wk1uOEpFblgwOXB5c0dndEZNVGtWV1pkeFE5SVNjd1FjNFcyV1dHUDBBZmR1MUZqcmxR",
+                "SC_KMS_LIST_FORTANIX_API_ENDPOINT_URL": "https://kms-test.adidas-group.com:8443"
             },
             "args": [
                 "kms",

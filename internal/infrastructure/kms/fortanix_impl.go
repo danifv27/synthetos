@@ -3,6 +3,7 @@ package kms
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"fry.org/cmo/cli/internal/application/kms"
@@ -80,17 +81,42 @@ func (f *fortanixClient) List(ctx context.Context) error {
 	var rcerror error
 
 	// Establish a session
-	_, err := f.client.AuthenticateWithAPIKey(ctx, f.apikey)
+	resp, err := f.client.AuthenticateWithAPIKey(ctx, f.apikey)
 	if err != nil {
 		f.l.WithFields(logger.Fields{
 			"err": err,
 		}).Info("Authentication failed")
 		return errortree.Add(rcerror, "fortanix.List", err)
 	}
+	fmt.Printf("[DBG]resp: %v", resp)
 	// Terminate the session on exit
 	defer f.client.TerminateSession(ctx)
+	// List all sobjects
+	queryParams := sdkms.ListSobjectsParams{
+		Sort: sdkms.SobjectSort{
+			ByName: &sdkms.SobjectSortByName{},
+		},
+	}
+	keys, err := f.client.ListSobjects(ctx, &queryParams)
+	if err != nil {
+		return errortree.Add(rcerror, "fortanix.List", err)
+	}
+	fmt.Printf("\n\nListing all sobjects (%v):\n", len(keys))
+	for _, key := range keys {
+		fmt.Printf("  %v\n", sobjectToString(&key))
+	}
 
 	return errortree.Add(rcerror, "fortanix.List", errors.New("method not implemented"))
+}
+
+func sobjectToString(sobject *sdkms.Sobject) string {
+	created, err := sobject.CreatedAt.Std()
+	if err != nil {
+		return err.Error()
+	}
+	return fmt.Sprintf("{ %v %#v group(%v) enabled: %v created: %v }",
+		*sobject.Kid, *sobject.Name, *sobject.GroupID, sobject.Enabled,
+		created.Local())
 }
 
 func (f *fortanixClient) Decrypt(ctx context.Context) error {
