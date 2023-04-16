@@ -23,12 +23,14 @@ package infrastructure
 import (
 	"fry.org/cmo/cli/internal/application/exporters"
 	"fry.org/cmo/cli/internal/application/healthchecker"
+	"fry.org/cmo/cli/internal/application/kms"
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/application/printer"
 	"fry.org/cmo/cli/internal/application/version"
 
 	ihealthchecker "fry.org/cmo/cli/internal/infrastructure/endpoints/healthchecker"
 	iexporters "fry.org/cmo/cli/internal/infrastructure/exporters"
+	ikms "fry.org/cmo/cli/internal/infrastructure/kms"
 	ilogger "fry.org/cmo/cli/internal/infrastructure/logger"
 	itableprinter "fry.org/cmo/cli/internal/infrastructure/printer"
 	istorage "fry.org/cmo/cli/internal/infrastructure/storage"
@@ -54,6 +56,7 @@ type Adapters struct {
 	printer.Printer
 	healthchecker.Healthchecker
 	exporters.CucumberExporter
+	kms.KeyManager
 }
 
 // NewAdapters
@@ -144,6 +147,17 @@ func WithCucumberExporter(opts ...iexporters.ExporterOption) AdapterOption {
 		var err error
 
 		a.CucumberExporter, err = iexporters.NewCucumberExporter(opts...)
+
+		return err
+	})
+}
+
+func WithKeyManager(url string, l logger.Logger) AdapterOption {
+
+	return AdapterOptionFunc(func(a *Adapters) error {
+		var err error
+
+		a.KeyManager, err = ikms.Parse(url, l)
 
 		return err
 	})
