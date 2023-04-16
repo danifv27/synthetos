@@ -47,7 +47,6 @@ type Commands struct {
 type Applications struct {
 	logger.Logger
 	healthchecker.Healthchecker
-	kms.KeyManager
 	Queries  Queries
 	Commands Commands
 }
@@ -102,16 +101,6 @@ func WithHealthchecker(h healthchecker.Healthchecker) ApplicationOption {
 	})
 }
 
-// func WithKmsKeyManager(k kms.KeyManager) ApplicationOption {
-
-// 	return ApplicationOptionFunc(func(a *Applications) error {
-
-// 		a.KeyManager = k
-
-// 		return nil
-// 	})
-// }
-
 func WithPrintVersionCommand(v version.Version, p printer.Printer) ApplicationOption {
 
 	return ApplicationOptionFunc(func(a *Applications) error {
@@ -127,7 +116,6 @@ func WithListGroupsQuery(l logger.Logger, k kms.KeyManager) ApplicationOption {
 	return ApplicationOptionFunc(func(a *Applications) error {
 
 		a.Queries.ListGroups = actions.NewListGroupsQueryHandler(l, k)
-		a.KeyManager = k
 
 		return nil
 	})

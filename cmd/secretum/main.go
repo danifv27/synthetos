@@ -125,6 +125,7 @@ func main() {
 		return nil
 	}
 
+	//Run command are traversed starting from kms/list/fortanix/groups to kms
 	flow := run.Parallel(
 		waitInterrupt,
 		run.Sequence(append(pCtxcmd.InitSeq, pCtxcmd.RunSeq)...),

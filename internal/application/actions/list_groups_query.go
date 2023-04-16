@@ -23,15 +23,16 @@ type ListGroupsQueryHandler interface {
 
 // Implements ListGroupsHandler interface
 type listGroupsQueryHandler struct {
-	l logger.Logger
-	k kms.KeyManager
+	lgr   logger.Logger
+	kmngr kms.KeyManager
 }
 
 // NewListGroupsQueryHandler Handler Constructor
-func NewListGroupsQueryHandler(lgr logger.Logger, k kms.KeyManager) ListGroupsQueryHandler {
+func NewListGroupsQueryHandler(l logger.Logger, k kms.KeyManager) ListGroupsQueryHandler {
 
 	return listGroupsQueryHandler{
-		l: lgr,
+		lgr:   l,
+		kmngr: k,
 	}
 }
 
@@ -39,7 +40,7 @@ func (h listGroupsQueryHandler) Handle(request ListGroupsRequest) (ListGroupsRes
 	var rcerror error
 
 	ctx := context.Background()
-	if err := h.k.List(ctx); err != nil {
+	if err := h.kmngr.List(ctx); err != nil {
 		return ListGroupsResult{}, errortree.Add(rcerror, "Handle", err)
 	}
 
