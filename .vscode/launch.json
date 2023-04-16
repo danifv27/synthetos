@@ -22,8 +22,7 @@
             "program": "${workspaceFolder}/cmd/secretum",
             "env": {
                 "SC_LOGGING_LEVEL": "debug",
-                "SC_KMS_LIST_FORTANIX_ACCESS_KEY": "dummyAccessKey",
-                "SC_KMS_LIST_FORTANIX_SECRET_KEY": "dummySecretKey"
+                "SC_KMS_LIST_FORTANIX_API_KEY": "dummyAccessKey",
             },
             "args": [
                 "kms",

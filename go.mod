@@ -9,6 +9,7 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20230408222125-26b95782d8e2
 	github.com/chromedp/chromedp v0.9.1
 	github.com/cucumber/godog v0.12.6
+	github.com/fortanix/sdkms-client-go v0.2.2
 	github.com/iancoleman/strcase v0.2.0
 	github.com/prometheus/client_golang v1.14.0
 	github.com/robert-nix/ansihtml v1.0.1
