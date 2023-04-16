@@ -42,7 +42,7 @@ func initializeKmsListFortanixGroupsCmd(ctx floc.Context, ctrl floc.Control) err
 	if err = application.WithOptions(&c.Apps,
 		application.WithListGroupsQuery(c.Apps.Logger, c.Adapters.KeyManager),
 	); err != nil {
-		return fmt.Errorf("initializeKubeDiffCmd: %w", err)
+		return errortree.Add(rcerror, "initializeKmsListFortanixGroupsCmd", err)
 	}
 	*c = common.Cmdctx{
 		Cmd:      c.Cmd,
@@ -80,8 +80,8 @@ func kmsListFortanixGroupsJob(ctx floc.Context, ctrl floc.Control) error {
 func (cmd *KmsListFortanixGroupsCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 
 	p := cli.Kms.Flags.Probes
-
-	c.InitSeq = append(c.InitSeq, initializeKmsListFortanixGroupsCmd)
+	//We need to append at the beginning to traverse the initseq in the right order
+	c.InitSeq = append([]floc.Job{initializeKmsListFortanixGroupsCmd}, c.InitSeq...)
 	c.RunSeq = guard.OnTimeout(
 		guard.ConstTimeout(5*time.Minute),
 		nil, // No need for timeout data

@@ -20,7 +20,7 @@ func initializeKmsListCmd(ctx floc.Context, ctrl floc.Control) error {
 
 func (cmd *KmsListCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 
-	c.InitSeq = append(c.InitSeq, initializeKmsListCmd)
+	c.InitSeq = append([]floc.Job{initializeKmsListCmd}, c.InitSeq...)
 
 	return nil
 }

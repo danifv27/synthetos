@@ -60,7 +60,7 @@ func initializeKmsListFortanixCmd(ctx floc.Context, ctrl floc.Control) error {
 
 func (cmd *KmsListFortanixCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 
-	c.InitSeq = append(c.InitSeq, initializeKmsListFortanixCmd)
+	c.InitSeq = append([]floc.Job{initializeKmsListFortanixCmd}, c.InitSeq...)
 
 	return nil
 }

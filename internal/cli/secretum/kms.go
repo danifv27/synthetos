@@ -66,6 +66,13 @@ func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
 		}
 		return err
 	}
+	*c = common.Cmdctx{
+		Cmd:      c.Cmd,
+		InitSeq:  c.InitSeq,
+		Apps:     c.Apps,
+		Adapters: c.Adapters,
+		Ports:    c.Ports,
+	}
 
 	return nil
 }
@@ -113,7 +120,7 @@ func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
 
 func (cmd *KmsCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 
-	c.InitSeq = append(c.InitSeq, initializeKmsCmd)
+	c.InitSeq = append([]floc.Job{initializeKmsCmd}, c.InitSeq...)
 
 	return nil
 }
