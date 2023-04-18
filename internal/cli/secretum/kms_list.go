@@ -13,6 +13,7 @@ type KmsListCmd struct {
 }
 
 type KmsListFlags struct {
+	Output string `prefix:"kms.list." help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KMS_LIST_OUTPUT"`
 }
 
 func initializeKmsListCmd(ctx floc.Context, ctrl floc.Control) error {

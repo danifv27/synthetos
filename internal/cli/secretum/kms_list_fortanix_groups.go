@@ -58,19 +58,28 @@ func initializeKmsListFortanixGroupsCmd(ctx floc.Context, ctrl floc.Control) err
 
 func kmsListFortanixGroupsJob(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
-	// var cli CLI
+	var cli CLI
 	var err error
 
 	if c, err = SecretumCmdCtx(ctx); err != nil {
 		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
 		return err
 	}
-	// if cli, err = SecretumFlags(ctx); err != nil {
-	// 	SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
-	// 	return err
-	// }
+	if cli, err = SecretumFlags(ctx); err != nil {
+		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
+		return err
+	}
 	req := actions.ListGroupsRequest{
-		Mode: printer.PrinterModeTable,
+		Mode: printer.PrinterModeNone,
+	}
+	m := cli.Kms.List.Flags.Output
+	switch {
+	case m == "json":
+		req.Mode = printer.PrinterModeJSON
+	case m == "text":
+		req.Mode = printer.PrinterModeText
+	case m == "table":
+		req.Mode = printer.PrinterModeTable
 	}
 	if _, err = c.Apps.Queries.ListGroups.Handle(req); err != nil {
 		SecretumSetRCErrorTree(ctx, "kmsListFortanixGroupsJob", err)
