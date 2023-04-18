@@ -111,11 +111,11 @@ func WithPrintVersionCommand(v version.Version, p printer.Printer) ApplicationOp
 	})
 }
 
-func WithListGroupsQuery(l logger.Logger, k kms.KeyManager) ApplicationOption {
+func WithListGroupsQuery(l logger.Logger, k kms.KeyManager, p printer.Printer) ApplicationOption {
 
 	return ApplicationOptionFunc(func(a *Applications) error {
 
-		a.Queries.ListGroups = actions.NewListGroupsQueryHandler(l, k)
+		a.Queries.ListGroups = actions.NewListGroupsQueryHandler(l, k, p)
 
 		return nil
 	})

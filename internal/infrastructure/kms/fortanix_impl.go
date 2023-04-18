@@ -2,9 +2,10 @@ package kms
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
-	"fmt"
 	"net/http"
+	"time"
 
 	"fry.org/cmo/cli/internal/application/kms"
 	"fry.org/cmo/cli/internal/application/logger"
@@ -22,9 +23,15 @@ type fortanixClient struct {
 func NewFortanixKms(opts ...KmsOption) (kms.KeyManager, error) {
 	var rcerror error
 
+	//Remove TLS certs validation
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	clh := &http.Client{Transport: tr}
+
 	f := fortanixClient{
 		client: sdkms.Client{
-			HTTPClient: http.DefaultClient,
+			HTTPClient: clh,
 		},
 	}
 	// Loop through each option
@@ -46,7 +53,7 @@ func WithApikey(apikey string) KmsOption {
 
 		if f, ok = i.(*fortanixClient); ok {
 			f.apikey = apikey
-			f.client.Auth = sdkms.APIKey(apikey)
+			// f.client.Auth = sdkms.APIKey(apikey)
 			return nil
 		}
 
@@ -77,47 +84,43 @@ func (f *fortanixClient) Get(ctx context.Context) error {
 	return errortree.Add(rcerror, "fortanix.Get", errors.New("method not implemented"))
 }
 
-func (f *fortanixClient) List(ctx context.Context) error {
+func (f *fortanixClient) ListGroups(ctx context.Context) ([]kms.Group, error) {
 	var rcerror error
+	var groups []kms.Group
 
+	cx, cancelfn := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancelfn()
 	// Establish a session
-	resp, err := f.client.AuthenticateWithAPIKey(ctx, f.apikey)
-	if err != nil {
+	if _, err := f.client.AuthenticateWithAPIKey(cx, f.apikey); err != nil {
 		f.l.WithFields(logger.Fields{
 			"err": err,
 		}).Info("Authentication failed")
-		return errortree.Add(rcerror, "fortanix.List", err)
+		return []kms.Group{}, errortree.Add(rcerror, "fortanix.List", err)
 	}
-	fmt.Printf("[DBG]resp: %v", resp)
 	// Terminate the session on exit
 	defer f.client.TerminateSession(ctx)
-	// List all sobjects
-	queryParams := sdkms.ListSobjectsParams{
-		Sort: sdkms.SobjectSort{
-			ByName: &sdkms.SobjectSortByName{},
-		},
-	}
-	keys, err := f.client.ListSobjects(ctx, &queryParams)
+	// List groups
+	gs, err := f.client.ListGroups(ctx)
 	if err != nil {
-		return errortree.Add(rcerror, "fortanix.List", err)
+		return []kms.Group{}, errortree.Add(rcerror, "fortanix.ListGroups", err)
 	}
-	fmt.Printf("\n\nListing all sobjects (%v):\n", len(keys))
-	for _, key := range keys {
-		fmt.Printf("  %v\n", sobjectToString(&key))
+	for _, g := range gs {
+		groups = append(groups, kms.Group{CreatedAt: string(g.CreatedAt), Description: g.Description, Name: g.Name, GroupID: g.GroupID})
+
 	}
 
-	return errortree.Add(rcerror, "fortanix.List", errors.New("method not implemented"))
+	return groups, nil
 }
 
-func sobjectToString(sobject *sdkms.Sobject) string {
-	created, err := sobject.CreatedAt.Std()
-	if err != nil {
-		return err.Error()
-	}
-	return fmt.Sprintf("{ %v %#v group(%v) enabled: %v created: %v }",
-		*sobject.Kid, *sobject.Name, *sobject.GroupID, sobject.Enabled,
-		created.Local())
-}
+// func sobjectToString(sobject *sdkms.Sobject) string {
+// 	created, err := sobject.CreatedAt.Std()
+// 	if err != nil {
+// 		return err.Error()
+// 	}
+// 	return fmt.Sprintf("{ %v %#v group(%v) enabled: %v created: %v }",
+// 		*sobject.Kid, *sobject.Name, *sobject.GroupID, sobject.Enabled,
+// 		created.Local())
+// }
 
 func (f *fortanixClient) Decrypt(ctx context.Context) error {
 	var rcerror error

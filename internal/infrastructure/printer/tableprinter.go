@@ -5,6 +5,7 @@ import (
 	"github.com/speijnik/go-errortree"
 )
 
+// TODO: remove tableprinter references from methods and objects names. It shoulb be generic.
 // An TablePrinterOption applies optional changes to the Kong application.
 type TablePrinterOption interface {
 	Apply(t *TablePrinterClient) error

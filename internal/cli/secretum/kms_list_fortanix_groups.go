@@ -7,6 +7,7 @@ import (
 
 	"fry.org/cmo/cli/internal/application"
 	"fry.org/cmo/cli/internal/application/actions"
+	"fry.org/cmo/cli/internal/application/printer"
 	"fry.org/cmo/cli/internal/cli/common"
 	"github.com/speijnik/go-errortree"
 	"github.com/workanator/go-floc/v3"
@@ -40,7 +41,7 @@ func initializeKmsListFortanixGroupsCmd(ctx floc.Context, ctrl floc.Control) err
 	// }
 
 	if err = application.WithOptions(&c.Apps,
-		application.WithListGroupsQuery(c.Apps.Logger, c.Adapters.KeyManager),
+		application.WithListGroupsQuery(c.Apps.Logger, c.Adapters.KeyManager, c.Adapters.Printer),
 	); err != nil {
 		return errortree.Add(rcerror, "initializeKmsListFortanixGroupsCmd", err)
 	}
@@ -68,7 +69,9 @@ func kmsListFortanixGroupsJob(ctx floc.Context, ctrl floc.Control) error {
 	// 	SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
 	// 	return err
 	// }
-	req := actions.ListGroupsRequest{}
+	req := actions.ListGroupsRequest{
+		Mode: printer.PrinterModeJSON,
+	}
 	if _, err = c.Apps.Queries.ListGroups.Handle(req); err != nil {
 		SecretumSetRCErrorTree(ctx, "kmsListFortanixGroupsJob", err)
 		return err

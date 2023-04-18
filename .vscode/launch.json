@@ -1,7 +1,7 @@
 {
     "configurations": [
         {
-            "name": "Version",
+            "name": "version",
             "type": "go",
             "request": "launch",
             "mode": "debug",
@@ -22,8 +22,8 @@
             "program": "${workspaceFolder}/cmd/secretum",
             "env": {
                 "SC_LOGGING_LEVEL": "debug",
-                "SC_KMS_LIST_FORTANIX_API_KEY": "ZDQ1Y2Y3MDMtYzVlOC00MGUyLWFkMTItMGU4YjBkZjViMjUwOnNsczhRUzBOd3d6UnlhU0x2OC1JMmdoN1RhWXIzLXJvNnN2Wk1uOEpFblgwOXB5c0dndEZNVGtWV1pkeFE5SVNjd1FjNFcyV1dHUDBBZmR1MUZqcmxR",
-                "SC_KMS_LIST_FORTANIX_API_ENDPOINT_URL": "https://kms-test.adidas-group.com:8443"
+                "SC_KMS_LIST_FORTANIX_API_KEY": "NWJmZmEzYzctN2E3My00NDU0LWIzYzUtYmM4NDkzMTRlOGI0OjFVdTR6OVlJa0RqWkV4V0pRZFQwUTZuanl0TE56ZXYyYW1Nb29ZWEI5ZE1BQkl2d3dtOUdpYkpmczJ4U08zSDhmYUVhR0JpWkVLTk5ldzlrQ19mS3Nn",
+                "SC_KMS_LIST_FORTANIX_API_ENDPOINT_URL": "https://kms-test.adidas-group.com"
             },
             "args": [
                 "kms",
@@ -35,7 +35,7 @@
             "showLog": true
         },
         {
-            "name": "Test",
+            "name": "test",
             "type": "go",
             "request": "launch",
             "mode": "debug",
