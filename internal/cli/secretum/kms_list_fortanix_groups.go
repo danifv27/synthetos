@@ -70,7 +70,7 @@ func kmsListFortanixGroupsJob(ctx floc.Context, ctrl floc.Control) error {
 	// 	return err
 	// }
 	req := actions.ListGroupsRequest{
-		Mode: printer.PrinterModeJSON,
+		Mode: printer.PrinterModeTable,
 	}
 	if _, err = c.Apps.Queries.ListGroups.Handle(req); err != nil {
 		SecretumSetRCErrorTree(ctx, "kmsListFortanixGroupsJob", err)
