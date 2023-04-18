@@ -11,7 +11,7 @@ import (
 	"github.com/tidwall/pretty"
 )
 
-func (t *TablePrinterClient) ListKmsGroups(groups []kms.Group, mode printer.PrinterMode) error {
+func (t *PrinterClient) ListKmsGroups(groups []kms.Group, mode printer.PrinterMode) error {
 	var rcerror error
 
 	switch mode {
@@ -28,5 +28,5 @@ func (t *TablePrinterClient) ListKmsGroups(groups []kms.Group, mode printer.Prin
 		fmt.Printf("%v", groups)
 	}
 
-	return errortree.Add(rcerror, "ListKmsGroups", errors.New("method not implemented"))
+	return nil
 }

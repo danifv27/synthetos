@@ -121,9 +121,9 @@ func WithTablePrinter() AdapterOption {
 	return AdapterOptionFunc(func(a *Adapters) error {
 		var err, rcerror error
 
-		options := []itableprinter.TablePrinterOption{}
+		options := []itableprinter.PrinterOption{}
 
-		if a.Printer, err = itableprinter.NewTablePrinter(options...); err != nil {
+		if a.Printer, err = itableprinter.NewPrinter(options...); err != nil {
 			return errortree.Add(rcerror, "WithTablePrinter", err)
 		}
 

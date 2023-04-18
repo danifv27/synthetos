@@ -9,7 +9,7 @@ import (
 	"github.com/speijnik/go-errortree"
 )
 
-func (t *TablePrinterClient) PrintVersion(v version.Version, mode printer.PrinterMode) error {
+func (t *PrinterClient) PrintVersion(v version.Version, mode printer.PrinterMode) error {
 	var err, rcerror error
 	var info version.VersionInfo
 	var out []byte
