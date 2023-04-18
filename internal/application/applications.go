@@ -12,7 +12,9 @@
 package application
 
 import (
+	"fry.org/cmo/cli/internal/application/actions"
 	"fry.org/cmo/cli/internal/application/healthchecker"
+	"fry.org/cmo/cli/internal/application/kms"
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/application/printer"
 	"fry.org/cmo/cli/internal/application/version"
@@ -33,11 +35,12 @@ func (o ApplicationOptionFunc) Apply(a *Applications) error {
 
 // Queries operations that request data
 type Queries struct {
+	ListGroups actions.ListGroupsQueryHandler
 }
 
 // Commands operations that accept data to make a change or trigger an action
 type Commands struct {
-	PrintVersion PrintVersionRequestHandler
+	PrintVersion actions.PrintVersionCommandHandler
 }
 
 // Applications contains all exposed services of the application layer
@@ -102,7 +105,17 @@ func WithPrintVersionCommand(v version.Version, p printer.Printer) ApplicationOp
 
 	return ApplicationOptionFunc(func(a *Applications) error {
 
-		a.Commands.PrintVersion = NewPrintVersionRequestHandler(v, p)
+		a.Commands.PrintVersion = actions.NewPrintVersionCommandHandler(v, p)
+
+		return nil
+	})
+}
+
+func WithListGroupsQuery(l logger.Logger, k kms.KeyManager, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ListGroups = actions.NewListGroupsQueryHandler(l, k, p)
 
 		return nil
 	})

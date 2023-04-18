@@ -10,7 +10,7 @@ import (
 	"fry.org/cmo/cli/internal/application"
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/cli/common"
-	"fry.org/cmo/cli/internal/cli/uxperi"
+	"fry.org/cmo/cli/internal/cli/secretum"
 	"fry.org/cmo/cli/internal/infrastructure"
 
 	"github.com/alecthomas/kong"
@@ -19,7 +19,7 @@ import (
 	"github.com/workanator/go-floc/v3/run"
 )
 
-func initializeCmd(cli *uxperi.CLI, cmd string) (common.Cmdctx, error) {
+func initializeCmd(cli *secretum.CLI, cmd string) (common.Cmdctx, error) {
 	var err, rcerror error
 	var output string
 
@@ -58,7 +58,7 @@ func main() {
 	var result floc.Result
 	var data interface{}
 
-	cli := uxperi.CLI{
+	cli := secretum.CLI{
 		Logging: common.Log{},
 	}
 
@@ -76,7 +76,7 @@ func main() {
 		kong.Bind(pCtxcmd),
 		kong.Bind(&rcerror),
 		kong.Name(bin),
-		kong.Description("Cucumber based Prometheus exporter"),
+		kong.Description("KMS manager"),
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{
 			Tree: true,
@@ -101,8 +101,8 @@ func main() {
 	}
 
 	flocCtx := floc.NewContext()
-	uxperi.UxperiSetCmdCtx(flocCtx, *pCtxcmd)
-	uxperi.UxperiSetFlags(flocCtx, cli)
+	secretum.SecretumSetCmdCtx(flocCtx, *pCtxcmd)
+	secretum.SecretumSetFlags(flocCtx, cli)
 	ctrl := floc.NewControl(flocCtx)
 
 	// Wait for SIGINT OS signal and cancel the flow
@@ -125,6 +125,7 @@ func main() {
 		return nil
 	}
 
+	//Run command are traversed starting from kms/list/fortanix/groups to kms
 	flow := run.Parallel(
 		waitInterrupt,
 		run.Sequence(append(pCtxcmd.InitSeq, pCtxcmd.RunSeq)...),
@@ -132,7 +133,7 @@ func main() {
 
 	//TODO: validate RunWith when the job finish with errors
 	if result, data, err = floc.RunWith(flocCtx, ctrl, flow); err != nil {
-		if rcerr, e := uxperi.UxperiRCErrorTree(flocCtx); e != nil {
+		if rcerr, e := secretum.SecretumRCErrorTree(flocCtx); e != nil {
 			rcerror = errortree.Add(rcerror, "context", e)
 			rcerror = errortree.Add(rcerror, "cmd", fmt.Errorf("%s", ctx.Command()))
 			rcerror = errortree.Add(rcerror, "msg", fmt.Errorf("error retrieving context values"))
@@ -156,7 +157,7 @@ func main() {
 		pCtxcmd.Apps.Logger.Debug("Flow failure")
 	default:
 		pCtxcmd.Apps.Logger.Debug("Flow finished with improper state")
-		if rcerror, err := uxperi.UxperiRCErrorTree(flocCtx); err != nil {
+		if rcerror, err := secretum.SecretumRCErrorTree(flocCtx); err != nil {
 			ctx.FatalIfErrorf(err)
 		} else {
 			ctx.FatalIfErrorf(*rcerror)
