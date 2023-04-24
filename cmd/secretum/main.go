@@ -11,6 +11,7 @@ import (
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/cli/common"
 	"fry.org/cmo/cli/internal/cli/secretum"
+	"fry.org/cmo/cli/internal/cli/versio"
 	"fry.org/cmo/cli/internal/infrastructure"
 
 	"github.com/alecthomas/kong"
@@ -103,6 +104,7 @@ func main() {
 	flocCtx := floc.NewContext()
 	secretum.SecretumSetCmdCtx(flocCtx, *pCtxcmd)
 	secretum.SecretumSetFlags(flocCtx, cli)
+	versio.VersioSetVersionCmd(flocCtx, cli.Version)
 	ctrl := floc.NewControl(flocCtx)
 
 	// Wait for SIGINT OS signal and cancel the flow
