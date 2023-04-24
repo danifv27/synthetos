@@ -8,9 +8,9 @@ import (
 )
 
 var (
-	secretumContextKeyCLI     = secretumContextKey("cli")
+	// secretumContextKeyCLI     = secretumContextKey("cli")
+	secretumContextKeyKmsCmd  = secretumContextKey("testcmd")
 	secretumContextKeyRCError = secretumContextKey("rcerror")
-	// secretumConTtextKeyCmdCtx  = secretumContextKey("cmdctx")
 )
 
 type secretumContextKey string
@@ -19,25 +19,45 @@ func (c secretumContextKey) String() string {
 	return "secretum." + string(c)
 }
 
-// SecretumFlags gets a pointer to CLI structure
-func SecretumFlags(ctx floc.Context) (CLI, error) {
-	var cli CLI
+// SecretumKmsCmd gets a pointer to secretum.KmsCmd structure
+func SecretumKmsCmd(ctx floc.Context) (KmsCmd, error) {
+	var cmd KmsCmd
 	var ok bool
 	var rcerror error
 
-	if cli, ok = ctx.Value(secretumContextKeyCLI).(CLI); !ok {
-		return CLI{}, errortree.Add(rcerror, "Flags", fmt.Errorf("type mismatch with key %s", secretumContextKeyCLI))
+	if cmd, ok = ctx.Value(secretumContextKeyKmsCmd).(KmsCmd); !ok {
+		return KmsCmd{}, errortree.Add(rcerror, "KmsCmd", fmt.Errorf("type mismatch with key %s", secretumContextKeyKmsCmd))
 	}
 
-	return cli, nil
+	return cmd, nil
 }
 
-func SecretumSetFlags(ctx floc.Context, c CLI) error {
+func SecretumSetKmsCmd(ctx floc.Context, c KmsCmd) error {
 
-	ctx.AddValue(secretumContextKeyCLI, c)
+	ctx.AddValue(secretumContextKeyKmsCmd, c)
 
 	return nil
 }
+
+// // SecretumFlags gets a pointer to CLI structure
+// func SecretumFlags(ctx floc.Context) (CLI, error) {
+// 	var cli CLI
+// 	var ok bool
+// 	var rcerror error
+
+// 	if cli, ok = ctx.Value(secretumContextKeyCLI).(CLI); !ok {
+// 		return CLI{}, errortree.Add(rcerror, "Flags", fmt.Errorf("type mismatch with key %s", secretumContextKeyCLI))
+// 	}
+
+// 	return cli, nil
+// }
+
+// func SecretumSetFlags(ctx floc.Context, c CLI) error {
+
+// 	ctx.AddValue(secretumContextKeyCLI, c)
+
+// 	return nil
+// }
 
 // SecretumRCErrorTree gets a pointer to errortree parent error
 func SecretumRCErrorTree(ctx floc.Context) (*error, error) {

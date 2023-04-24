@@ -103,7 +103,7 @@ func main() {
 
 	flocCtx := floc.NewContext()
 	common.CommonSetCmdCtx(flocCtx, *pCtxcmd)
-	secretum.SecretumSetFlags(flocCtx, cli)
+	secretum.SecretumSetKmsCmd(flocCtx, cli.Kms)
 	versio.VersioSetVersionCmd(flocCtx, cli.Version)
 	ctrl := floc.NewControl(flocCtx)
 

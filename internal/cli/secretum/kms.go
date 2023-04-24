@@ -26,7 +26,7 @@ type KmsFlags struct {
 func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
-	var cli CLI
+	var cmd KmsCmd
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
@@ -34,14 +34,14 @@ func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
 		}
 		return err
 	}
-	if cli, err = SecretumFlags(ctx); err != nil {
+	if cmd, err = SecretumKmsCmd(ctx); err != nil {
 		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeKmsCmd", e)
 		}
 		return err
 	}
 	infraOptions := []infrastructure.AdapterOption{
-		infrastructure.WithHealthchecker(cli.Kms.Flags.Probes.RootPrefix),
+		infrastructure.WithHealthchecker(cmd.Flags.Probes.RootPrefix),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
 		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
@@ -79,27 +79,27 @@ func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
 
 func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
-	var cli CLI
+	var cmd KmsCmd
 	var err error
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
 		return err
 	}
-	if cli, err = SecretumFlags(ctx); err != nil {
+	if cmd, err = SecretumKmsCmd(ctx); err != nil {
 		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
 		return err
 	}
 
 	// Start the server in a separate goroutine
 	srv := &http.Server{
-		Addr:    cli.Kms.Flags.Probes.Address,
+		Addr:    cmd.Flags.Probes.Address,
 		Handler: c.Adapters.Healthchecker,
 	}
 	go func() {
 		c.Apps.Logger.WithFields(logger.Fields{
-			"rootPrefix": cli.Kms.Flags.Probes.RootPrefix,
-			"address":    cli.Kms.Flags.Probes.Address,
+			"rootPrefix": cmd.Flags.Probes.RootPrefix,
+			"address":    cmd.Flags.Probes.Address,
 		}).Info("Starting health endpoints")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)

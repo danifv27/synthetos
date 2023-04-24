@@ -56,7 +56,7 @@ func Parse(URI string, l logger.Logger) (kms.KeyManager, error) {
 			l.WithFields(logger.Fields{
 				"endpoint": endpoint,
 			}).Debug("Usind default kms endpoint")
-			endpoint = "https://kms.adidas.com"
+			endpoint = "https://api.fortanix.com"
 		}
 		options = append(options,
 			WithEndpoint(endpoint),
