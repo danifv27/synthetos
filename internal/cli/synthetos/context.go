@@ -12,6 +12,7 @@ var (
 	synthetosContextKeyCLI     = synthetosContextKey("cli")
 	synthetosContextKeyRCError = synthetosContextKey("rcerror")
 	synthetosContextKeyCmdCtx  = synthetosContextKey("cmdctx")
+	// synthetosContextKeyVersionCmd = synthetosContextKey("versioncmd")
 )
 
 type synthetosContextKey string
