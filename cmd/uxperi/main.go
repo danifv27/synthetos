@@ -11,6 +11,7 @@ import (
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/cli/common"
 	"fry.org/cmo/cli/internal/cli/uxperi"
+	"fry.org/cmo/cli/internal/cli/versio"
 	"fry.org/cmo/cli/internal/infrastructure"
 
 	"github.com/alecthomas/kong"
@@ -103,6 +104,7 @@ func main() {
 	flocCtx := floc.NewContext()
 	uxperi.UxperiSetCmdCtx(flocCtx, *pCtxcmd)
 	uxperi.UxperiSetFlags(flocCtx, cli)
+	versio.VersioSetVersionCmd(flocCtx, cli.Version)
 	ctrl := floc.NewControl(flocCtx)
 
 	// Wait for SIGINT OS signal and cancel the flow
