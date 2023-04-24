@@ -29,14 +29,14 @@ func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
 	var cli CLI
 
 	if c, err = SecretumCmdCtx(ctx); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeTestCmd", e)
+		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsCmd", e)
 		}
 		return err
 	}
 	if cli, err = SecretumFlags(ctx); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeTestCmd", e)
+		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsCmd", e)
 		}
 		return err
 	}
@@ -44,8 +44,8 @@ func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
 		infrastructure.WithHealthchecker(cli.Kms.Flags.Probes.RootPrefix),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeTestCmd", e)
+		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsCmd", e)
 		}
 		return err
 	}
@@ -61,8 +61,8 @@ func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
 	if err = application.WithOptions(&c.Apps,
 		application.WithHealthchecker(c.Adapters.Healthchecker),
 	); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeTestCmd", e)
+		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsCmd", e)
 		}
 		return err
 	}

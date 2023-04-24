@@ -12,7 +12,7 @@ Overall, this Golang CLI application is a powerful and flexible tool for buildin
 
 # Quick Start
 
-Installation of `uxperi` is dead-simple, just download the release for your system and run the binary. The binaries are published in Cloudsmit.io, under `com/fry-systems/devops/uxperi/` package.
+Installation of `synthetos` is dead-simple, just download the release for your system and run the binary. The binaries are published in Cloudsmit.io, under `com/fry-systems/devops/synthetos/` package.
 
 The binaries are classified by operating system (darwin, linux or windows), architecture (amd64) and version.
 
@@ -23,7 +23,7 @@ export VERSION=0.0.1
 export GOOS=darwin
 export GOARCH=amd64
 
-curl -Lo uxperi https://<cloudsmith.io>/artifactory/com/fry-systems/devops/${GOOS}/${GOARCH}/${VERSION}/bin/uxperi
+curl -Lo synthetos https://<cloudsmith.io>/artifactory/com/fry-systems/devops/${GOOS}/${GOARCH}/${VERSION}/bin/synthetos
 
 # make the binary executable
 chmod +x optimo
@@ -35,14 +35,14 @@ Clone this repo and:
 
 ```bash
 git clone https://github.com/danifv27/synthetos.git
-cd cmd/uxperi
+cd cmd/synthetos
 make local
 
 # to 'install' the optimo binary, make it executable and either call it directy, put 
 # it in your PATH, or move it to a location which is already in your PATH:
 
-chmod +x uxperi
-mv uxperi /usr/local/bin
+chmod +x synthetos
+mv synthetos /usr/local/bin
 ```
 
 ### Cross compile

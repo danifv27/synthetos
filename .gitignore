@@ -21,4 +21,5 @@ output
 **/*/.DS_Store
 **/*/__debug_bin
 **/*/*.nogit
-.DS_Store
+.DS_Stored
+**.nogit

@@ -1,4 +1,4 @@
-package synthetos
+package kuberium
 
 import (
 	"context"
@@ -14,38 +14,38 @@ import (
 	"github.com/workanator/go-floc/v3"
 )
 
-type KmsCmd struct {
-	Flags KmsFlags   `embed:""`
-	List  KmsListCmd `cmd:"" help:"KMS list."`
+type K8sCmd struct {
+	Flags   K8sFlags      `embed:""`
+	Summary K8sSummaryCmd `cmd:"" help:"Show a summary of the objects deployed in a namespace or present in a kubernetes manifests."`
 }
 
-type KmsFlags struct {
+type K8sFlags struct {
 	Probes common.Probes `embed:"" group:"probes"`
 }
 
-func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
+func initializeK8sCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
 	var cli CLI
 
-	if c, err = SynthetosCmdCtx(ctx); err != nil {
-		if e := SynthetosSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeTestCmd", e)
+	if c, err = KuberiumCmdCtx(ctx); err != nil {
+		if e := KuberiumSetRCErrorTree(ctx, "initializeK8sCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeK8sCmd", e)
 		}
 		return err
 	}
-	if cli, err = SynthetosFlags(ctx); err != nil {
-		if e := SynthetosSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeTestCmd", e)
+	if cli, err = KuberiumFlags(ctx); err != nil {
+		if e := KuberiumSetRCErrorTree(ctx, "initializeK8sCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeK8sCmd", e)
 		}
 		return err
 	}
 	infraOptions := []infrastructure.AdapterOption{
-		infrastructure.WithHealthchecker(cli.Kms.Flags.Probes.RootPrefix),
+		infrastructure.WithHealthchecker(cli.K8s.Flags.Probes.RootPrefix),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
-		if e := SynthetosSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeTestCmd", e)
+		if e := KuberiumSetRCErrorTree(ctx, "initializeK8sCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeK8sCmd", e)
 		}
 		return err
 	}
@@ -61,8 +61,8 @@ func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
 	if err = application.WithOptions(&c.Apps,
 		application.WithHealthchecker(c.Adapters.Healthchecker),
 	); err != nil {
-		if e := SynthetosSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeTestCmd", e)
+		if e := KuberiumSetRCErrorTree(ctx, "initializeK8sCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeK8sCmd", e)
 		}
 		return err
 	}
@@ -82,27 +82,27 @@ func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
 	var cli CLI
 	var err error
 
-	if c, err = SynthetosCmdCtx(ctx); err != nil {
-		SynthetosSetRCErrorTree(ctx, "synthetos.startProbesServer", err)
+	if c, err = KuberiumCmdCtx(ctx); err != nil {
+		KuberiumSetRCErrorTree(ctx, "kuberium.startProbesServer", err)
 		return err
 	}
-	if cli, err = SynthetosFlags(ctx); err != nil {
-		SynthetosSetRCErrorTree(ctx, "synthetos.startProbesServer", err)
+	if cli, err = KuberiumFlags(ctx); err != nil {
+		KuberiumSetRCErrorTree(ctx, "kuberium.startProbesServer", err)
 		return err
 	}
 
 	// Start the server in a separate goroutine
 	srv := &http.Server{
-		Addr:    cli.Kms.Flags.Probes.Address,
+		Addr:    cli.K8s.Flags.Probes.Address,
 		Handler: c.Adapters.Healthchecker,
 	}
 	go func() {
 		c.Apps.Logger.WithFields(logger.Fields{
-			"rootPrefix": cli.Kms.Flags.Probes.RootPrefix,
-			"address":    cli.Kms.Flags.Probes.Address,
+			"rootPrefix": cli.K8s.Flags.Probes.RootPrefix,
+			"address":    cli.K8s.Flags.Probes.Address,
 		}).Info("Starting health endpoints")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			SynthetosSetRCErrorTree(ctx, "synthetos.startProbesServer", err)
+			KuberiumSetRCErrorTree(ctx, "kuberium.startProbesServer", err)
 		}
 	}()
 	// Wait for the context to be canceled
@@ -112,15 +112,15 @@ func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
 	ct, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ct); err != nil {
-		SynthetosSetRCErrorTree(ctx, "synthetos.startProbesServer", err)
+		KuberiumSetRCErrorTree(ctx, "kuberium.startProbesServer", err)
 	}
 
 	return nil
 }
 
-func (cmd *KmsCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
+func (cmd *K8sCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 
-	c.InitSeq = append([]floc.Job{initializeKmsCmd}, c.InitSeq...)
+	c.InitSeq = append([]floc.Job{initializeK8sCmd}, c.InitSeq...)
 
 	return nil
 }
