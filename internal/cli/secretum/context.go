@@ -3,7 +3,6 @@ package secretum
 import (
 	"fmt"
 
-	"fry.org/cmo/cli/internal/cli/common"
 	"github.com/speijnik/go-errortree"
 	"github.com/workanator/go-floc/v3"
 )
@@ -11,7 +10,7 @@ import (
 var (
 	secretumContextKeyCLI     = secretumContextKey("cli")
 	secretumContextKeyRCError = secretumContextKey("rcerror")
-	secretumContextKeyCmdCtx  = secretumContextKey("cmdctx")
+	// secretumConTtextKeyCmdCtx  = secretumContextKey("cmdctx")
 )
 
 type secretumContextKey string
@@ -68,30 +67,30 @@ func SecretumSetRCErrorTree(ctx floc.Context, key string, e error) error {
 	return errortree.Add(rce, "SetRCErrorTree", err)
 }
 
-// SecretumCmdCtx gets a pointer to the command context
-func SecretumCmdCtx(ctx floc.Context) (*common.Cmdctx, error) {
-	var c *common.Cmdctx
-	var ok bool
-	var rcerror error
+// // SecretumCmdCtx gets a pointer to the command context
+// func SecretumCmdCtx(ctx floc.Context) (*common.Cmdctx, error) {
+// 	var c *common.Cmdctx
+// 	var ok bool
+// 	var rcerror error
 
-	obj := ctx.Value(secretumContextKeyCmdCtx)
-	if obj == nil {
-		c = new(common.Cmdctx)
-		ctx.AddValue(secretumContextKeyCmdCtx, c)
-	} else if c, ok = obj.(*common.Cmdctx); !ok {
-		return nil, errortree.Add(rcerror, "NewApplications", fmt.Errorf("type mismatch with key %s", secretumContextKeyCmdCtx))
-	}
+// 	obj := ctx.Value(secretumContextKeyCmdCtx)
+// 	if obj == nil {
+// 		c = new(common.Cmdctx)
+// 		ctx.AddValue(secretumContextKeyCmdCtx, c)
+// 	} else if c, ok = obj.(*common.Cmdctx); !ok {
+// 		return nil, errortree.Add(rcerror, "NewApplications", fmt.Errorf("type mismatch with key %s", secretumContextKeyCmdCtx))
+// 	}
 
-	return c, nil
-}
+// 	return c, nil
+// }
 
-func SecretumSetCmdCtx(ctx floc.Context, p common.Cmdctx) error {
-	var c *common.Cmdctx
-	var err, rcerror error
+// func SecretumSetCmdCtx(ctx floc.Context, p common.Cmdctx) error {
+// 	var c *common.Cmdctx
+// 	var err, rcerror error
 
-	if c, err = SecretumCmdCtx(ctx); err == nil {
-		*c = p
-	}
+// 	if c, err = SecretumCmdCtx(ctx); err == nil {
+// 		*c = p
+// 	}
 
-	return errortree.Add(rcerror, "SetCmdCtx", err)
-}
+// 	return errortree.Add(rcerror, "SetCmdCtx", err)
+// }

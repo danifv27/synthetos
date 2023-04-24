@@ -3,15 +3,14 @@ package uxperi
 import (
 	"fmt"
 
-	"fry.org/cmo/cli/internal/cli/common"
 	"github.com/speijnik/go-errortree"
 	"github.com/workanator/go-floc/v3"
 )
 
 var (
-	uxperiContextKeyCLI     = uxperiContextKey("cli")
 	uxperiContextKeyRCError = uxperiContextKey("rcerror")
-	uxperiContextKeyCmdCtx  = uxperiContextKey("cmdctx")
+	// uxperiContextKeyCmdCtx  = uxperiContextKey("cmdctx")
+	uxperiContextKeyTestCmd = uxperiContextKey("testcmd")
 )
 
 type uxperiContextKey string
@@ -20,22 +19,22 @@ func (c uxperiContextKey) String() string {
 	return "uxperi." + string(c)
 }
 
-// UxperiFlags gets a pointer to CLI structure
-func UxperiFlags(ctx floc.Context) (CLI, error) {
-	var cli CLI
+// UxperiTestCmd gets a pointer to uxperi.TestCmd structure
+func UxperiTestCmd(ctx floc.Context) (TestCmd, error) {
+	var cmd TestCmd
 	var ok bool
 	var rcerror error
 
-	if cli, ok = ctx.Value(uxperiContextKeyCLI).(CLI); !ok {
-		return CLI{}, errortree.Add(rcerror, "UxperiFlags", fmt.Errorf("type mismatch with key %s", uxperiContextKeyCLI))
+	if cmd, ok = ctx.Value(uxperiContextKeyTestCmd).(TestCmd); !ok {
+		return TestCmd{}, errortree.Add(rcerror, "TestCmd", fmt.Errorf("type mismatch with key %s", uxperiContextKeyTestCmd))
 	}
 
-	return cli, nil
+	return cmd, nil
 }
 
-func UxperiSetFlags(ctx floc.Context, c CLI) error {
+func UxperiSetTestCmd(ctx floc.Context, c TestCmd) error {
 
-	ctx.AddValue(uxperiContextKeyCLI, c)
+	ctx.AddValue(uxperiContextKeyTestCmd, c)
 
 	return nil
 }
@@ -68,30 +67,30 @@ func UxperiSetRCErrorTree(ctx floc.Context, key string, e error) error {
 	return errortree.Add(rce, "SetRCErrorTree", err)
 }
 
-// UxperiCmdCtx gets a pointer to the command context
-func UxperiCmdCtx(ctx floc.Context) (*common.Cmdctx, error) {
-	var c *common.Cmdctx
-	var ok bool
-	var rcerror error
+// // UxperiCmdCtx gets a pointer to the command context
+// func UxperiCmdCtx(ctx floc.Context) (*common.Cmdctx, error) {
+// 	var c *common.Cmdctx
+// 	var ok bool
+// 	var rcerror error
 
-	obj := ctx.Value(uxperiContextKeyCmdCtx)
-	if obj == nil {
-		c = new(common.Cmdctx)
-		ctx.AddValue(uxperiContextKeyCmdCtx, c)
-	} else if c, ok = obj.(*common.Cmdctx); !ok {
-		return nil, errortree.Add(rcerror, "UxperiCmdCtx", fmt.Errorf("type mismatch with key %s", uxperiContextKeyCmdCtx))
-	}
+// 	obj := ctx.Value(uxperiContextKeyCmdCtx)
+// 	if obj == nil {
+// 		c = new(common.Cmdctx)
+// 		ctx.AddValue(uxperiContextKeyCmdCtx, c)
+// 	} else if c, ok = obj.(*common.Cmdctx); !ok {
+// 		return nil, errortree.Add(rcerror, "UxperiCmdCtx", fmt.Errorf("type mismatch with key %s", uxperiContextKeyCmdCtx))
+// 	}
 
-	return c, nil
-}
+// 	return c, nil
+// }
 
-func UxperiSetCmdCtx(ctx floc.Context, p common.Cmdctx) error {
-	var c *common.Cmdctx
-	var err, rcerror error
+// func UxperiSetCmdCtx(ctx floc.Context, p common.Cmdctx) error {
+// 	var c *common.Cmdctx
+// 	var err, rcerror error
 
-	if c, err = UxperiCmdCtx(ctx); err == nil {
-		*c = p
-	}
+// 	if c, err = UxperiCmdCtx(ctx); err == nil {
+// 		*c = p
+// 	}
 
-	return errortree.Add(rcerror, "UxperiSetCmdCtx", err)
-}
+// 	return errortree.Add(rcerror, "UxperiSetCmdCtx", err)
+// }

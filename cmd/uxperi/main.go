@@ -102,8 +102,8 @@ func main() {
 	}
 
 	flocCtx := floc.NewContext()
-	uxperi.UxperiSetCmdCtx(flocCtx, *pCtxcmd)
-	uxperi.UxperiSetFlags(flocCtx, cli)
+	common.CommonSetCmdCtx(flocCtx, *pCtxcmd)
+	uxperi.UxperiSetTestCmd(flocCtx, cli.Test)
 	versio.VersioSetVersionCmd(flocCtx, cli.Version)
 	ctrl := floc.NewControl(flocCtx)
 

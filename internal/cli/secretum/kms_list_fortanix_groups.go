@@ -27,7 +27,7 @@ func initializeKmsListFortanixGroupsCmd(ctx floc.Context, ctrl floc.Control) err
 	var c *common.Cmdctx
 	// var cli CLI
 
-	if c, err = SecretumCmdCtx(ctx); err != nil {
+	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		if e := SecretumSetRCErrorTree(ctx, "initializeKmsListFortanixGroupsCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeKmsListFortanixGroupsCmd", e)
 		}
@@ -61,7 +61,7 @@ func kmsListFortanixGroupsJob(ctx floc.Context, ctrl floc.Control) error {
 	var cli CLI
 	var err error
 
-	if c, err = SecretumCmdCtx(ctx); err != nil {
+	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
 		return err
 	}

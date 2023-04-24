@@ -11,6 +11,7 @@ import (
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/cli/common"
 	"fry.org/cmo/cli/internal/cli/synthetos"
+	"fry.org/cmo/cli/internal/cli/uxperi"
 	"fry.org/cmo/cli/internal/cli/versio"
 	"fry.org/cmo/cli/internal/infrastructure"
 
@@ -102,8 +103,8 @@ func main() {
 	}
 
 	flocCtx := floc.NewContext()
-	synthetos.SynthetosSetCmdCtx(flocCtx, *pCtxcmd)
-	synthetos.SynthetosSetFlags(flocCtx, cli)
+	common.CommonSetCmdCtx(flocCtx, *pCtxcmd)
+	uxperi.UxperiSetTestCmd(flocCtx, cli.Test)
 	versio.VersioSetVersionCmd(flocCtx, cli.Version)
 	ctrl := floc.NewControl(flocCtx)
 

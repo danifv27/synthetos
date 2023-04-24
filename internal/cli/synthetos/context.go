@@ -3,7 +3,6 @@ package synthetos
 import (
 	"fmt"
 
-	"fry.org/cmo/cli/internal/cli/common"
 	"github.com/speijnik/go-errortree"
 	"github.com/workanator/go-floc/v3"
 )
@@ -11,7 +10,7 @@ import (
 var (
 	synthetosContextKeyCLI     = synthetosContextKey("cli")
 	synthetosContextKeyRCError = synthetosContextKey("rcerror")
-	synthetosContextKeyCmdCtx  = synthetosContextKey("cmdctx")
+	// synthetosContextKeyCmdCtx  = synthetosContextKey("cmdctx")
 	// synthetosContextKeyVersionCmd = synthetosContextKey("versioncmd")
 )
 
@@ -69,30 +68,30 @@ func SynthetosSetRCErrorTree(ctx floc.Context, key string, e error) error {
 	return errortree.Add(rce, "SetRCErrorTree", err)
 }
 
-// SynthetosCmdCtx gets a pointer to the command context
-func SynthetosCmdCtx(ctx floc.Context) (*common.Cmdctx, error) {
-	var c *common.Cmdctx
-	var ok bool
-	var rcerror error
+// // SynthetosCmdCtx gets a pointer to the command context
+// func SynthetosCmdCtx(ctx floc.Context) (*common.Cmdctx, error) {
+// 	var c *common.Cmdctx
+// 	var ok bool
+// 	var rcerror error
 
-	obj := ctx.Value(synthetosContextKeyCmdCtx)
-	if obj == nil {
-		c = new(common.Cmdctx)
-		ctx.AddValue(synthetosContextKeyCmdCtx, c)
-	} else if c, ok = obj.(*common.Cmdctx); !ok {
-		return nil, errortree.Add(rcerror, "NewApplications", fmt.Errorf("type mismatch with key %s", synthetosContextKeyCmdCtx))
-	}
+// 	obj := ctx.Value(synthetosContextKeyCmdCtx)
+// 	if obj == nil {
+// 		c = new(common.Cmdctx)
+// 		ctx.AddValue(synthetosContextKeyCmdCtx, c)
+// 	} else if c, ok = obj.(*common.Cmdctx); !ok {
+// 		return nil, errortree.Add(rcerror, "NewApplications", fmt.Errorf("type mismatch with key %s", synthetosContextKeyCmdCtx))
+// 	}
 
-	return c, nil
-}
+// 	return c, nil
+// }
 
-func SynthetosSetCmdCtx(ctx floc.Context, p common.Cmdctx) error {
-	var c *common.Cmdctx
-	var err, rcerror error
+// func SynthetosSetCmdCtx(ctx floc.Context, p common.Cmdctx) error {
+// 	var c *common.Cmdctx
+// 	var err, rcerror error
 
-	if c, err = SynthetosCmdCtx(ctx); err == nil {
-		*c = p
-	}
+// 	if c, err = SynthetosCmdCtx(ctx); err == nil {
+// 		*c = p
+// 	}
 
-	return errortree.Add(rcerror, "SetCmdCtx", err)
-}
+// 	return errortree.Add(rcerror, "SetCmdCtx", err)
+// }
