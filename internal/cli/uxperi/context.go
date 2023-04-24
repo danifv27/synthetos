@@ -9,7 +9,6 @@ import (
 
 var (
 	uxperiContextKeyRCError = uxperiContextKey("rcerror")
-	// uxperiContextKeyCmdCtx  = uxperiContextKey("cmdctx")
 	uxperiContextKeyTestCmd = uxperiContextKey("testcmd")
 )
 
@@ -66,31 +65,3 @@ func UxperiSetRCErrorTree(ctx floc.Context, key string, e error) error {
 
 	return errortree.Add(rce, "SetRCErrorTree", err)
 }
-
-// // UxperiCmdCtx gets a pointer to the command context
-// func UxperiCmdCtx(ctx floc.Context) (*common.Cmdctx, error) {
-// 	var c *common.Cmdctx
-// 	var ok bool
-// 	var rcerror error
-
-// 	obj := ctx.Value(uxperiContextKeyCmdCtx)
-// 	if obj == nil {
-// 		c = new(common.Cmdctx)
-// 		ctx.AddValue(uxperiContextKeyCmdCtx, c)
-// 	} else if c, ok = obj.(*common.Cmdctx); !ok {
-// 		return nil, errortree.Add(rcerror, "UxperiCmdCtx", fmt.Errorf("type mismatch with key %s", uxperiContextKeyCmdCtx))
-// 	}
-
-// 	return c, nil
-// }
-
-// func UxperiSetCmdCtx(ctx floc.Context, p common.Cmdctx) error {
-// 	var c *common.Cmdctx
-// 	var err, rcerror error
-
-// 	if c, err = UxperiCmdCtx(ctx); err == nil {
-// 		*c = p
-// 	}
-
-// 	return errortree.Add(rcerror, "UxperiSetCmdCtx", err)
-// }

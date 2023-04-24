@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	versioContextKeyCLI        = versioContextKey("cli")
+	// versioContextKeyCLI        = versioContextKey("cli")
 	versioContextKeyRCError    = versioContextKey("rcerror")
 	versioContextKeyCmdCtx     = versioContextKey("cmdctx")
 	versioContextKeyVersionCmd = versioContextKey("versioncmd")
@@ -41,25 +41,25 @@ func VersioSetVersionCmd(ctx floc.Context, c VersionCmd) error {
 	return nil
 }
 
-// VersioFlags gets a pointer to CLI structure
-func VersioFlags(ctx floc.Context) (CLI, error) {
-	var cli CLI
-	var ok bool
-	var rcerror error
+// // VersioFlags gets a pointer to CLI structure
+// func VersioFlags(ctx floc.Context) (CLI, error) {
+// 	var cli CLI
+// 	var ok bool
+// 	var rcerror error
 
-	if cli, ok = ctx.Value(versioContextKeyCLI).(CLI); !ok {
-		return CLI{}, errortree.Add(rcerror, "Flags", fmt.Errorf("type mismatch with key %s", versioContextKeyCLI))
-	}
+// 	if cli, ok = ctx.Value(versioContextKeyCLI).(CLI); !ok {
+// 		return CLI{}, errortree.Add(rcerror, "Flags", fmt.Errorf("type mismatch with key %s", versioContextKeyCLI))
+// 	}
 
-	return cli, nil
-}
+// 	return cli, nil
+// }
 
-func VersioSetFlags(ctx floc.Context, c CLI) error {
+// func VersioSetFlags(ctx floc.Context, c CLI) error {
 
-	ctx.AddValue(versioContextKeyCLI, c)
+// 	ctx.AddValue(versioContextKeyCLI, c)
 
-	return nil
-}
+// 	return nil
+// }
 
 // VersioRCErrorTree gets a pointer to errortree parent error
 func VersioRCErrorTree(ctx floc.Context) (*error, error) {
