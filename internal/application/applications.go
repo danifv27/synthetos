@@ -35,7 +35,8 @@ func (o ApplicationOptionFunc) Apply(a *Applications) error {
 
 // Queries operations that request data
 type Queries struct {
-	ListGroups actions.ListGroupsQueryHandler
+	ListGroups  actions.ListGroupsQueryHandler
+	ShowSummary actions.ShowSummaryQueryHandler
 }
 
 // Commands operations that accept data to make a change or trigger an action
@@ -116,6 +117,16 @@ func WithListGroupsQuery(l logger.Logger, k kms.KeyManager, p printer.Printer) A
 	return ApplicationOptionFunc(func(a *Applications) error {
 
 		a.Queries.ListGroups = actions.NewListGroupsQueryHandler(l, k, p)
+
+		return nil
+	})
+}
+
+func WithShowSummaryQuery(l logger.Logger, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ShowSummary = actions.NewShowSummaryQueryHandler(l, p)
 
 		return nil
 	})
