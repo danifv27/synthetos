@@ -23,22 +23,22 @@ type KmzFlags struct {
 func initializeKmzCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
-	var cli CLI
+	var cmd KmzCmd
 
-	if c, err = KuberiumCmdCtx(ctx); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmzCmd", e)
+	if c, err = common.CommonCmdCtx(ctx); err != nil {
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsCmd", e)
 		}
 		return err
 	}
-	if cli, err = KuberiumFlags(ctx); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmzCmd", e)
+	if cmd, err = KuberiumKmzCmd(ctx); err != nil {
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsCmd", e)
 		}
 		return err
 	}
 	infraOptions := []infrastructure.AdapterOption{
-		infrastructure.WithHealthchecker(cli.Kmz.Flags.Probes.RootPrefix),
+		infrastructure.WithHealthchecker(cmd.Flags.Probes.RootPrefix),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
 		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzCmd", err); e != nil {

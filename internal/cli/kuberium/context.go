@@ -3,15 +3,14 @@ package kuberium
 import (
 	"fmt"
 
-	"fry.org/cmo/cli/internal/cli/common"
 	"github.com/speijnik/go-errortree"
 	"github.com/workanator/go-floc/v3"
 )
 
 var (
-	kuberiumContextKeyCLI     = kuberiumContextKey("cli")
+	kuberiumContextKeyK8sCmd  = kuberiumContextKey("k8scmd")
 	kuberiumContextKeyRCError = kuberiumContextKey("rcerror")
-	kuberiumContextKeyCmdCtx  = kuberiumContextKey("cmdctx")
+	kuberiumContextKeyKmzCmd  = kuberiumContextKey("kmzcmd")
 )
 
 type kuberiumContextKey string
@@ -20,22 +19,42 @@ func (c kuberiumContextKey) String() string {
 	return "kuberium." + string(c)
 }
 
-// KuberiumFlags gets a pointer to CLI structure
-func KuberiumFlags(ctx floc.Context) (CLI, error) {
-	var cli CLI
+// KuberiumSetK8sCmd gets a pointer to kuberium.K8sCmd structure
+func KuberiumK8sCmd(ctx floc.Context) (K8sCmd, error) {
+	var cmd K8sCmd
 	var ok bool
 	var rcerror error
 
-	if cli, ok = ctx.Value(kuberiumContextKeyCLI).(CLI); !ok {
-		return CLI{}, errortree.Add(rcerror, "Flags", fmt.Errorf("type mismatch with key %s", kuberiumContextKeyCLI))
+	if cmd, ok = ctx.Value(kuberiumContextKeyK8sCmd).(K8sCmd); !ok {
+		return K8sCmd{}, errortree.Add(rcerror, "K8sCmd", fmt.Errorf("type mismatch with key %s", kuberiumContextKeyK8sCmd))
 	}
 
-	return cli, nil
+	return cmd, nil
 }
 
-func KuberiumSetFlags(ctx floc.Context, c CLI) error {
+func KuberiumSetK8sCmd(ctx floc.Context, c K8sCmd) error {
 
-	ctx.AddValue(kuberiumContextKeyCLI, c)
+	ctx.AddValue(kuberiumContextKeyK8sCmd, c)
+
+	return nil
+}
+
+// KuberiumKmzCmd gets a pointer to kuberium.K8sCmd structure
+func KuberiumKmzCmd(ctx floc.Context) (KmzCmd, error) {
+	var cmd KmzCmd
+	var ok bool
+	var rcerror error
+
+	if cmd, ok = ctx.Value(kuberiumContextKeyKmzCmd).(KmzCmd); !ok {
+		return KmzCmd{}, errortree.Add(rcerror, "KmzCmd", fmt.Errorf("type mismatch with key %s", kuberiumContextKeyKmzCmd))
+	}
+
+	return cmd, nil
+}
+
+func KuberiumSetKmzCmd(ctx floc.Context, c KmzCmd) error {
+
+	ctx.AddValue(kuberiumContextKeyKmzCmd, c)
 
 	return nil
 }
@@ -66,32 +85,4 @@ func KuberiumSetRCErrorTree(ctx floc.Context, key string, e error) error {
 	}
 
 	return errortree.Add(rce, "SetRCErrorTree", err)
-}
-
-// KuberiumCmdCtx gets a pointer to the command context
-func KuberiumCmdCtx(ctx floc.Context) (*common.Cmdctx, error) {
-	var c *common.Cmdctx
-	var ok bool
-	var rcerror error
-
-	obj := ctx.Value(kuberiumContextKeyCmdCtx)
-	if obj == nil {
-		c = new(common.Cmdctx)
-		ctx.AddValue(kuberiumContextKeyCmdCtx, c)
-	} else if c, ok = obj.(*common.Cmdctx); !ok {
-		return nil, errortree.Add(rcerror, "NewApplications", fmt.Errorf("type mismatch with key %s", kuberiumContextKeyCmdCtx))
-	}
-
-	return c, nil
-}
-
-func KuberiumSetCmdCtx(ctx floc.Context, p common.Cmdctx) error {
-	var c *common.Cmdctx
-	var err, rcerror error
-
-	if c, err = KuberiumCmdCtx(ctx); err == nil {
-		*c = p
-	}
-
-	return errortree.Add(rcerror, "SetCmdCtx", err)
 }
