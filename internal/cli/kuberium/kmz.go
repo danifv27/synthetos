@@ -12,8 +12,8 @@ import (
 )
 
 type KmzCmd struct {
-	Flags KmzFlags `embed:""`
-	// Summary KmzSummaryCmd `cmd:"" help:"Show a summary of the objects present in a kubernetes manifests."`
+	Flags   KmzFlags      `embed:""`
+	Summary KmzSummaryCmd `cmd:"" help:"Show a summary of the objects present in a kubernetes manifests."`
 }
 
 type KmzFlags struct {
@@ -26,19 +26,20 @@ func initializeKmzCmd(ctx floc.Context, ctrl floc.Control) error {
 	var cmd KmzCmd
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmsCmd", e)
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmzCmd", e)
 		}
 		return err
 	}
 	if cmd, err = KuberiumKmzCmd(ctx); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmsCmd", e)
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmzCmd", e)
 		}
 		return err
 	}
 	infraOptions := []infrastructure.AdapterOption{
 		infrastructure.WithHealthchecker(cmd.Flags.Probes.RootPrefix),
+		infrastructure.WithTablePrinter(),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
 		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzCmd", err); e != nil {
@@ -57,6 +58,7 @@ func initializeKmzCmd(ctx floc.Context, ctrl floc.Control) error {
 	)
 	if err = application.WithOptions(&c.Apps,
 		application.WithHealthchecker(c.Adapters.Healthchecker),
+		application.WithShowSummaryQuery(c.Apps.Logger, c.Adapters.Printer),
 	); err != nil {
 		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeKmzCmd", e)

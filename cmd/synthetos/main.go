@@ -10,6 +10,8 @@ import (
 	"fry.org/cmo/cli/internal/application"
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/cli/common"
+	"fry.org/cmo/cli/internal/cli/kuberium"
+	"fry.org/cmo/cli/internal/cli/secretum"
 	"fry.org/cmo/cli/internal/cli/synthetos"
 	"fry.org/cmo/cli/internal/cli/uxperi"
 	"fry.org/cmo/cli/internal/cli/versio"
@@ -105,6 +107,9 @@ func main() {
 	flocCtx := floc.NewContext()
 	common.CommonSetCmdCtx(flocCtx, *pCtxcmd)
 	uxperi.UxperiSetTestCmd(flocCtx, cli.Test)
+	secretum.SecretumSetKmsCmd(flocCtx, cli.Kms)
+	kuberium.KuberiumSetKubeCmd(flocCtx, cli.Kube)
+	kuberium.KuberiumSetKmzCmd(flocCtx, cli.Kmz)
 	versio.VersioSetVersionCmd(flocCtx, cli.Version)
 	ctrl := floc.NewControl(flocCtx)
 
@@ -128,10 +133,32 @@ func main() {
 		return nil
 	}
 
+	seq := append(pCtxcmd.InitSeq, pCtxcmd.RunSeq)
+	jobs := make([]floc.Job, 0)
+	for _, item := range seq {
+		if item != nil {
+			jobs = append(jobs, item)
+		}
+	}
+	//Last command quit waitInterrupt
+	jobs = append(jobs,
+		func(ctx floc.Context, ctrl floc.Control) error {
+			if rcerror, err := synthetos.SynthetosRCErrorTree(ctx); err != nil {
+				ctrl.Fail(fmt.Sprintf("Command '%s' internal error", pCtxcmd.Cmd), err)
+				return err
+			} else if *rcerror != nil {
+				ctrl.Fail(fmt.Sprintf("Command '%s' failed", pCtxcmd.Cmd), *rcerror)
+				return *rcerror
+			}
+			ctrl.Complete(fmt.Sprintf("Command '%s' completed", pCtxcmd.Cmd))
+
+			return nil
+		},
+	)
 	//Run command are traversed starting from kms/list/fortanix/groups to kms
 	flow := run.Parallel(
 		waitInterrupt,
-		run.Sequence(append(pCtxcmd.InitSeq, pCtxcmd.RunSeq)...),
+		run.Sequence(jobs...),
 	)
 
 	//TODO: validate RunWith when the job finish with errors

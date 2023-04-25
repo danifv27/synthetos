@@ -11,38 +11,39 @@ import (
 	"github.com/workanator/go-floc/v3"
 )
 
-type K8sCmd struct {
-	Flags   K8sFlags      `embed:""`
-	Summary K8sSummaryCmd `cmd:"" help:"Show a summary of the objects deployed in a namespace or present in a kubernetes manifests."`
+type KubeCmd struct {
+	Flags   KubeFlags      `embed:""`
+	Summary KubeSummaryCmd `cmd:"" help:"Show a summary of the objects deployed in a namespace or present in a kubernetes manifests."`
 }
 
-type K8sFlags struct {
+type KubeFlags struct {
 	Probes common.Probes `embed:"" group:"probes"`
 }
 
-func initializeK8sCmd(ctx floc.Context, ctrl floc.Control) error {
+func initializeKubeCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
-	var cmd K8sCmd
+	var cmd KubeCmd
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmsCmd", e)
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKubeCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKubeCmd", e)
 		}
 		return err
 	}
-	if cmd, err = KuberiumK8sCmd(ctx); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmsCmd", e)
+	if cmd, err = KuberiumKubeCmd(ctx); err != nil {
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKubeCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKubeCmd", e)
 		}
 		return err
 	}
 	infraOptions := []infrastructure.AdapterOption{
 		infrastructure.WithHealthchecker(cmd.Flags.Probes.RootPrefix),
+		infrastructure.WithTablePrinter(),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "initializeK8sCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeK8sCmd", e)
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKubeCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKubeCmd", e)
 		}
 		return err
 	}
@@ -57,9 +58,10 @@ func initializeK8sCmd(ctx floc.Context, ctrl floc.Control) error {
 	)
 	if err = application.WithOptions(&c.Apps,
 		application.WithHealthchecker(c.Adapters.Healthchecker),
+		application.WithShowSummaryQuery(c.Apps.Logger, c.Adapters.Printer),
 	); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "initializeK8sCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeK8sCmd", e)
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKubeCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKubeCmd", e)
 		}
 		return err
 	}
@@ -119,9 +121,9 @@ func initializeK8sCmd(ctx floc.Context, ctrl floc.Control) error {
 // 	return nil
 // }
 
-func (cmd *K8sCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
+func (cmd *KubeCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 
-	c.InitSeq = append([]floc.Job{initializeK8sCmd}, c.InitSeq...)
+	c.InitSeq = append([]floc.Job{initializeKubeCmd}, c.InitSeq...)
 
 	return nil
 }

@@ -19,20 +19,20 @@ func (c kuberiumContextKey) String() string {
 	return "kuberium." + string(c)
 }
 
-// KuberiumSetK8sCmd gets a pointer to kuberium.K8sCmd structure
-func KuberiumK8sCmd(ctx floc.Context) (K8sCmd, error) {
-	var cmd K8sCmd
+// KuberiumKubeCmd gets a pointer to kuberium.K8sCmd structure
+func KuberiumKubeCmd(ctx floc.Context) (KubeCmd, error) {
+	var cmd KubeCmd
 	var ok bool
 	var rcerror error
 
-	if cmd, ok = ctx.Value(kuberiumContextKeyK8sCmd).(K8sCmd); !ok {
-		return K8sCmd{}, errortree.Add(rcerror, "K8sCmd", fmt.Errorf("type mismatch with key %s", kuberiumContextKeyK8sCmd))
+	if cmd, ok = ctx.Value(kuberiumContextKeyK8sCmd).(KubeCmd); !ok {
+		return KubeCmd{}, errortree.Add(rcerror, "K8sCmd", fmt.Errorf("type mismatch with key %s", kuberiumContextKeyK8sCmd))
 	}
 
 	return cmd, nil
 }
 
-func KuberiumSetK8sCmd(ctx floc.Context, c K8sCmd) error {
+func KuberiumSetKubeCmd(ctx floc.Context, c KubeCmd) error {
 
 	ctx.AddValue(kuberiumContextKeyK8sCmd, c)
 

@@ -5,7 +5,7 @@ else
 endif
 
 # The binary to build (just the basename).
-BIN ?= kuberum
+BIN ?= kuberium
 BASE64_PASSWORD = ZHVtbXlWYWx1ZQ==
 IMAGE_NAME = $(DOCKER_REGISTRY)/$(VCS_USER)/$(BIN)
 VCS_USER ?= danifv27

@@ -11,7 +11,6 @@ import (
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/cli/common"
 	"fry.org/cmo/cli/internal/cli/kuberium"
-	"fry.org/cmo/cli/internal/cli/secretum"
 	"fry.org/cmo/cli/internal/cli/versio"
 	"fry.org/cmo/cli/internal/infrastructure"
 
@@ -21,7 +20,7 @@ import (
 	"github.com/workanator/go-floc/v3/run"
 )
 
-func initializeCmd(cli *secretum.CLI, cmd string) (common.Cmdctx, error) {
+func initializeCmd(cli *kuberium.CLI, cmd string) (common.Cmdctx, error) {
 	var err, rcerror error
 	var output string
 
@@ -104,7 +103,7 @@ func main() {
 
 	flocCtx := floc.NewContext()
 	common.CommonSetCmdCtx(flocCtx, *pCtxcmd)
-	kuberium.KuberiumSetK8sCmd(flocCtx, cli.K8s)
+	kuberium.KuberiumSetKubeCmd(flocCtx, cli.Kube)
 	kuberium.KuberiumSetKmzCmd(flocCtx, cli.Kmz)
 	versio.VersioSetVersionCmd(flocCtx, cli.Version)
 	ctrl := floc.NewControl(flocCtx)
@@ -129,15 +128,37 @@ func main() {
 		return nil
 	}
 
+	seq := append(pCtxcmd.InitSeq, pCtxcmd.RunSeq)
+	jobs := make([]floc.Job, 0)
+	for _, item := range seq {
+		if item != nil {
+			jobs = append(jobs, item)
+		}
+	}
+	//Last command quit waitInterrupt
+	jobs = append(jobs,
+		func(ctx floc.Context, ctrl floc.Control) error {
+			if rcerror, err := kuberium.KuberiumRCErrorTree(ctx); err != nil {
+				ctrl.Fail(fmt.Sprintf("Command '%s' internal error", pCtxcmd.Cmd), err)
+				return err
+			} else if *rcerror != nil {
+				ctrl.Fail(fmt.Sprintf("Command '%s' failed", pCtxcmd.Cmd), *rcerror)
+				return *rcerror
+			}
+			ctrl.Complete(fmt.Sprintf("Command '%s' completed", pCtxcmd.Cmd))
+
+			return nil
+		},
+	)
 	//Run command are traversed starting from kms/list/fortanix/groups to kms
 	flow := run.Parallel(
 		waitInterrupt,
-		run.Sequence(append(pCtxcmd.InitSeq, pCtxcmd.RunSeq)...),
+		run.Sequence(jobs...),
 	)
 
 	//TODO: validate RunWith when the job finish with errors
 	if result, data, err = floc.RunWith(flocCtx, ctrl, flow); err != nil {
-		if rcerr, e := secretum.SecretumRCErrorTree(flocCtx); e != nil {
+		if rcerr, e := kuberium.KuberiumRCErrorTree(flocCtx); e != nil {
 			rcerror = errortree.Add(rcerror, "context", e)
 			rcerror = errortree.Add(rcerror, "cmd", fmt.Errorf("%s", ctx.Command()))
 			rcerror = errortree.Add(rcerror, "msg", fmt.Errorf("error retrieving context values"))
@@ -161,7 +182,7 @@ func main() {
 		pCtxcmd.Apps.Logger.Debug("Flow failure")
 	default:
 		pCtxcmd.Apps.Logger.Debug("Flow finished with improper state")
-		if rcerror, err := secretum.SecretumRCErrorTree(flocCtx); err != nil {
+		if rcerror, err := kuberium.KuberiumRCErrorTree(flocCtx); err != nil {
 			ctx.FatalIfErrorf(err)
 		} else {
 			ctx.FatalIfErrorf(*rcerror)

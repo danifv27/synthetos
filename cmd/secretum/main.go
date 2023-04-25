@@ -127,6 +127,28 @@ func main() {
 		return nil
 	}
 
+	seq := append(pCtxcmd.InitSeq, pCtxcmd.RunSeq)
+	jobs := make([]floc.Job, 0)
+	for _, item := range seq {
+		if item != nil {
+			jobs = append(jobs, item)
+		}
+	}
+	//Last command
+	jobs = append(jobs,
+		func(ctx floc.Context, ctrl floc.Control) error {
+			if rcerror, err := secretum.SecretumRCErrorTree(ctx); err != nil {
+				ctrl.Fail(fmt.Sprintf("Command '%s' internal error", pCtxcmd.Cmd), err)
+				return err
+			} else if *rcerror != nil {
+				ctrl.Fail(fmt.Sprintf("Command '%s' failed", pCtxcmd.Cmd), *rcerror)
+				return *rcerror
+			}
+			ctrl.Complete(fmt.Sprintf("Command '%s' completed", pCtxcmd.Cmd))
+
+			return nil
+		},
+	)
 	//Run command are traversed starting from kms/list/fortanix/groups to kms
 	flow := run.Parallel(
 		waitInterrupt,
