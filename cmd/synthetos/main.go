@@ -80,7 +80,7 @@ func main() {
 		kong.Bind(pCtxcmd),
 		kong.Bind(&rcerror),
 		kong.Name(bin),
-		kong.Description("KMS manager"),
+		kong.Description("Synthetos CLI"),
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{
 			Tree: true,
@@ -140,7 +140,7 @@ func main() {
 			jobs = append(jobs, item)
 		}
 	}
-	//Last command quit waitInterrupt
+	//Last command
 	jobs = append(jobs,
 		func(ctx floc.Context, ctrl floc.Control) error {
 			if rcerror, err := synthetos.SynthetosRCErrorTree(ctx); err != nil {
@@ -158,7 +158,7 @@ func main() {
 	//Run command are traversed starting from kms/list/fortanix/groups to kms
 	flow := run.Parallel(
 		waitInterrupt,
-		run.Sequence(jobs...),
+		run.Sequence(append(pCtxcmd.InitSeq, pCtxcmd.RunSeq)...),
 	)
 
 	//TODO: validate RunWith when the job finish with errors

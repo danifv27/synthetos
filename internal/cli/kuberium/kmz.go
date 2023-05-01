@@ -76,7 +76,7 @@ func initializeKmzCmd(ctx floc.Context, ctrl floc.Control) error {
 	return nil
 }
 
-func (cmd *KmzCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
+func (cmd *KmzCmd) Run(c *common.Cmdctx, rcerror *error) error {
 
 	c.InitSeq = append([]floc.Job{initializeKmzCmd}, c.InitSeq...)
 
