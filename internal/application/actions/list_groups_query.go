@@ -30,7 +30,7 @@ type listGroupsQueryHandler struct {
 }
 
 // NewListGroupsQueryHandler Handler Constructor
-func NewListGroupsQueryHandler(l logger.Logger, k kms.KeyManager, p printer.Printer) ListGroupsQueryHandler {
+func NewListGroupsQueryHandler(l logger.Logger, p printer.Printer, k kms.KeyManager) ListGroupsQueryHandler {
 
 	return listGroupsQueryHandler{
 		lgr:   l,

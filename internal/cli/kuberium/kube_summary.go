@@ -21,7 +21,7 @@ type KubeSummaryCmd struct {
 }
 
 type KubeSummaryFlags struct {
-	Output string `prefix:"k8s.list." help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KUBE_SUMMARY_OUTPUT"`
+	Output string `prefix:"kube.summary." help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KUBE_SUMMARY_OUTPUT"`
 }
 
 func initializeKubeSummaryCmd(ctx floc.Context, ctrl floc.Control) error {
@@ -51,7 +51,7 @@ func initializeKubeSummaryCmd(ctx floc.Context, ctrl floc.Control) error {
 		return err
 	}
 	if err = application.WithOptions(&c.Apps,
-		application.WithShowSummaryQuery(c.Apps.Logger, c.Adapters.Printer),
+		application.WithShowSummaryQuery(c.Apps.Logger, c.Adapters.Printer, c.Adapters.ResourceProvider),
 	); err != nil {
 		if e := KuberiumSetRCErrorTree(ctx, "initializeKubeSummaryCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeKubeSummaryCmd", e)

@@ -41,7 +41,7 @@ func initializeKmsListFortanixGroupsCmd(ctx floc.Context, ctrl floc.Control) err
 	// }
 
 	if err = application.WithOptions(&c.Apps,
-		application.WithListGroupsQuery(c.Apps.Logger, c.Adapters.KeyManager, c.Adapters.Printer),
+		application.WithListGroupsQuery(c.Apps.Logger, c.Adapters.Printer, c.Adapters.KeyManager),
 	); err != nil {
 		return errortree.Add(rcerror, "initializeKmsListFortanixGroupsCmd", err)
 	}

@@ -17,7 +17,8 @@ type KmzCmd struct {
 }
 
 type KmzFlags struct {
-	Probes common.Probes `embed:"" group:"probes"`
+	Probes            common.Probes `embed:"" group:"probes"`
+	KustomizationPath string        `help:"Absolute path to kustomization file" type:"path" prefix:"kmz." env:"SC_KMZ_KUSTOMIZATION_PATH" required:""`
 }
 
 func initializeKmzCmd(ctx floc.Context, ctrl floc.Control) error {
@@ -58,7 +59,6 @@ func initializeKmzCmd(ctx floc.Context, ctrl floc.Control) error {
 	)
 	if err = application.WithOptions(&c.Apps,
 		application.WithHealthchecker(c.Adapters.Healthchecker),
-		application.WithShowSummaryQuery(c.Apps.Logger, c.Adapters.Printer),
 	); err != nil {
 		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeKmzCmd", e)

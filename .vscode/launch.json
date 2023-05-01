@@ -22,6 +22,7 @@
             "program": "${workspaceFolder}/cmd/kuberium",
             "env": {
                 "SC_LOGGING_LEVEL": "debug",
+                "SC_KMZ_KUSTOMIZATION_PATH": "/home/dfraile/Proyectos/packagesGit/github/danifv27/optimo/kustomize/overlays/stg/aws/tools/optimo/main",
             },
             "args": [
                 "kmz",

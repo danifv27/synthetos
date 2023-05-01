@@ -3,6 +3,7 @@ package kuberium
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"time"
 
 	"fry.org/cmo/cli/internal/application"
@@ -17,17 +18,17 @@ import (
 )
 
 type KmzSummaryCmd struct {
-	Flags KubeSummaryFlags `embed:""`
+	Flags KmzSummaryFlags `embed:""`
 }
 
 type KmzSummaryFlags struct {
-	Output string `prefix:"k8s.list." help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KMZ_SUMMARY_OUTPUT"`
+	Output string `prefix:"kmz.summary." help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KMZ_SUMMARY_OUTPUT"`
 }
 
 func initializeKmzSummaryCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
-	// var cmd KmzCmd
+	var cmd KmzCmd
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzSummaryCmd", err); e != nil {
@@ -35,14 +36,16 @@ func initializeKmzSummaryCmd(ctx floc.Context, ctrl floc.Control) error {
 		}
 		return err
 	}
-	// if cmd, err = KuberiumKmzCmd(ctx); err != nil {
-	// 	if e := KuberiumSetRCErrorTree(ctx, "initializeKmzSummaryCmd", err); e != nil {
-	// 		return errortree.Add(rcerror, "initializeKmzSummaryCmd", e)
-	// 	}
-	// 	return err
-	// }
+	if cmd, err = KuberiumKmzCmd(ctx); err != nil {
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzSummaryCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmzSummaryCmd", e)
+		}
+		return err
+	}
+	uri := fmt.Sprintf("provider:kustomize?kustomization=%s", url.QueryEscape(cmd.Flags.KustomizationPath))
 	infraOptions := []infrastructure.AdapterOption{
 		infrastructure.WithTablePrinter(),
+		infrastructure.WithResourceProvider(uri, c.Apps.Logger),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
 		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzSummaryCmd", err); e != nil {
@@ -51,7 +54,7 @@ func initializeKmzSummaryCmd(ctx floc.Context, ctrl floc.Control) error {
 		return err
 	}
 	if err = application.WithOptions(&c.Apps,
-		application.WithShowSummaryQuery(c.Apps.Logger, c.Adapters.Printer),
+		application.WithShowSummaryQuery(c.Apps.Logger, c.Adapters.Printer, c.Adapters.ResourceProvider),
 	); err != nil {
 		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzSummaryCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeKmzSummaryCmd", e)
@@ -83,7 +86,8 @@ func kmzSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 		return err
 	}
 	req := actions.ShowSummaryRequest{
-		Mode: printer.PrinterModeNone,
+		Mode:     printer.PrinterModeNone,
+		Location: cmd.Flags.KustomizationPath,
 	}
 	m := cmd.Summary.Flags.Output
 	switch {
