@@ -2,6 +2,7 @@ package actions
 
 import (
 	"context"
+	"errors"
 
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/application/printer"
@@ -17,7 +18,9 @@ type ShowSummaryRequest struct {
 	Selector string
 }
 
-type ShowSummaryResult struct{}
+type ShowSummaryResult struct {
+	items []provider.Summary
+}
 
 type ShowSummaryQueryHandler interface {
 	Handle(request ShowSummaryRequest) (ShowSummaryResult, error)
@@ -40,25 +43,51 @@ func NewShowSummaryQueryHandler(l logger.Logger, p printer.Printer, pr provider.
 	}
 }
 
+func summarize(u *unstructured.Unstructured) (provider.Summary, error) {
+	var rcerror error
+
+	s := provider.Summary{
+		APIVersion: u.GetAPIVersion(),
+		Kind:       u.GetKind(),
+	}
+
+	nameRaw := u.GetName()
+	if nameRaw != "" {
+		s.Name = nameRaw
+		return s, nil
+	}
+
+	generateNameRaw := u.GetGenerateName()
+	if generateNameRaw != "" {
+		s.Name = generateNameRaw
+		return s, nil
+	}
+
+	return provider.Summary{}, errortree.Add(rcerror, "summarize", errors.New("unable to find object name"))
+}
+
 func (h showSummaryQueryHandler) Handle(request ShowSummaryRequest) (ShowSummaryResult, error) {
 	var err, rcerror error
-	var rc ShowSummaryResult
-	var uitems []*unstructured.Unstructured
+	var resources []*unstructured.Unstructured
 
 	ctx := context.Background()
-
-	if uitems, err = h.provider.GetResources(ctx, request.Location, request.Selector); err != nil {
+	rc := ShowSummaryResult{
+		items: make([]provider.Summary, 0),
+	}
+	if resources, err = h.provider.GetResources(ctx, request.Location, request.Selector); err != nil {
 		return ShowSummaryResult{}, errortree.Add(rcerror, "Handle", err)
 	}
-	if request.Mode != printer.PrinterModeNone {
-		for _, u := range uitems {
-			h.lgr.WithFields(logger.Fields{
-				"item": u,
-			}).Debug("Kustomization resource")
+	for _, r := range resources {
+		if s, err := summarize(r); err != nil {
+			return ShowSummaryResult{}, errortree.Add(rcerror, "Handle", err)
+		} else {
+			rc.items = append(rc.items, s)
 		}
-		// 	if err = h.print.ListKmsGroups(rc.Groups, request.Mode); err != nil {
-		// 		return ShowSummaryResult{}, errortree.Add(rcerror, "Handle", err)
-		// 	}
+	}
+	if request.Mode != printer.PrinterModeNone {
+		if err = h.print.PrintResourceSummary(rc.items, request.Mode); err != nil {
+			return ShowSummaryResult{}, errortree.Add(rcerror, "Handle", err)
+		}
 	}
 
 	return rc, nil

@@ -10,8 +10,10 @@ import (
 	"fry.org/cmo/cli/internal/application/provider"
 	"github.com/speijnik/go-errortree"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/kustomize/api/filesys"
 	"sigs.k8s.io/kustomize/api/krusty"
+	"sigs.k8s.io/kustomize/api/resmap"
 	"sigs.k8s.io/kustomize/api/types"
 )
 
@@ -104,7 +106,36 @@ func WithKustomizationPath(path string) ProviderOption {
 }
 
 func (c *kustomizeClient) GetResources(ctx context.Context, location string, selector string) ([]*unstructured.Unstructured, error) {
-	var rcerror error
+	var err, rcerror error
+	var resources []*unstructured.Unstructured
+	var m resmap.ResMap
 
-	return nil, errortree.Add(rcerror, "kustomization.GetResources", errors.New("getresources method not implemented"))
+	m, err = c.kst.Run(c.fSys, c.kustomizationPath)
+	if err != nil {
+		return nil, errortree.Add(rcerror, "kustomize.GetResources", err)
+	}
+
+	// Convert the resources to unstructured objects.
+	for _, res := range m.Resources() {
+
+		// Get the Resource's ResId
+		resId := res.OrgId()
+
+		// Create an Unstructured object with the Resource's contents
+		u := &unstructured.Unstructured{}
+		u.SetName(resId.Name)
+		u.SetNamespace(resId.Namespace)
+		u.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   resId.Group,
+			Kind:    resId.Kind,
+			Version: resId.Version,
+		})
+		if u.Object, err = res.Map(); err != nil {
+			return nil, errortree.Add(rcerror, "kustomize.GetResources", err)
+		}
+
+		resources = append(resources, u)
+	}
+
+	return resources, nil
 }
