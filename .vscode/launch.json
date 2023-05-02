@@ -32,6 +32,25 @@
             "showLog": true
         },
         {
+            "name": "kube summary",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/kuberium",
+            "env": {
+                "SC_LOGGING_LEVEL": "debug",
+                "SC_KUBE_CONFIG_NAMESPACE": "pc-pdm-sit",
+                "SC_KUBE_CONFIG_PATH": "/home/dfraile/.kube/config",
+            },
+            "args": [
+                "kube",
+                "--no-probes.enable",
+                "--kube.context=pvt-pdm-sit",
+                "summary"
+            ],
+            "showLog": true
+        },
+        {
             "name": "kms list fortanix group",
             "type": "go",
             "request": "launch",

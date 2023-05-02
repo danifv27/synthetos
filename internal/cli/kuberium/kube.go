@@ -20,7 +20,11 @@ type KubeCmd struct {
 }
 
 type KubeFlags struct {
-	Probes common.Probes `embed:"" group:"probes"`
+	Probes    common.Probes `embed:"" group:"probes"`
+	Namespace string        `help:"namespace" prefix:"kube." env:"SC_KUBE_CONFIG_NAMESPACE" required:""`
+	Path      string        `help:"path to the kubeconfig file to use for requests or host url" prefix:"kube." env:"SC_KUBE_CONFIG_PATH" required:""`
+	Context   string        `help:"the name of the kubeconfig context to use" prefix:"kube." env:"SC_KUBE_CONTEXT" required:""`
+	Selector  *string       `help:"selector (label query) to filter on," prefix:"kube." env:"SC_KUBE_SELECTOR" short:"l"`
 }
 
 func initializeKubeCmd(ctx floc.Context, ctrl floc.Control) error {

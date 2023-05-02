@@ -3,12 +3,17 @@ package provider
 import (
 	"context"
 	"errors"
+	"fmt"
+	"sync"
 
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/application/provider"
 	iClient "fry.org/cmo/cli/internal/infrastructure/client"
+	"github.com/avast/retry-go/v4"
 	"github.com/speijnik/go-errortree"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 )
 
@@ -17,6 +22,11 @@ type kubernetesClient struct {
 	Client        *iClient.KubeDynamicClient
 	Namespace     string
 	LabelSelector string
+}
+
+type kubernetesClientItem struct {
+	obj     unstructured.Unstructured
+	rcerror error
 }
 
 // NewKubernetesProvider creates a new CucumberExporter
@@ -89,7 +99,117 @@ func WithKubernetesLabelSelector(selector string) ProviderOption {
 }
 
 func (c *kubernetesClient) GetResources(ctx context.Context, location string, selector string) ([]*unstructured.Unstructured, error) {
-	var rcerror error
+	var rcerror, err error
+	var list []*metav1.APIResourceList
+	var uItems []*unstructured.Unstructured
 
-	return nil, errortree.Add(rcerror, "kubernetes.GetResources", errors.New("getresources method not implemented"))
+	//The v1.APIResourceList object is used to represent a list of available Kubernetes API resources for a particular group version (GV).
+	list, err = c.Client.DiscoveryClient.ServerPreferredResources()
+	if err != nil {
+		return nil, errortree.Add(rcerror, "GetResources", err)
+	}
+	listOptions := metav1.ListOptions{
+		LabelSelector: selector,
+	}
+	ch := make(chan kubernetesClientItem, 10)
+	wg := sync.WaitGroup{}
+	//Start the consumer first to keep the number of producer goroutines low
+	quit := make(chan struct{})
+	c.l.Debug("Starting kubernetes consumer...")
+	go func(ch chan kubernetesClientItem, q chan struct{}) {
+	consumerLoop:
+		for {
+			select {
+			case <-ctx.Done(): // closes when the caller cancels the ctx
+				c.l.WithFields(logger.Fields{
+					"err": ctx.Err(),
+				}).Warn("Kubernetes consumer stopped")
+				break consumerLoop
+			case u, ok := <-ch:
+				if !ok {
+					break consumerLoop
+				}
+				if u.rcerror == nil {
+					uItems = append(uItems, &u.obj)
+					c.l.WithFields(logger.Fields{
+						"obj": u.obj.GetName(),
+					}).Debug("Kubernetes consumed...")
+				} else {
+					c.l.WithFields(logger.Fields{
+						"err": u.rcerror,
+						"obj": u.obj.GetName(),
+					}).Warn("Error consuming Kubernetes cluster object")
+				}
+			} //select
+		} //for
+		close(q)
+		c.l.Debug("Finished kubernetes consumer. Channel closed")
+	}(ch, quit)
+	// Start the producer
+	for idx := range list {
+		wg.Add(1)
+		go func(ch chan kubernetesClientItem, meta *metav1.APIResourceList) {
+			var u kubernetesClientItem
+			var ulist *unstructured.UnstructuredList
+			var rcerror error
+
+			defer wg.Done()
+			select {
+			case <-ctx.Done(): // closes when the caller cancels the ctx
+				c.l.WithFields(logger.Fields{
+					"err": ctx.Err(),
+				}).Warn("Kubernetes producer stopped")
+				break
+			default:
+				if gv, err := schema.ParseGroupVersion(meta.GroupVersion); err != nil {
+					c.l.WithFields(logger.Fields{
+						"err": err,
+						"gv":  meta.GroupVersion,
+					}).Warn("Error parsing group version")
+					u.rcerror = errortree.Add(rcerror, "GetResources", err)
+				} else {
+					for _, res := range meta.APIResources {
+						gvr := gv.WithResource(res.Name)
+						err := retry.Do(
+							func() error {
+								var err error
+								ulist, err = c.Client.DynamicInterface.Resource(gvr).Namespace(location).List(context.TODO(), listOptions)
+								c.l.WithFields(logger.Fields{
+									"err":       err,
+									"gvr":       gvr,
+									"namespace": location,
+								}).Warn("Error listing kubernetes objects")
+
+								return err
+							},
+							retry.Attempts(3),
+						)
+						if err != nil {
+							u.rcerror = errortree.Add(rcerror, "GetResources", fmt.Errorf("listing resource %v (%v): %w", gvr, location, err))
+
+						} else if ulist != nil && len(ulist.Items) > 0 {
+							for _, item := range ulist.Items {
+								u.obj = item
+								c.l.WithFields(logger.Fields{
+									"gvr":     gvr,
+									"gv":      meta.GroupVersion,
+									"rcerror": u.rcerror,
+								}).Debug("Send to kubernetes consumer")
+								ch <- u
+							}
+						}
+					}
+				}
+			} //select
+		}(ch, list[idx])
+	} //for range
+	c.l.Debug("Waiting for kubernetes producers to stop...")
+	wg.Wait()
+	c.l.Debug("Kubernetes producers closed. Closing channel...")
+	close(ch)
+	c.l.Debug("Channel closed. Waiting for kubernetes consumer to close")
+	<-quit
+	c.l.Debug("Kubernetes consumer closed")
+
+	return uItems, nil
 }
