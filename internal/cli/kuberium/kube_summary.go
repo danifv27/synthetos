@@ -61,7 +61,8 @@ func initializeKubeSummaryCmd(ctx floc.Context, ctrl floc.Control) error {
 		return err
 	}
 	if err = application.WithOptions(&c.Apps,
-		application.WithShowSummaryQuery(c.Apps.Logger, c.Adapters.Printer, c.Adapters.ResourceProvider),
+		application.WithShowSummaryQuery(c.Apps.Logger, c.Adapters.ResourceProvider),
+		application.WithPrintResourceSummaryCommand(c.Apps.Logger, c.Adapters.Printer),
 	); err != nil {
 		if e := KuberiumSetRCErrorTree(ctx, "initializeKubeSummaryCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeKubeSummaryCmd", e)
@@ -83,6 +84,7 @@ func kubeSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
 	var cmd KubeCmd
 	var err error
+	var showSummaryRC actions.ShowSummaryResult
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
@@ -93,22 +95,29 @@ func kubeSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 		return err
 	}
 	req := actions.ShowSummaryRequest{
-		Mode:     printer.PrinterModeNone,
 		Location: cmd.Flags.Namespace,
 	}
 	if cmd.Flags.Selector != nil {
 		req.Selector = *cmd.Flags.Selector
 	}
+	if showSummaryRC, err = c.Apps.Queries.ShowSummary.Handle(req); err != nil {
+		KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
+		return err
+	}
 	m := cmd.Summary.Flags.Output
+	reqPrint := actions.PrintResourceSummaryRequest{
+		Mode:  printer.PrinterModeNone,
+		Items: showSummaryRC.Items,
+	}
 	switch {
 	case m == "json":
-		req.Mode = printer.PrinterModeJSON
+		reqPrint.Mode = printer.PrinterModeJSON
 	case m == "text":
-		req.Mode = printer.PrinterModeText
+		reqPrint.Mode = printer.PrinterModeText
 	case m == "table":
-		req.Mode = printer.PrinterModeTable
+		reqPrint.Mode = printer.PrinterModeTable
 	}
-	if _, err = c.Apps.Queries.ShowSummary.Handle(req); err != nil {
+	if _, err = c.Apps.Commands.PrintResourceSummary.Handle(reqPrint); err != nil {
 		KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
 		return err
 	}

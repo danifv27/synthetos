@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"fry.org/cmo/cli/internal/application/logger"
-	"fry.org/cmo/cli/internal/application/printer"
 	"fry.org/cmo/cli/internal/application/provider"
 	"github.com/speijnik/go-errortree"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -13,13 +12,12 @@ import (
 
 // ShowSummaryRequest query params
 type ShowSummaryRequest struct {
-	Mode     printer.PrinterMode
 	Location string
 	Selector string
 }
 
 type ShowSummaryResult struct {
-	items []provider.Summary
+	Items []provider.Summary
 }
 
 type ShowSummaryQueryHandler interface {
@@ -29,16 +27,14 @@ type ShowSummaryQueryHandler interface {
 // Implements ShowSummaryHandler interface
 type showSummaryQueryHandler struct {
 	lgr      logger.Logger
-	print    printer.Printer
 	provider provider.ResourceProvider
 }
 
 // NewShowSummaryQueryHandler Handler Constructor
-func NewShowSummaryQueryHandler(l logger.Logger, p printer.Printer, pr provider.ResourceProvider) ShowSummaryQueryHandler {
+func NewShowSummaryQueryHandler(l logger.Logger, pr provider.ResourceProvider) ShowSummaryQueryHandler {
 
 	return showSummaryQueryHandler{
 		lgr:      l,
-		print:    p,
 		provider: pr,
 	}
 }
@@ -72,7 +68,7 @@ func (h showSummaryQueryHandler) Handle(request ShowSummaryRequest) (ShowSummary
 
 	ctx := context.Background()
 	rc := ShowSummaryResult{
-		items: make([]provider.Summary, 0),
+		Items: make([]provider.Summary, 0),
 	}
 	if resources, err = h.provider.GetResources(ctx, request.Location, request.Selector); err != nil {
 		return ShowSummaryResult{}, errortree.Add(rcerror, "Handle", err)
@@ -81,12 +77,7 @@ func (h showSummaryQueryHandler) Handle(request ShowSummaryRequest) (ShowSummary
 		if s, err := summarize(r); err != nil {
 			return ShowSummaryResult{}, errortree.Add(rcerror, "Handle", err)
 		} else {
-			rc.items = append(rc.items, s)
-		}
-	}
-	if request.Mode != printer.PrinterModeNone {
-		if err = h.print.PrintResourceSummary(rc.items, request.Mode); err != nil {
-			return ShowSummaryResult{}, errortree.Add(rcerror, "Handle", err)
+			rc.Items = append(rc.Items, s)
 		}
 	}
 

@@ -42,7 +42,8 @@ type Queries struct {
 
 // Commands operations that accept data to make a change or trigger an action
 type Commands struct {
-	PrintVersion actions.PrintVersionCommandHandler
+	PrintVersion         actions.PrintVersionCommandHandler
+	PrintResourceSummary actions.PrintResourceSummaryCommand
 }
 
 // Applications contains all exposed services of the application layer
@@ -113,6 +114,16 @@ func WithPrintVersionCommand(v version.Version, p printer.Printer) ApplicationOp
 	})
 }
 
+func WithPrintResourceSummaryCommand(l logger.Logger, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.PrintResourceSummary = actions.NewPrintResourceSummaryCommandHandler(l, p)
+
+		return nil
+	})
+}
+
 func WithListGroupsQuery(l logger.Logger, p printer.Printer, k kms.KeyManager) ApplicationOption {
 
 	return ApplicationOptionFunc(func(a *Applications) error {
@@ -123,11 +134,11 @@ func WithListGroupsQuery(l logger.Logger, p printer.Printer, k kms.KeyManager) A
 	})
 }
 
-func WithShowSummaryQuery(l logger.Logger, p printer.Printer, pr provider.ResourceProvider) ApplicationOption {
+func WithShowSummaryQuery(l logger.Logger, pr provider.ResourceProvider) ApplicationOption {
 
 	return ApplicationOptionFunc(func(a *Applications) error {
 
-		a.Queries.ShowSummary = actions.NewShowSummaryQueryHandler(l, p, pr)
+		a.Queries.ShowSummary = actions.NewShowSummaryQueryHandler(l, pr)
 
 		return nil
 	})
