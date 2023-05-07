@@ -2,6 +2,7 @@ package printer
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 
 	"fry.org/cmo/cli/internal/application/printer"
@@ -9,6 +10,7 @@ import (
 	"github.com/alexeyco/simpletable"
 	"github.com/gonejack/linesprinter"
 	"github.com/speijnik/go-errortree"
+	"github.com/tidwall/pretty"
 )
 
 func (t *PrinterClient) printResourcesSummaryTable(ch <-chan provider.Summary) error {
@@ -55,6 +57,34 @@ func (t *PrinterClient) printResourcesSummaryTable(ch <-chan provider.Summary) e
 	return nil
 }
 
+func printResourcesSummaryJSON(ch <-chan provider.Summary) error {
+	var rcerror error
+	var summaries []provider.Summary
+
+	for r := range ch {
+		summaries = append(summaries, r)
+	} //for
+	// Convert structs to JSON.
+	if j, err := json.Marshal(summaries); err != nil {
+		return errortree.Add(rcerror, "printResourcesSummaryJSON", err)
+	} else {
+		fmt.Printf("%s\n", pretty.Pretty(j))
+	}
+
+	return nil
+}
+
+func printResourcesSummaryText(ch <-chan provider.Summary) error {
+	var summaries []provider.Summary
+
+	for r := range ch {
+		summaries = append(summaries, r)
+	} //for
+	fmt.Printf("%v\n", summaries)
+
+	return nil
+}
+
 func (t *PrinterClient) PrintResourceSummary(ch <-chan provider.Summary, mode printer.PrinterMode) error {
 	var rcerror error
 
@@ -62,17 +92,11 @@ func (t *PrinterClient) PrintResourceSummary(ch <-chan provider.Summary, mode pr
 
 	switch mode {
 	case printer.PrinterModeJSON:
-		// Convert structs to JSON.
-		// if j, err := json.Marshal(resources); err != nil {
-		// 	return errortree.Add(rcerror, "PrintResourceSummary", err)
-		// } else {
-		// 	fmt.Printf("%s\n", pretty.Pretty(j))
-		// }
-		// return nil
+		rcerror = printResourcesSummaryJSON(ch)
 	case printer.PrinterModeTable:
 		rcerror = t.printResourcesSummaryTable(ch)
-		// default:
-		// fmt.Printf("%v", resources)
+	case printer.PrinterModeText:
+		rcerror = printResourcesSummaryText(ch)
 	}
 
 	return rcerror
