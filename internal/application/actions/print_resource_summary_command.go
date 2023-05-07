@@ -9,14 +9,12 @@ import (
 
 // PrintResourceSummaryRequest query params
 type PrintResourceSummaryRequest struct {
-	Mode  printer.PrinterMode
-	Items []provider.Summary
+	Mode printer.PrinterMode
+	Ch   <-chan provider.Summary
 }
 
-type PrintResourceSummaryResult struct{}
-
 type PrintResourceSummaryCommand interface {
-	Handle(request PrintResourceSummaryRequest) (PrintResourceSummaryResult, error)
+	Handle(request PrintResourceSummaryRequest) error
 }
 
 // Implements PrintResourceSummaryCommand interface
@@ -34,14 +32,14 @@ func NewPrintResourceSummaryCommandHandler(l logger.Logger, p printer.Printer) P
 	}
 }
 
-func (h printResourceSummaryCommand) Handle(request PrintResourceSummaryRequest) (PrintResourceSummaryResult, error) {
+func (h printResourceSummaryCommand) Handle(request PrintResourceSummaryRequest) error {
 	var err, rcerror error
 
 	if request.Mode != printer.PrinterModeNone {
-		if err = h.printer.PrintResourceSummary(request.Items, request.Mode); err != nil {
-			return PrintResourceSummaryResult{}, errortree.Add(rcerror, "Handle", err)
+		if err = h.printer.PrintResourceSummary(request.Ch, request.Mode); err != nil {
+			return errortree.Add(rcerror, "Handle", err)
 		}
 	}
 
-	return PrintResourceSummaryResult{}, nil
+	return nil
 }

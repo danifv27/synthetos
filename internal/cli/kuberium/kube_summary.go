@@ -94,19 +94,14 @@ func kubeSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 		KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
 		return err
 	}
-	req := actions.ShowSummaryRequest{
-		Location: cmd.Flags.Namespace,
-	}
-	if cmd.Flags.Selector != nil {
-		req.Selector = *cmd.Flags.Selector
-	}
-	if showSummaryRC, err = c.Apps.Queries.ShowSummary.Handle(req); err != nil {
-		KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
-		return err
-	}
+	summaryCh := make(chan provider.Summary, 3)
+	quit := make(chan struct{})
+
+	// Let's start the printer consumer
 	m := cmd.Summary.Flags.Output
 	reqPrint := actions.PrintResourceSummaryRequest{
 		Mode:  printer.PrinterModeNone,
+		Ch:    summaryCh,
 		Items: showSummaryRC.Items,
 	}
 	switch {
@@ -117,10 +112,12 @@ func kubeSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 	case m == "table":
 		reqPrint.Mode = printer.PrinterModeTable
 	}
-	if _, err = c.Apps.Commands.PrintResourceSummary.Handle(reqPrint); err != nil {
-		KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
-		return err
-	}
+	go func(req actions.PrintResourceSummaryRequest) {
+		if _, err = c.Apps.Commands.PrintResourceSummary.Handle(req); err != nil {
+			KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
+		}
+		close(quit)
+	}(reqPrint)
 
 	return nil
 }
