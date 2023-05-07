@@ -9,6 +9,7 @@ import (
 	"fry.org/cmo/cli/internal/application"
 	"fry.org/cmo/cli/internal/application/actions"
 	"fry.org/cmo/cli/internal/application/printer"
+	"fry.org/cmo/cli/internal/application/provider"
 	"fry.org/cmo/cli/internal/cli/common"
 	"fry.org/cmo/cli/internal/infrastructure"
 	"github.com/speijnik/go-errortree"
@@ -86,16 +87,13 @@ func kmzSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 		KuberiumSetRCErrorTree(ctx, "kmzSummaryJob", err)
 		return err
 	}
-	req := actions.ShowSummaryRequest{
-		Location: cmd.Flags.KustomizationPath,
-	}
-	if err = c.Apps.Queries.ShowSummary.Handle(req); err != nil {
-		KuberiumSetRCErrorTree(ctx, "kmzSummaryJob", err)
-		return err
-	}
+	summaryCh := make(chan provider.Summary, 3)
+	quit := make(chan struct{})
+	// Let's start the printer consumer
 	m := cmd.Summary.Flags.Output
 	reqPrint := actions.PrintResourceSummaryRequest{
 		Mode: printer.PrinterModeNone,
+		Ch:   summaryCh,
 	}
 	switch {
 	case m == "json":
@@ -105,10 +103,24 @@ func kmzSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 	case m == "table":
 		reqPrint.Mode = printer.PrinterModeTable
 	}
-	if err = c.Apps.Commands.PrintResourceSummary.Handle(reqPrint); err != nil {
-		KuberiumSetRCErrorTree(ctx, "kmzSummaryJob", err)
-		return err
+	go func(req actions.PrintResourceSummaryRequest) {
+		if err = c.Apps.Commands.PrintResourceSummary.Handle(req); err != nil {
+			KuberiumSetRCErrorTree(ctx, "kmzSummaryJob", err)
+		}
+		close(quit)
+	}(reqPrint)
+	//Start the producer
+	reqShow := actions.ShowSummaryRequest{
+		Location: cmd.Flags.KustomizationPath,
+		Ch:       summaryCh,
 	}
+	go func(req actions.ShowSummaryRequest) {
+		if err = c.Apps.Queries.ShowSummary.Handle(req); err != nil {
+			KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
+		}
+	}(reqShow)
+	//Wait until printer finish it work
+	<-quit
 
 	return nil
 }

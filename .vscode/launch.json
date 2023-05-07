@@ -23,6 +23,7 @@
             "env": {
                 "SC_LOGGING_LEVEL": "debug",
                 "SC_KMZ_KUSTOMIZATION_PATH": "/home/dfraile/Proyectos/packagesGit/github/danifv27/optimo/kustomize/overlays/stg/aws/tools/optimo/main",
+                "SC_KUBE_CMD": "kuberium kmz --no-probes.enable --kmz.kustomization-path=/home/dfraile/Proyectos/packagesGit/github/danifv27/optimo/kustomize/overlays/stg/aws/tools/optimo/main summary"
             },
             "args": [
                 "kmz",
@@ -41,6 +42,7 @@
                 "SC_LOGGING_LEVEL": "debug",
                 "SC_KUBE_CONFIG_NAMESPACE": "pc-pdm-sit",
                 "SC_KUBE_CONFIG_PATH": "/home/dfraile/.kube/config",
+                "SC_KUBE_CMD": "kuberium kube --kube.path=/home/dfraile/.kube/config --kube.namespace=pc-pdm-sit --kube.context=pvt-pdm-sit summary"
             },
             "args": [
                 "kube",
