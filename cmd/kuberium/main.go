@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"reflect"
 
 	"fry.org/cmo/cli/internal/application"
 	"fry.org/cmo/cli/internal/application/logger"
@@ -82,7 +83,7 @@ func main() {
 		kong.ConfigureHelp(kong.HelpOptions{
 			Tree: true,
 		}),
-		// kong.TypeMapper(reflect.TypeOf([]common.K8sResource{}), common.K8sResource{}),
+		kong.TypeMapper(reflect.TypeOf([]common.K8sResource{}), common.K8sResource{}),
 		kong.Configuration(kong.JSON, fmt.Sprintf("/etc/%s.json", bin), fmt.Sprintf("~/.%s.json", bin), fmt.Sprintf("%s/.%s.json", exPath, exBin)),
 	)
 	if *pCtxcmd, err = initializeCmd(&cli, ctx.Command()); err != nil {

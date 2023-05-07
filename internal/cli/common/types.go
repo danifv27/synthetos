@@ -1,8 +1,13 @@
 package common
 
 import (
+	"fmt"
+	"reflect"
+	"strings"
+
 	"fry.org/cmo/cli/internal/application"
 	"fry.org/cmo/cli/internal/infrastructure"
+	"github.com/alecthomas/kong"
 	"github.com/workanator/go-floc/v3"
 )
 
@@ -34,4 +39,49 @@ type Cmdctx struct {
 func (p Probes) AreProbesEnabled(ctx floc.Context) bool {
 
 	return p.Enable
+}
+
+type K8sResource struct {
+	Kind string
+}
+
+func (r K8sResource) Decode(ctx *kong.DecodeContext, target reflect.Value) error {
+
+	values := ctx.Scan.PopWhile(func(t kong.Token) bool {
+		return t.Type != kong.EOLToken && t.Type == kong.FlagValueToken
+	})
+
+	t := target.Type()
+	//Reset the slice
+	if t.Kind() == reflect.Slice {
+		target.Set(reflect.MakeSlice(t, 0, 0))
+	}
+	for _, resource := range values {
+		switch reflect.TypeOf(resource.Value).Kind() {
+		case reflect.Slice:
+			s := reflect.ValueOf((resource.Value))
+			for i := 0; i < s.Len(); i++ {
+				res := K8sResource{}
+				res.Kind = fmt.Sprintf("%v", s.Index(i))
+				target.Set(reflect.Append(target, reflect.ValueOf(res)))
+			}
+		case reflect.String:
+			resourcesList := strings.Split(fmt.Sprintf("%v", resource.Value), ",")
+			for _, r := range resourcesList {
+				res := K8sResource{}
+				res.Kind = r
+				target.Set(reflect.Append(target, reflect.ValueOf(res)))
+			}
+		default:
+			res := K8sResource{}
+			res.Kind = fmt.Sprintf("%v", resource)
+			target.Set(reflect.Append(target, reflect.ValueOf(res)))
+		}
+	}
+	// If v represents a struct
+	// v := target.FieldByName("Kind")
+	// if v.IsValid() {
+	// 	v.SetString(value)
+	// }
+	return nil
 }

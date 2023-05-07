@@ -20,7 +20,11 @@ type KubeSummaryCmd struct {
 	Flags KubeSummaryFlags `embed:""`
 }
 
-type KubeSummaryFlags struct{}
+type KubeSummaryFlags struct {
+	Exclude []common.K8sResource `help:"Regexp matching resources to be excluded from the comparision" prefix:"kube.summary." env:"SC_KUBE_SUMMARY_EXCLUDE_RESOURCE" xor:"Exclude,Include"`
+	Include []common.K8sResource `help:"Regexp matching resources to be included to the comparision" prefix:"kube.summary." env:"SC_KUBE_SUMMARY_INCLUDE_RESOURCE" xor:"Exclude,Include"`
+	Output  string               `help:"Format the output (table|json|text)." enum:"table,json,text" prefix:"kube.summary." default:"table" env:"SC_KUBE_SUMMARY_OUTPUT"`
+}
 
 func initializeKubeSummaryCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
