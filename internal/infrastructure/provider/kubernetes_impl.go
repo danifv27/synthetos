@@ -131,15 +131,16 @@ func (c *kubernetesClient) GetResources(ctx context.Context, location string, se
 				}
 				if u.rcerror == nil {
 					uItems = append(uItems, &u.obj)
-					c.l.WithFields(logger.Fields{
-						"obj": u.obj.GetName(),
-					}).Debug("Kubernetes consumed...")
-				} else {
-					c.l.WithFields(logger.Fields{
-						"err": u.rcerror,
-						"obj": u.obj.GetName(),
-					}).Warn("Error consuming Kubernetes cluster object")
+					// c.l.WithFields(logger.Fields{
+					// 	"obj": u.obj.GetName(),
+					// }).Debug("Kubernetes consumed...")
 				}
+				// } else {
+				// 	c.l.WithFields(logger.Fields{
+				// 		"err": u.rcerror,
+				// 		"obj": u.obj.GetName(),
+				// 	}).Warn("Error consuming Kubernetes cluster object")
+				// }
 			} //select
 		} //for
 		close(q)
@@ -174,12 +175,11 @@ func (c *kubernetesClient) GetResources(ctx context.Context, location string, se
 							func() error {
 								var err error
 								ulist, err = c.Client.DynamicInterface.Resource(gvr).Namespace(location).List(context.TODO(), listOptions)
-								c.l.WithFields(logger.Fields{
-									"err":       err,
-									"gvr":       gvr,
-									"namespace": location,
-								}).Warn("Error listing kubernetes objects")
-
+								// c.l.WithFields(logger.Fields{
+								// 	"err":       err,
+								// 	"gvr":       gvr,
+								// 	"namespace": location,
+								// }).Warn("Error listing kubernetes objects")
 								return err
 							},
 							retry.Attempts(3),
@@ -190,11 +190,11 @@ func (c *kubernetesClient) GetResources(ctx context.Context, location string, se
 						} else if ulist != nil && len(ulist.Items) > 0 {
 							for _, item := range ulist.Items {
 								u.obj = item
-								c.l.WithFields(logger.Fields{
-									"gvr":     gvr,
-									"gv":      meta.GroupVersion,
-									"rcerror": u.rcerror,
-								}).Debug("Send to kubernetes consumer")
+								// c.l.WithFields(logger.Fields{
+								// 	"gvr":     gvr,
+								// 	"gv":      meta.GroupVersion,
+								// 	"rcerror": u.rcerror,
+								// }).Debug("Send to kubernetes consumer")
 								ch <- u
 							}
 						}

@@ -9,6 +9,7 @@ import (
 	"fry.org/cmo/cli/internal/application"
 	"fry.org/cmo/cli/internal/application/actions"
 	"fry.org/cmo/cli/internal/application/printer"
+	"fry.org/cmo/cli/internal/application/provider"
 	"fry.org/cmo/cli/internal/cli/common"
 	"fry.org/cmo/cli/internal/infrastructure"
 	"github.com/speijnik/go-errortree"
@@ -84,7 +85,6 @@ func kubeSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
 	var cmd KubeCmd
 	var err error
-	var showSummaryRC actions.ShowSummaryResult
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
@@ -94,20 +94,14 @@ func kubeSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 		KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
 		return err
 	}
-	req := actions.ShowSummaryRequest{
-		Location: cmd.Flags.Namespace,
-	}
-	if cmd.Flags.Selector != nil {
-		req.Selector = *cmd.Flags.Selector
-	}
-	if showSummaryRC, err = c.Apps.Queries.ShowSummary.Handle(req); err != nil {
-		KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
-		return err
-	}
+	summaryCh := make(chan provider.Summary, 3)
+	quit := make(chan struct{})
+
+	// Let's start the printer consumer
 	m := cmd.Summary.Flags.Output
 	reqPrint := actions.PrintResourceSummaryRequest{
-		Mode:  printer.PrinterModeNone,
-		Items: showSummaryRC.Items,
+		Mode: printer.PrinterModeNone,
+		Ch:   summaryCh,
 	}
 	switch {
 	case m == "json":
@@ -117,10 +111,27 @@ func kubeSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 	case m == "table":
 		reqPrint.Mode = printer.PrinterModeTable
 	}
-	if _, err = c.Apps.Commands.PrintResourceSummary.Handle(reqPrint); err != nil {
-		KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
-		return err
+	go func(req actions.PrintResourceSummaryRequest) {
+		if err = c.Apps.Commands.PrintResourceSummary.Handle(req); err != nil {
+			KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
+		}
+		close(quit)
+	}(reqPrint)
+	//Start the producer
+	reqShow := actions.ShowSummaryRequest{
+		Location: cmd.Flags.Namespace,
+		Ch:       summaryCh,
 	}
+	if cmd.Flags.Selector != nil {
+		reqShow.Selector = *cmd.Flags.Selector
+	}
+	go func(req actions.ShowSummaryRequest) {
+		if err = c.Apps.Queries.ShowSummary.Handle(req); err != nil {
+			KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
+		}
+	}(reqShow)
+	//Wait until printer finish it work
+	<-quit
 
 	return nil
 }

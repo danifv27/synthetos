@@ -14,14 +14,11 @@ import (
 type ShowSummaryRequest struct {
 	Location string
 	Selector string
-}
-
-type ShowSummaryResult struct {
-	Items []provider.Summary
+	Ch       chan<- provider.Summary
 }
 
 type ShowSummaryQueryHandler interface {
-	Handle(request ShowSummaryRequest) (ShowSummaryResult, error)
+	Handle(request ShowSummaryRequest) error
 }
 
 // Implements ShowSummaryHandler interface
@@ -62,24 +59,23 @@ func summarize(u *unstructured.Unstructured) (provider.Summary, error) {
 	return provider.Summary{}, errortree.Add(rcerror, "summarize", errors.New("unable to find object name"))
 }
 
-func (h showSummaryQueryHandler) Handle(request ShowSummaryRequest) (ShowSummaryResult, error) {
+func (h showSummaryQueryHandler) Handle(request ShowSummaryRequest) error {
 	var err, rcerror error
 	var resources []*unstructured.Unstructured
 
 	ctx := context.Background()
-	rc := ShowSummaryResult{
-		Items: make([]provider.Summary, 0),
-	}
 	if resources, err = h.provider.GetResources(ctx, request.Location, request.Selector); err != nil {
-		return ShowSummaryResult{}, errortree.Add(rcerror, "Handle", err)
+		return errortree.Add(rcerror, "Handle", err)
 	}
 	for _, r := range resources {
 		if s, err := summarize(r); err != nil {
-			return ShowSummaryResult{}, errortree.Add(rcerror, "Handle", err)
+			return errortree.Add(rcerror, "Handle", err)
 		} else {
-			rc.Items = append(rc.Items, s)
+			request.Ch <- s
 		}
 	}
+	//Let's signal there is no more resources to process
+	close(request.Ch)
 
-	return rc, nil
+	return nil
 }
