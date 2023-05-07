@@ -77,7 +77,6 @@ func kmzSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
 	var cmd KmzCmd
 	var err error
-	var showSummaryRC actions.ShowSummaryResult
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
@@ -90,14 +89,13 @@ func kmzSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 	req := actions.ShowSummaryRequest{
 		Location: cmd.Flags.KustomizationPath,
 	}
-	if showSummaryRC, err = c.Apps.Queries.ShowSummary.Handle(req); err != nil {
+	if err = c.Apps.Queries.ShowSummary.Handle(req); err != nil {
 		KuberiumSetRCErrorTree(ctx, "kmzSummaryJob", err)
 		return err
 	}
 	m := cmd.Summary.Flags.Output
 	reqPrint := actions.PrintResourceSummaryRequest{
-		Mode:  printer.PrinterModeNone,
-		Items: showSummaryRC.Items,
+		Mode: printer.PrinterModeNone,
 	}
 	switch {
 	case m == "json":
@@ -107,7 +105,7 @@ func kmzSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 	case m == "table":
 		reqPrint.Mode = printer.PrinterModeTable
 	}
-	if _, err = c.Apps.Commands.PrintResourceSummary.Handle(reqPrint); err != nil {
+	if err = c.Apps.Commands.PrintResourceSummary.Handle(reqPrint); err != nil {
 		KuberiumSetRCErrorTree(ctx, "kmzSummaryJob", err)
 		return err
 	}
