@@ -62,11 +62,11 @@ func kmsListFortanixGroupsJob(ctx floc.Context, ctrl floc.Control) error {
 	var err error
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
+		SecretumSetRCErrorTree(ctx, "secretum.kmsListFortanixGroupsJob", err)
 		return err
 	}
 	if cmd, err = SecretumKmsCmd(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
+		SecretumSetRCErrorTree(ctx, "secretum.kmsListFortanixGroupsJob", err)
 		return err
 	}
 	req := actions.ListGroupsRequest{
@@ -98,7 +98,7 @@ func (cmd *KmsListFortanixGroupsCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *er
 		guard.ConstTimeout(5*time.Minute),
 		nil, // No need for timeout data
 		run.Sequence(
-			run.If(p.AreProbesEnabled, run.Background(startProbesServer)),
+			run.If(p.AreProbesEnabled, run.Background(startSecretumProbesServer)),
 			kmsListFortanixGroupsJob,
 			func(ctx floc.Context, ctrl floc.Control) error {
 				if rcerror, err := SecretumRCErrorTree(ctx); err != nil {

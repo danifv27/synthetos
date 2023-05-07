@@ -113,20 +113,20 @@ func initializeTestCmd(ctx floc.Context, ctrl floc.Control) error {
 	return nil
 }
 
-func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
+func startTestProbesServer(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
 	var cmd TestCmd
 	var err error
 
 	if cmd, err = UxperiTestCmd(ctx); err != nil {
-		UxperiSetRCErrorTree(ctx, "uxperi.startProbesServer", err)
+		UxperiSetRCErrorTree(ctx, "uxperi.startTestProbesServer", err)
 		return err
 	}
 	if !cmd.Flags.Probes.AreProbesEnabled(ctx) {
 		return nil
 	}
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		UxperiSetRCErrorTree(ctx, "uxperi.startProbesServer", err)
+		UxperiSetRCErrorTree(ctx, "uxperi.startTestProbesServer", err)
 		return err
 	}
 	// Start the server in a separate goroutine
@@ -140,7 +140,7 @@ func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
 			"address":    cmd.Flags.Probes.Address,
 		}).Info("Starting health probes endpoints")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			UxperiSetRCErrorTree(ctx, "uxperi.startProbesServer", err)
+			UxperiSetRCErrorTree(ctx, "uxperi.startTestProbesServer", err)
 		}
 	}()
 	// Wait for the context to be canceled
@@ -150,7 +150,7 @@ func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
 	ct, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ct); err != nil {
-		UxperiSetRCErrorTree(ctx, "uxperi.startProbesServer", err)
+		UxperiSetRCErrorTree(ctx, "uxperi.startTestProbesServer", err)
 	}
 
 	return nil
@@ -166,7 +166,7 @@ func exporterRunMetricsServer(ctx floc.Context, ctrl floc.Control) error {
 		return err
 	}
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		UxperiSetRCErrorTree(ctx, "uxperi.startProbesServer", err)
+		UxperiSetRCErrorTree(ctx, "uxperi.exporterRunMetricsServer", err)
 		return err
 	}
 	// Start the server in a separate goroutine
@@ -210,7 +210,7 @@ func (cmd *TestCmd) Run(c *common.Cmdctx, rcerror *error) error {
 
 	c.RunSeq = run.Sequence(
 		run.Background(exporterRunMetricsServer),
-		run.Background(startProbesServer),
+		run.Background(startTestProbesServer),
 		waitForCancel,
 		func(ctx floc.Context, ctrl floc.Control) error {
 			if rcerror, err := UxperiRCErrorTree(ctx); err != nil {

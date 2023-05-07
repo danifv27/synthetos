@@ -133,7 +133,7 @@ func (cmd *KmzSummaryCmd) Run(c *common.Cmdctx, rcerror *error) error {
 		guard.ConstTimeout(5*time.Minute),
 		nil, // No need for timeout data
 		run.Sequence(
-			run.Background(startProbesServer),
+			run.Background(startKmzProbesServer),
 			kmzSummaryJob,
 			func(ctx floc.Context, ctrl floc.Control) error {
 				if rcerror, err := KuberiumRCErrorTree(ctx); err != nil {

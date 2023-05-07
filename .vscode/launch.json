@@ -27,7 +27,7 @@
             },
             "args": [
                 "kmz",
-                "--probes.enable",
+                "--probes.enable=false",
                 "summary"
             ],
             "showLog": true

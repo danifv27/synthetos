@@ -144,7 +144,7 @@ func (cmd *KubeSummaryCmd) Run(c *common.Cmdctx, rcerror *error) error {
 		guard.ConstTimeout(5*time.Minute),
 		nil, // No need for timeout data
 		run.Sequence(
-			run.Background(startProbesServer),
+			run.Background(startKubeProbesServer),
 			kubeSummaryJob,
 			func(ctx floc.Context, ctrl floc.Control) error {
 				if rcerror, err := KuberiumRCErrorTree(ctx); err != nil {

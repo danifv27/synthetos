@@ -1,10 +1,13 @@
 package kuberium
 
 import (
+	"context"
+	"net/http"
 	"time"
 
 	"fry.org/cmo/cli/internal/application"
 	"fry.org/cmo/cli/internal/application/healthchecker"
+	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/cli/common"
 	"fry.org/cmo/cli/internal/infrastructure"
 	"github.com/speijnik/go-errortree"
@@ -17,7 +20,7 @@ type KmzCmd struct {
 }
 
 type KmzFlags struct {
-	Probes            common.Probes `embed:"" group:"probes"`
+	Probes            common.Probes `embed:"" prefix:"probes."`
 	KustomizationPath string        `help:"Absolute path to kustomization file" type:"path" prefix:"kmz." env:"SC_KMZ_KUSTOMIZATION_PATH" required:""`
 }
 
@@ -71,6 +74,55 @@ func initializeKmzCmd(ctx floc.Context, ctrl floc.Control) error {
 		Apps:     c.Apps,
 		Adapters: c.Adapters,
 		Ports:    c.Ports,
+	}
+
+	return nil
+}
+
+func startKmzProbesServer(ctx floc.Context, ctrl floc.Control) error {
+	var err, rcerror error
+	var c *common.Cmdctx
+	var cmd KmzCmd
+
+	if c, err = common.CommonCmdCtx(ctx); err != nil {
+		if e := KuberiumSetRCErrorTree(ctx, "startKmzProbesServer", err); e != nil {
+			return errortree.Add(rcerror, "startKmzProbesServer", e)
+		}
+		return err
+	}
+	if cmd, err = KuberiumKmzCmd(ctx); err != nil {
+		if e := KuberiumSetRCErrorTree(ctx, "startKmzProbesServer", err); e != nil {
+			return errortree.Add(rcerror, "startKmzProbesServer", e)
+		}
+		return err
+	}
+	p := cmd.Flags.Probes
+	if !p.AreProbesEnabled(ctx) {
+		c.Apps.Logger.Debug("Probes not enabled")
+		return nil
+	}
+	// Start the server in a separate goroutine
+	srv := &http.Server{
+		Addr:    cmd.Flags.Probes.Address,
+		Handler: c.Adapters.Healthchecker,
+	}
+	go func() {
+		c.Apps.Logger.WithFields(logger.Fields{
+			"rootPrefix": cmd.Flags.Probes.RootPrefix,
+			"address":    cmd.Flags.Probes.Address,
+		}).Info("Starting health endpoints")
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			KuberiumSetRCErrorTree(ctx, "kuberium.startKmzProbesServer", err)
+		}
+	}()
+	// Wait for the context to be canceled
+	<-ctx.Done()
+	// shut down the server gracefully
+	// create a context with a timeout
+	ct, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ct); err != nil {
+		KuberiumSetRCErrorTree(ctx, "kuberium.startKmzProbesServer", err)
 	}
 
 	return nil

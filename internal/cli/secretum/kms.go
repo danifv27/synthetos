@@ -77,17 +77,17 @@ func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
 	return nil
 }
 
-func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
+func startSecretumProbesServer(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
 	var cmd KmsCmd
 	var err error
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
+		SecretumSetRCErrorTree(ctx, "secretum.startSecretumProbesServer", err)
 		return err
 	}
 	if cmd, err = SecretumKmsCmd(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
+		SecretumSetRCErrorTree(ctx, "secretum.startSecretumProbesServer", err)
 		return err
 	}
 
@@ -102,7 +102,7 @@ func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
 			"address":    cmd.Flags.Probes.Address,
 		}).Info("Starting health endpoints")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
+			SecretumSetRCErrorTree(ctx, "secretum.startSecretumProbesServer", err)
 		}
 	}()
 	// Wait for the context to be canceled
@@ -112,7 +112,7 @@ func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
 	ct, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ct); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
+		SecretumSetRCErrorTree(ctx, "secretum.startSecretumProbesServer", err)
 	}
 
 	return nil

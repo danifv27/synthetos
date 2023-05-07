@@ -81,20 +81,20 @@ func initializeKubeCmd(ctx floc.Context, ctrl floc.Control) error {
 	return nil
 }
 
-func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
+func startKubeProbesServer(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
 	var cmd KubeCmd
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "startProbesServer", err); e != nil {
-			return errortree.Add(rcerror, "startProbesServer", e)
+		if e := KuberiumSetRCErrorTree(ctx, "startKubeProbesServer", err); e != nil {
+			return errortree.Add(rcerror, "startKubeProbesServer", e)
 		}
 		return err
 	}
 	if cmd, err = KuberiumKubeCmd(ctx); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "startProbesServer", err); e != nil {
-			return errortree.Add(rcerror, "startProbesServer", e)
+		if e := KuberiumSetRCErrorTree(ctx, "startKubeProbesServer", err); e != nil {
+			return errortree.Add(rcerror, "startKubeProbesServer", e)
 		}
 		return err
 	}
@@ -114,7 +114,7 @@ func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
 			"address":    cmd.Flags.Probes.Address,
 		}).Info("Starting health endpoints")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			KuberiumSetRCErrorTree(ctx, "kuberium.startProbesServer", err)
+			KuberiumSetRCErrorTree(ctx, "kuberium.startKubeProbesServer", err)
 		}
 	}()
 	// Wait for the context to be canceled
@@ -124,7 +124,7 @@ func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
 	ct, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ct); err != nil {
-		KuberiumSetRCErrorTree(ctx, "kuberium.startProbesServer", err)
+		KuberiumSetRCErrorTree(ctx, "kuberium.startKubeProbesServer", err)
 	}
 
 	return nil
