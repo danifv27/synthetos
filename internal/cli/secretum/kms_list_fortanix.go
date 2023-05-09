@@ -11,8 +11,9 @@ import (
 )
 
 type KmsListFortanixCmd struct {
-	Flags  KmsListFortanixFlags     `embed:""`
-	Groups KmsListFortanixGroupsCmd `cmd:"" help:"List Fortanix groups."`
+	Flags   KmsListFortanixFlags      `embed:""`
+	Groups  KmsListFortanixGroupsCmd  `cmd:"" help:"List Fortanix groups."`
+	Secrets KmsListFortanixSecretsCmd `cmd:"" help:"List Fortanix secrets."`
 }
 
 type KmsListFortanixFlags struct {

@@ -95,7 +95,7 @@ func (f *fortanixClient) ListGroups(ctx context.Context) ([]kms.Group, error) {
 		f.l.WithFields(logger.Fields{
 			"err": err,
 		}).Info("Authentication failed")
-		return []kms.Group{}, errortree.Add(rcerror, "fortanix.List", err)
+		return []kms.Group{}, errortree.Add(rcerror, "fortanix.ListGroups", err)
 	}
 	// Terminate the session on exit
 	defer f.client.TerminateSession(ctx)
@@ -105,11 +105,51 @@ func (f *fortanixClient) ListGroups(ctx context.Context) ([]kms.Group, error) {
 		return []kms.Group{}, errortree.Add(rcerror, "fortanix.ListGroups", err)
 	}
 	for _, g := range gs {
-		groups = append(groups, kms.Group{CreatedAt: string(g.CreatedAt), Description: g.Description, Name: g.Name, GroupID: g.GroupID})
+		groups = append(groups, kms.Group{
+			CreatedAt:   string(g.CreatedAt),
+			Description: g.Description,
+			Name:        g.Name,
+			GroupID:     g.GroupID,
+		})
 
 	}
 
 	return groups, nil
+}
+
+func (f *fortanixClient) ListSecrets(ctx context.Context) ([]kms.Secret, error) {
+	var rcerror error
+	var secrets []kms.Secret
+
+	cx, cancelfn := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancelfn()
+	// Establish a session
+	if _, err := f.client.AuthenticateWithAPIKey(cx, f.apikey); err != nil {
+		f.l.WithFields(logger.Fields{
+			"err": err,
+		}).Info("Authentication failed")
+		return []kms.Secret{}, errortree.Add(rcerror, "fortanix.ListSecrets", err)
+	}
+	// Terminate the session on exit
+	defer f.client.TerminateSession(ctx)
+	// List groups
+	gs, err := f.client.ListSobjects(ctx, nil)
+	if err != nil {
+		return []kms.Secret{}, errortree.Add(rcerror, "fortanix.ListSecrets", err)
+	}
+	for _, g := range gs {
+		secrets = append(secrets, kms.Secret{
+			CreatedAt:   string(g.CreatedAt),
+			LastusedAt:  string(g.LastusedAt),
+			Description: g.Description,
+			Name:        g.Name,
+			GroupID:     g.GroupID,
+			Blob:        g.Value,
+			SecretID:    g.Kid,
+		})
+	}
+
+	return secrets, nil
 }
 
 // func sobjectToString(sobject *sdkms.Sobject) string {
