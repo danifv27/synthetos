@@ -64,9 +64,11 @@ EOF
 if [ -z "${OUTPUT_DIR:-}" ]; then
   OUTPUT_DIR=.
 fi
-OUTPUT=${OUTPUT_DIR}/${BIN}
+OUTPUT=${OUTPUT_DIR}/${BIN}-${VERSION}-${GOOS}-${GOARCH}
+OUTPUT_ALIAS=${OUTPUT_DIR}/${BIN}
 if [ "${GOOS}" = "windows" ]; then
   OUTPUT="${OUTPUT}.exe"
+  OUTPUT_ALIAS="${OUTPUT_DIR}/${BIN}.exe"
 fi
 
 if [ "${GOARCH}" = "arm" ]; then
@@ -89,5 +91,5 @@ eval "${cmd}"
 #     -o ${OUTPUT} \
 #     -installsuffix "static" \
 #     ./cmd/**/*.go
-
+cp ${OUTPUT} ${OUTPUT_ALIAS}
 rm -f ${VERSION_JSON}; touch ${VERSION_JSON}
