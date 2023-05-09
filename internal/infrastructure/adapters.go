@@ -26,6 +26,7 @@ import (
 	"fry.org/cmo/cli/internal/application/kms"
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/application/printer"
+	"fry.org/cmo/cli/internal/application/provider"
 	"fry.org/cmo/cli/internal/application/version"
 
 	ihealthchecker "fry.org/cmo/cli/internal/infrastructure/endpoints/healthchecker"
@@ -33,6 +34,7 @@ import (
 	ikms "fry.org/cmo/cli/internal/infrastructure/kms"
 	ilogger "fry.org/cmo/cli/internal/infrastructure/logger"
 	itableprinter "fry.org/cmo/cli/internal/infrastructure/printer"
+	iprovider "fry.org/cmo/cli/internal/infrastructure/provider"
 	istorage "fry.org/cmo/cli/internal/infrastructure/storage"
 	"github.com/speijnik/go-errortree"
 )
@@ -57,6 +59,7 @@ type Adapters struct {
 	healthchecker.Healthchecker
 	exporters.CucumberExporter
 	kms.KeyManager
+	provider.ResourceProvider
 }
 
 // NewAdapters
@@ -158,6 +161,17 @@ func WithKeyManager(url string, l logger.Logger) AdapterOption {
 		var err error
 
 		a.KeyManager, err = ikms.Parse(url, l)
+
+		return err
+	})
+}
+
+func WithResourceProvider(url string, l logger.Logger) AdapterOption {
+
+	return AdapterOptionFunc(func(a *Adapters) error {
+		var err error
+
+		a.ResourceProvider, err = iprovider.Parse(url, l)
 
 		return err
 	})
