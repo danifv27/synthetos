@@ -83,8 +83,8 @@ func kubeSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 	// Let's start the printer consumer
 	m := cmd.Flags.Output
 	reqPrint := actions.PrintResourceSummaryRequest{
-		Mode: printer.PrinterModeNone,
-		Ch:   summaryCh,
+		Mode:    printer.PrinterModeNone,
+		InputCh: summaryCh,
 	}
 	switch {
 	case m == "json":
@@ -100,10 +100,11 @@ func kubeSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 		}
 		close(quit)
 	}(reqPrint)
+
 	//Start the producer
 	reqShow := actions.ShowSummaryRequest{
 		Location: cmd.Flags.Namespace,
-		Ch:       summaryCh,
+		OutputCh: summaryCh,
 	}
 	if cmd.Flags.Selector != nil {
 		reqShow.Selector = *cmd.Flags.Selector

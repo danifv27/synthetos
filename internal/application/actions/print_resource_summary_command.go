@@ -9,8 +9,8 @@ import (
 
 // PrintResourceSummaryRequest query params
 type PrintResourceSummaryRequest struct {
-	Mode printer.PrinterMode
-	Ch   <-chan provider.Summary
+	Mode    printer.PrinterMode
+	InputCh <-chan provider.Summary
 }
 
 type PrintResourceSummaryCommand interface {
@@ -36,7 +36,7 @@ func (h printResourceSummaryCommand) Handle(request PrintResourceSummaryRequest)
 	var err, rcerror error
 
 	if request.Mode != printer.PrinterModeNone {
-		if err = h.printer.PrintResourceSummary(request.Ch, request.Mode); err != nil {
+		if err = h.printer.PrintResourceSummary(request.InputCh, request.Mode); err != nil {
 			return errortree.Add(rcerror, "Handle", err)
 		}
 	}

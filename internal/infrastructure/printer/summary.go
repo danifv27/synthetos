@@ -27,21 +27,18 @@ func (t *PrinterClient) printResourcesSummaryTable(ch <-chan provider.Summary) e
 		apiVersion := new(bytes.Buffer)
 		p := linesprinter.NewLinesPrinter(apiVersion, 48, []byte("\r\n"))
 		if _, err := p.Write([]byte(r.APIVersion)); err != nil {
-			// return errortree.Add(rcerror, "printResourcesSummaryTable", err)
 			continue
 		}
 		p.Close()
 		kind := new(bytes.Buffer)
 		p = linesprinter.NewLinesPrinter(kind, 48, []byte("\r\n"))
 		if _, err := p.Write([]byte(r.Kind)); err != nil {
-			// return errortree.Add(rcerror, "printResourcesSummaryTable", err)
 			continue
 		}
 		p.Close()
 		name := new(bytes.Buffer)
 		p = linesprinter.NewLinesPrinter(name, 96, []byte("\r\n"))
 		if _, err := p.Write([]byte(r.Name)); err != nil {
-			// return errortree.Add(rcerror, "printResourcesSummaryTable", err)
 			continue
 		}
 		p.Close()

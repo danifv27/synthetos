@@ -14,7 +14,7 @@ import (
 type ShowSummaryRequest struct {
 	Location string
 	Selector string
-	Ch       chan<- provider.Summary
+	OutputCh chan<- provider.Summary
 }
 
 type ShowSummaryQueryHandler interface {
@@ -72,11 +72,11 @@ func (h showSummaryQueryHandler) Handle(request ShowSummaryRequest) error {
 		if s, err := summarize(r); err != nil {
 			return errortree.Add(rcerror, "Handle", err)
 		} else {
-			request.Ch <- s
+			request.OutputCh <- s
 		}
 	}
 	//Let's signal there is no more resources to process
-	close(request.Ch)
+	close(request.OutputCh)
 
 	return nil
 }

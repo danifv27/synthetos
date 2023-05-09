@@ -92,8 +92,8 @@ func kmzSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 	// Let's start the printer consumer
 	m := cmd.Summary.Flags.Output
 	reqPrint := actions.PrintResourceSummaryRequest{
-		Mode: printer.PrinterModeNone,
-		Ch:   summaryCh,
+		Mode:    printer.PrinterModeNone,
+		InputCh: summaryCh,
 	}
 	switch {
 	case m == "json":
@@ -112,7 +112,7 @@ func kmzSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 	//Start the producer
 	reqShow := actions.ShowSummaryRequest{
 		Location: cmd.Flags.KustomizationPath,
-		Ch:       summaryCh,
+		OutputCh: summaryCh,
 	}
 	go func(req actions.ShowSummaryRequest) {
 		if err = c.Apps.Queries.ShowSummary.Handle(req); err != nil {
