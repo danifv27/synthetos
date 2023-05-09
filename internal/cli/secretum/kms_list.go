@@ -20,7 +20,7 @@ func initializeKmsListCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
 
-	if c, err = SecretumCmdCtx(ctx); err != nil {
+	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		if e := SecretumSetRCErrorTree(ctx, "initializeKmsListCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeKmsListCmd", e)
 		}

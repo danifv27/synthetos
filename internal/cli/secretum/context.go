@@ -3,15 +3,14 @@ package secretum
 import (
 	"fmt"
 
-	"fry.org/cmo/cli/internal/cli/common"
 	"github.com/speijnik/go-errortree"
 	"github.com/workanator/go-floc/v3"
 )
 
 var (
-	secretumContextKeyCLI     = secretumContextKey("cli")
+	// secretumContextKeyCLI     = secretumContextKey("cli")
+	secretumContextKeyKmsCmd  = secretumContextKey("testcmd")
 	secretumContextKeyRCError = secretumContextKey("rcerror")
-	secretumContextKeyCmdCtx  = secretumContextKey("cmdctx")
 )
 
 type secretumContextKey string
@@ -20,22 +19,22 @@ func (c secretumContextKey) String() string {
 	return "secretum." + string(c)
 }
 
-// SecretumFlags gets a pointer to CLI structure
-func SecretumFlags(ctx floc.Context) (CLI, error) {
-	var cli CLI
+// SecretumKmsCmd gets a pointer to secretum.KmsCmd structure
+func SecretumKmsCmd(ctx floc.Context) (KmsCmd, error) {
+	var cmd KmsCmd
 	var ok bool
 	var rcerror error
 
-	if cli, ok = ctx.Value(secretumContextKeyCLI).(CLI); !ok {
-		return CLI{}, errortree.Add(rcerror, "Flags", fmt.Errorf("type mismatch with key %s", secretumContextKeyCLI))
+	if cmd, ok = ctx.Value(secretumContextKeyKmsCmd).(KmsCmd); !ok {
+		return KmsCmd{}, errortree.Add(rcerror, "KmsCmd", fmt.Errorf("type mismatch with key %s", secretumContextKeyKmsCmd))
 	}
 
-	return cli, nil
+	return cmd, nil
 }
 
-func SecretumSetFlags(ctx floc.Context, c CLI) error {
+func SecretumSetKmsCmd(ctx floc.Context, c KmsCmd) error {
 
-	ctx.AddValue(secretumContextKeyCLI, c)
+	ctx.AddValue(secretumContextKeyKmsCmd, c)
 
 	return nil
 }
@@ -66,32 +65,4 @@ func SecretumSetRCErrorTree(ctx floc.Context, key string, e error) error {
 	}
 
 	return errortree.Add(rce, "SetRCErrorTree", err)
-}
-
-// SecretumCmdCtx gets a pointer to the command context
-func SecretumCmdCtx(ctx floc.Context) (*common.Cmdctx, error) {
-	var c *common.Cmdctx
-	var ok bool
-	var rcerror error
-
-	obj := ctx.Value(secretumContextKeyCmdCtx)
-	if obj == nil {
-		c = new(common.Cmdctx)
-		ctx.AddValue(secretumContextKeyCmdCtx, c)
-	} else if c, ok = obj.(*common.Cmdctx); !ok {
-		return nil, errortree.Add(rcerror, "NewApplications", fmt.Errorf("type mismatch with key %s", secretumContextKeyCmdCtx))
-	}
-
-	return c, nil
-}
-
-func SecretumSetCmdCtx(ctx floc.Context, p common.Cmdctx) error {
-	var c *common.Cmdctx
-	var err, rcerror error
-
-	if c, err = SecretumCmdCtx(ctx); err == nil {
-		*c = p
-	}
-
-	return errortree.Add(rcerror, "SetCmdCtx", err)
 }

@@ -45,7 +45,7 @@ func Parse(URI string, l logger.Logger) (kms.KeyManager, error) {
 		}
 		apikey := u.Query().Get("apikey")
 		if apikey == "" {
-			rcerror = errortree.Add(rcerror, "kms.Parse", fmt.Errorf("invalid scheme %s", URI))
+			rcerror = errortree.Add(rcerror, "kms.Parse", errors.New("missing apikey query argument"))
 			return nil, rcerror
 		}
 		options = append(options,

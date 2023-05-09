@@ -26,26 +26,26 @@ type KmsFlags struct {
 func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
-	var cli CLI
+	var cmd KmsCmd
 
-	if c, err = SecretumCmdCtx(ctx); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeTestCmd", e)
+	if c, err = common.CommonCmdCtx(ctx); err != nil {
+		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsCmd", e)
 		}
 		return err
 	}
-	if cli, err = SecretumFlags(ctx); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeTestCmd", e)
+	if cmd, err = SecretumKmsCmd(ctx); err != nil {
+		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsCmd", e)
 		}
 		return err
 	}
 	infraOptions := []infrastructure.AdapterOption{
-		infrastructure.WithHealthchecker(cli.Kms.Flags.Probes.RootPrefix),
+		infrastructure.WithHealthchecker(cmd.Flags.Probes.RootPrefix),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeTestCmd", e)
+		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsCmd", e)
 		}
 		return err
 	}
@@ -61,8 +61,8 @@ func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
 	if err = application.WithOptions(&c.Apps,
 		application.WithHealthchecker(c.Adapters.Healthchecker),
 	); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeTestCmd", e)
+		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsCmd", e)
 		}
 		return err
 	}
@@ -77,32 +77,32 @@ func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
 	return nil
 }
 
-func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
+func startSecretumProbesServer(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
-	var cli CLI
+	var cmd KmsCmd
 	var err error
 
-	if c, err = SecretumCmdCtx(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
+	if c, err = common.CommonCmdCtx(ctx); err != nil {
+		SecretumSetRCErrorTree(ctx, "secretum.startSecretumProbesServer", err)
 		return err
 	}
-	if cli, err = SecretumFlags(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
+	if cmd, err = SecretumKmsCmd(ctx); err != nil {
+		SecretumSetRCErrorTree(ctx, "secretum.startSecretumProbesServer", err)
 		return err
 	}
 
 	// Start the server in a separate goroutine
 	srv := &http.Server{
-		Addr:    cli.Kms.Flags.Probes.Address,
+		Addr:    cmd.Flags.Probes.Address,
 		Handler: c.Adapters.Healthchecker,
 	}
 	go func() {
 		c.Apps.Logger.WithFields(logger.Fields{
-			"rootPrefix": cli.Kms.Flags.Probes.RootPrefix,
-			"address":    cli.Kms.Flags.Probes.Address,
+			"rootPrefix": cmd.Flags.Probes.RootPrefix,
+			"address":    cmd.Flags.Probes.Address,
 		}).Info("Starting health endpoints")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
+			SecretumSetRCErrorTree(ctx, "secretum.startSecretumProbesServer", err)
 		}
 	}()
 	// Wait for the context to be canceled
@@ -112,7 +112,7 @@ func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
 	ct, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ct); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
+		SecretumSetRCErrorTree(ctx, "secretum.startSecretumProbesServer", err)
 	}
 
 	return nil
