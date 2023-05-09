@@ -1,4 +1,4 @@
-package uxperi
+package versio
 
 import (
 	"errors"
@@ -27,8 +27,8 @@ func initializeVersionCmd(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
 	var err, rcerror error
 
-	if c, err = UxperiCmdCtx(ctx); err != nil {
-		if e := UxperiSetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
+	if c, err = VersioCmdCtx(ctx); err != nil {
+		if e := VersioSetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeVersionCmd", e)
 		}
 		return err
@@ -39,7 +39,7 @@ func initializeVersionCmd(ctx floc.Context, ctrl floc.Control) error {
 		infrastructure.WithTablePrinter(),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
-		if e := UxperiSetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
+		if e := VersioSetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeVersionCmd", e)
 		}
 		return err
@@ -47,19 +47,19 @@ func initializeVersionCmd(ctx floc.Context, ctrl floc.Control) error {
 	if err = application.WithOptions(&c.Apps,
 		application.WithPrintVersionCommand(c.Adapters.Version, c.Adapters.Printer),
 	); err != nil {
-		if e := UxperiSetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
+		if e := VersioSetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeVersionCmd", e)
 		}
 		return err
 	}
-	if err = UxperiSetCmdCtx(ctx, common.Cmdctx{
+	if err = VersioSetCmdCtx(ctx, common.Cmdctx{
 		Cmd:      c.Cmd,
 		InitSeq:  c.InitSeq,
 		Apps:     c.Apps,
 		Adapters: c.Adapters,
 		Ports:    c.Ports,
 	}); err != nil {
-		if e := UxperiSetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
+		if e := VersioSetRCErrorTree(ctx, "initializeVersionCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeVersionCmd", e)
 		}
 		return err
@@ -70,29 +70,29 @@ func initializeVersionCmd(ctx floc.Context, ctrl floc.Control) error {
 
 func versionPrintJob(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
-	var cli CLI
+	var cmd VersionCmd
 	var err error
 
-	if c, err = UxperiCmdCtx(ctx); err != nil {
-		UxperiSetRCErrorTree(ctx, "versionPrintJob", err)
+	if c, err = VersioCmdCtx(ctx); err != nil {
+		VersioSetRCErrorTree(ctx, "versionPrintJob", err)
 		return err
 	}
-	if cli, err = UxperiFlags(ctx); err != nil {
-		UxperiSetRCErrorTree(ctx, "versionPrintJob", err)
+	if cmd, err = VersioVersionCmd(ctx); err != nil {
+		VersioSetRCErrorTree(ctx, "versionPrintJob", err)
 		return err
 	}
 	req := actions.PrintVersionRequest{
-		Format: cli.Version.Flags.Output,
+		Format: cmd.Flags.Output,
 	}
 	if err = c.Apps.Commands.PrintVersion.Handle(req); err != nil {
-		UxperiSetRCErrorTree(ctx, "versionPrintJob", err)
+		VersioSetRCErrorTree(ctx, "versionPrintJob", err)
 		return err
 	}
 
 	return nil
 }
 
-func (cmd *VersionCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
+func (cmd *VersionCmd) Run(c *common.Cmdctx, rcerror *error) error {
 
 	c.InitSeq = append(c.InitSeq, initializeVersionCmd)
 
@@ -103,7 +103,7 @@ func (cmd *VersionCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 			versionPrintJob,
 			func(ctx floc.Context, ctrl floc.Control) error {
 
-				if rcerror, err := UxperiRCErrorTree(ctx); err != nil {
+				if rcerror, err := VersioRCErrorTree(ctx); err != nil {
 					ctrl.Fail(fmt.Sprintf("Command '%s' internal error", c.Cmd), err)
 					return err
 				} else if *rcerror != nil {
@@ -118,8 +118,8 @@ func (cmd *VersionCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 		func(ctx floc.Context, ctrl floc.Control, id interface{}) {
 			// Fail the flow on timeout
 			msg := fmt.Sprintf("Command '%s' timeout expired", c.Cmd)
-			UxperiSetRCErrorTree(ctx, "timeout", errors.New(msg))
-			if rcerror, err := UxperiRCErrorTree(ctx); err != nil {
+			VersioSetRCErrorTree(ctx, "timeout", errors.New(msg))
+			if rcerror, err := VersioRCErrorTree(ctx); err != nil {
 				ctrl.Fail(fmt.Sprintf("Command '%s' internal error", c.Cmd), err)
 			} else {
 				ctrl.Fail(msg, *rcerror)

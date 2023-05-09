@@ -41,26 +41,26 @@ type TestFlags struct {
 func initializeTestCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
-	var cli CLI
+	var cmd TestCmd
 	var login, products iexporters.CucumberPlugin
 
-	if c, err = UxperiCmdCtx(ctx); err != nil {
+	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		if e := UxperiSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeTestCmd", e)
 		}
 		return err
 	}
-	if cli, err = UxperiFlags(ctx); err != nil {
+	if cmd, err = UxperiTestCmd(ctx); err != nil {
 		if e := UxperiSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeTestCmd", e)
 		}
 		return err
 	}
 
-	if login, err = ifeatures.NewLoginPageFeature(cli.Test.Flags.FeaturesFolder,
-		ifeatures.WithLoginPageAuth(cli.Test.Flags.Auth.Id, cli.Test.Flags.Auth.Password),
+	if login, err = ifeatures.NewLoginPageFeature(cmd.Flags.FeaturesFolder,
+		ifeatures.WithLoginPageAuth(cmd.Flags.Auth.Id, cmd.Flags.Auth.Password),
 		ifeatures.WithLoginPageLogger(c.Apps.Logger),
-		ifeatures.WithLoginPageSnapshotFolder(cli.Test.Flags.SnapshotsFolder),
+		ifeatures.WithLoginPageSnapshotFolder(cmd.Flags.SnapshotsFolder),
 	); err != nil {
 		if e := UxperiSetRCErrorTree(ctx, "initializeTestCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeTestCmd", e)
@@ -68,10 +68,10 @@ func initializeTestCmd(ctx floc.Context, ctrl floc.Control) error {
 		return err
 	}
 
-	if products, err = ifeatures.NewProductsTabFeature(cli.Test.Flags.FeaturesFolder,
-		ifeatures.WithProductsTabAuth(cli.Test.Flags.Auth.Id, cli.Test.Flags.Auth.Password),
+	if products, err = ifeatures.NewProductsTabFeature(cmd.Flags.FeaturesFolder,
+		ifeatures.WithProductsTabAuth(cmd.Flags.Auth.Id, cmd.Flags.Auth.Password),
 		ifeatures.WithProductsTabLogger(c.Apps.Logger),
-		ifeatures.WithProductsTabSnapshotFolder(cli.Test.Flags.SnapshotsFolder),
+		ifeatures.WithProductsTabSnapshotFolder(cmd.Flags.SnapshotsFolder),
 	); err != nil {
 		if e := UxperiSetRCErrorTree(ctx, "initializeExporterCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeExporterCmd", e)
@@ -80,11 +80,11 @@ func initializeTestCmd(ctx floc.Context, ctrl floc.Control) error {
 	}
 
 	infraOptions := []infrastructure.AdapterOption{
-		infrastructure.WithHealthchecker(cli.Test.Flags.Probes.RootPrefix),
+		infrastructure.WithHealthchecker(cmd.Flags.Probes.RootPrefix),
 		infrastructure.WithCucumberExporter(
-			iexporters.WithCucumberRootPrefix(cli.Test.Flags.Metrics.RootPrefix),
-			iexporters.WithCucumberHistoryEndpoint(cli.Test.Flags.Metrics.RootPrefix),
-			iexporters.WithCucumberTimeout(cli.Test.Flags.Timeout),
+			iexporters.WithCucumberRootPrefix(cmd.Flags.Metrics.RootPrefix),
+			iexporters.WithCucumberHistoryEndpoint(cmd.Flags.Metrics.RootPrefix),
+			iexporters.WithCucumberTimeout(cmd.Flags.Timeout),
 			iexporters.WithCucumberPlugin("loginPage", login),
 			iexporters.WithCucumberPlugin("productsTab", products),
 		),
@@ -110,7 +110,7 @@ func initializeTestCmd(ctx floc.Context, ctrl floc.Control) error {
 		}
 		return err
 	}
-	if err = UxperiSetCmdCtx(ctx, common.Cmdctx{
+	if err = common.CommonSetCmdCtx(ctx, common.Cmdctx{
 		Cmd:      c.Cmd,
 		InitSeq:  c.InitSeq,
 		Apps:     c.Apps,
@@ -126,32 +126,34 @@ func initializeTestCmd(ctx floc.Context, ctrl floc.Control) error {
 	return nil
 }
 
-func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
+func startTestProbesServer(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
-	var cli CLI
+	var cmd TestCmd
 	var err error
 
-	if c, err = UxperiCmdCtx(ctx); err != nil {
-		UxperiSetRCErrorTree(ctx, "uxperi.startProbesServer", err)
+	if cmd, err = UxperiTestCmd(ctx); err != nil {
+		UxperiSetRCErrorTree(ctx, "uxperi.startTestProbesServer", err)
 		return err
 	}
-	if cli, err = UxperiFlags(ctx); err != nil {
-		UxperiSetRCErrorTree(ctx, "uxperi.startProbesServer", err)
+	if !cmd.Flags.Probes.AreProbesEnabled(ctx) {
+		return nil
+	}
+	if c, err = common.CommonCmdCtx(ctx); err != nil {
+		UxperiSetRCErrorTree(ctx, "uxperi.startTestProbesServer", err)
 		return err
 	}
-
 	// Start the server in a separate goroutine
 	srv := &http.Server{
-		Addr:    cli.Test.Flags.Probes.Address,
+		Addr:    cmd.Flags.Probes.Address,
 		Handler: c.Adapters.Healthchecker,
 	}
 	go func() {
 		c.Apps.Logger.WithFields(logger.Fields{
-			"rootPrefix": cli.Test.Flags.Probes.RootPrefix,
-			"address":    cli.Test.Flags.Probes.Address,
+			"rootPrefix": cmd.Flags.Probes.RootPrefix,
+			"address":    cmd.Flags.Probes.Address,
 		}).Info("Starting health probes endpoints")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			UxperiSetRCErrorTree(ctx, "uxperi.startProbesServer", err)
+			UxperiSetRCErrorTree(ctx, "uxperi.startTestProbesServer", err)
 		}
 	}()
 	// Wait for the context to be canceled
@@ -161,7 +163,7 @@ func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
 	ct, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ct); err != nil {
-		UxperiSetRCErrorTree(ctx, "uxperi.startProbesServer", err)
+		UxperiSetRCErrorTree(ctx, "uxperi.startTestProbesServer", err)
 	}
 
 	return nil
@@ -169,27 +171,26 @@ func startProbesServer(ctx floc.Context, ctrl floc.Control) error {
 
 func exporterRunMetricsServer(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
-	var cli CLI
+	var cmd TestCmd
 	var err error
 
-	if c, err = UxperiCmdCtx(ctx); err != nil {
+	if cmd, err = UxperiTestCmd(ctx); err != nil {
 		UxperiSetRCErrorTree(ctx, "exporterRunMetricsServer", err)
 		return err
 	}
-	if cli, err = UxperiFlags(ctx); err != nil {
-		UxperiSetRCErrorTree(ctx, "exporterRunMetricsServer", err)
+	if c, err = common.CommonCmdCtx(ctx); err != nil {
+		UxperiSetRCErrorTree(ctx, "uxperi.exporterRunMetricsServer", err)
 		return err
 	}
-
 	// Start the server in a separate goroutine
 	srv := &http.Server{
-		Addr:    cli.Test.Flags.Metrics.Address,
+		Addr:    cmd.Flags.Metrics.Address,
 		Handler: c.Adapters.CucumberExporter,
 	}
 	go func() {
 		c.Apps.Logger.WithFields(logger.Fields{
-			"rootPrefix": cli.Test.Flags.Metrics.RootPrefix,
-			"address":    cli.Test.Flags.Metrics.Address,
+			"rootPrefix": cmd.Flags.Metrics.RootPrefix,
+			"address":    cmd.Flags.Metrics.Address,
 		}).Info("Starting Prometheus metrics endpoint")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			UxperiSetRCErrorTree(ctx, "exporterRunMetricsServer", err)
@@ -208,9 +209,7 @@ func exporterRunMetricsServer(ctx floc.Context, ctrl floc.Control) error {
 	return nil
 }
 
-func (cmd *TestCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
-
-	p := cli.Test.Flags.Probes
+func (cmd *TestCmd) Run(c *common.Cmdctx, rcerror *error) error {
 
 	waitForCancel := func(ctx floc.Context, ctrl floc.Control) error {
 
@@ -224,7 +223,7 @@ func (cmd *TestCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 
 	c.RunSeq = run.Sequence(
 		run.Background(exporterRunMetricsServer),
-		run.If(p.AreProbesEnabled, run.Background(startProbesServer)),
+		run.Background(startTestProbesServer),
 		waitForCancel,
 		func(ctx floc.Context, ctrl floc.Control) error {
 			if rcerror, err := UxperiRCErrorTree(ctx); err != nil {

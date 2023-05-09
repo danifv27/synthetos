@@ -1,4 +1,4 @@
-package uxperi
+package kuberium
 
 import (
 	"fry.org/cmo/cli/internal/cli/common"
@@ -8,5 +8,6 @@ import (
 type CLI struct {
 	Logging common.Log        `embed:"" prefix:"logging."`
 	Version versio.VersionCmd `cmd:"" help:"Show version information"`
-	Test    TestCmd           `cmd:"" help:"Enter Prometheus mode"`
+	Kube    KubeCmd           `cmd:"" help:"Provides visibility to the resources running in a Kubernetes cluster"`
+	Kmz     KmzCmd            `cmd:"" help:"Works with kustomize manifests"`
 }

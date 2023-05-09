@@ -1,4 +1,4 @@
-package secretum
+package kuberium
 
 import (
 	"context"
@@ -14,38 +14,40 @@ import (
 	"github.com/workanator/go-floc/v3"
 )
 
-type KmsCmd struct {
-	Flags KmsFlags   `embed:""`
-	List  KmsListCmd `cmd:"" help:"KMS list."`
+type KmzCmd struct {
+	Flags   KmzFlags      `embed:""`
+	Summary KmzSummaryCmd `cmd:"" help:"Show a summary of the objects present in a kubernetes manifests."`
 }
 
-type KmsFlags struct {
-	Probes common.Probes `embed:"" group:"probes"`
+type KmzFlags struct {
+	Probes            common.Probes `embed:"" prefix:"probes."`
+	KustomizationPath string        `help:"Absolute path to kustomization file" type:"path" prefix:"kmz." env:"SC_KMZ_KUSTOMIZATION_PATH" required:""`
 }
 
-func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
+func initializeKmzCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
-	var cmd KmsCmd
+	var cmd KmzCmd
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmsCmd", e)
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmzCmd", e)
 		}
 		return err
 	}
-	if cmd, err = SecretumKmsCmd(ctx); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmsCmd", e)
+	if cmd, err = KuberiumKmzCmd(ctx); err != nil {
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmzCmd", e)
 		}
 		return err
 	}
 	infraOptions := []infrastructure.AdapterOption{
 		infrastructure.WithHealthchecker(cmd.Flags.Probes.RootPrefix),
+		infrastructure.WithTablePrinter(),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmsCmd", e)
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmzCmd", e)
 		}
 		return err
 	}
@@ -61,8 +63,8 @@ func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
 	if err = application.WithOptions(&c.Apps,
 		application.WithHealthchecker(c.Adapters.Healthchecker),
 	); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeKmsCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmsCmd", e)
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmzCmd", e)
 		}
 		return err
 	}
@@ -77,20 +79,28 @@ func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {
 	return nil
 }
 
-func startSecretumProbesServer(ctx floc.Context, ctrl floc.Control) error {
+func startKmzProbesServer(ctx floc.Context, ctrl floc.Control) error {
+	var err, rcerror error
 	var c *common.Cmdctx
-	var cmd KmsCmd
-	var err error
+	var cmd KmzCmd
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.startSecretumProbesServer", err)
+		if e := KuberiumSetRCErrorTree(ctx, "startKmzProbesServer", err); e != nil {
+			return errortree.Add(rcerror, "startKmzProbesServer", e)
+		}
 		return err
 	}
-	if cmd, err = SecretumKmsCmd(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.startSecretumProbesServer", err)
+	if cmd, err = KuberiumKmzCmd(ctx); err != nil {
+		if e := KuberiumSetRCErrorTree(ctx, "startKmzProbesServer", err); e != nil {
+			return errortree.Add(rcerror, "startKmzProbesServer", e)
+		}
 		return err
 	}
-
+	p := cmd.Flags.Probes
+	if !p.AreProbesEnabled(ctx) {
+		c.Apps.Logger.Debug("Probes not enabled")
+		return nil
+	}
 	// Start the server in a separate goroutine
 	srv := &http.Server{
 		Addr:    cmd.Flags.Probes.Address,
@@ -102,7 +112,7 @@ func startSecretumProbesServer(ctx floc.Context, ctrl floc.Control) error {
 			"address":    cmd.Flags.Probes.Address,
 		}).Info("Starting health endpoints")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			SecretumSetRCErrorTree(ctx, "secretum.startSecretumProbesServer", err)
+			KuberiumSetRCErrorTree(ctx, "kuberium.startKmzProbesServer", err)
 		}
 	}()
 	// Wait for the context to be canceled
@@ -112,15 +122,15 @@ func startSecretumProbesServer(ctx floc.Context, ctrl floc.Control) error {
 	ct, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ct); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.startSecretumProbesServer", err)
+		KuberiumSetRCErrorTree(ctx, "kuberium.startKmzProbesServer", err)
 	}
 
 	return nil
 }
 
-func (cmd *KmsCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
+func (cmd *KmzCmd) Run(c *common.Cmdctx, rcerror *error) error {
 
-	c.InitSeq = append([]floc.Job{initializeKmsCmd}, c.InitSeq...)
+	c.InitSeq = append([]floc.Job{initializeKmzCmd}, c.InitSeq...)
 
 	return nil
 }

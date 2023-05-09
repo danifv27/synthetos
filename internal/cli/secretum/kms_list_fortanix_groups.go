@@ -27,7 +27,7 @@ func initializeKmsListFortanixGroupsCmd(ctx floc.Context, ctrl floc.Control) err
 	var c *common.Cmdctx
 	// var cli CLI
 
-	if c, err = SecretumCmdCtx(ctx); err != nil {
+	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		if e := SecretumSetRCErrorTree(ctx, "initializeKmsListFortanixGroupsCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeKmsListFortanixGroupsCmd", e)
 		}
@@ -41,7 +41,7 @@ func initializeKmsListFortanixGroupsCmd(ctx floc.Context, ctrl floc.Control) err
 	// }
 
 	if err = application.WithOptions(&c.Apps,
-		application.WithListGroupsQuery(c.Apps.Logger, c.Adapters.KeyManager, c.Adapters.Printer),
+		application.WithListGroupsQuery(c.Apps.Logger, c.Adapters.Printer, c.Adapters.KeyManager),
 	); err != nil {
 		return errortree.Add(rcerror, "initializeKmsListFortanixGroupsCmd", err)
 	}
@@ -58,21 +58,21 @@ func initializeKmsListFortanixGroupsCmd(ctx floc.Context, ctrl floc.Control) err
 
 func kmsListFortanixGroupsJob(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
-	var cli CLI
+	var cmd KmsCmd
 	var err error
 
-	if c, err = SecretumCmdCtx(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
+	if c, err = common.CommonCmdCtx(ctx); err != nil {
+		SecretumSetRCErrorTree(ctx, "secretum.kmsListFortanixGroupsJob", err)
 		return err
 	}
-	if cli, err = SecretumFlags(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.startProbesServer", err)
+	if cmd, err = SecretumKmsCmd(ctx); err != nil {
+		SecretumSetRCErrorTree(ctx, "secretum.kmsListFortanixGroupsJob", err)
 		return err
 	}
 	req := actions.ListGroupsRequest{
 		Mode: printer.PrinterModeNone,
 	}
-	m := cli.Kms.List.Flags.Output
+	m := cmd.List.Flags.Output
 	switch {
 	case m == "json":
 		req.Mode = printer.PrinterModeJSON
@@ -98,7 +98,7 @@ func (cmd *KmsListFortanixGroupsCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *er
 		guard.ConstTimeout(5*time.Minute),
 		nil, // No need for timeout data
 		run.Sequence(
-			run.If(p.AreProbesEnabled, run.Background(startProbesServer)),
+			run.If(p.AreProbesEnabled, run.Background(startSecretumProbesServer)),
 			kmsListFortanixGroupsJob,
 			func(ctx floc.Context, ctrl floc.Control) error {
 				if rcerror, err := SecretumRCErrorTree(ctx); err != nil {

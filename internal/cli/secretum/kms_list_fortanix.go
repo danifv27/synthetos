@@ -23,21 +23,21 @@ type KmsListFortanixFlags struct {
 func initializeKmsListFortanixCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
-	var cli CLI
+	var cmd KmsCmd
 
-	if c, err = SecretumCmdCtx(ctx); err != nil {
+	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		if e := SecretumSetRCErrorTree(ctx, "initializeKmsListFortanixGroupsCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeKmsListFortanixGroupsCmd", e)
 		}
 		return err
 	}
-	if cli, err = SecretumFlags(ctx); err != nil {
+	if cmd, err = SecretumKmsCmd(ctx); err != nil {
 		if e := SecretumSetRCErrorTree(ctx, "initializeKmsListFortanixGroupsCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeKmsListFortanixGroupsCmd", e)
 		}
 		return err
 	}
-	uri := fmt.Sprintf("keymanager:fortanix?endpoint=%s&apikey=%s", url.QueryEscape(cli.Kms.List.Fortanix.Flags.ApiEndpointURL), url.QueryEscape(cli.Kms.List.Fortanix.Flags.ApiKey))
+	uri := fmt.Sprintf("keymanager:fortanix?endpoint=%s&apikey=%s", url.QueryEscape(cmd.List.Fortanix.Flags.ApiEndpointURL), url.QueryEscape(cmd.List.Fortanix.Flags.ApiKey))
 	infraOptions := []infrastructure.AdapterOption{
 		infrastructure.WithKeyManager(uri, c.Apps.Logger),
 	}

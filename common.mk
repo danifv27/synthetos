@@ -21,8 +21,9 @@ clean: ARCH ?= $(shell go env GOOS)-$(shell go env GOARCH)
 ARCH ?= linux-amd64
 
 REVISION := $(shell echo $$(git rev-parse --short HEAD) ||echo "Unknown Revision")
-BUILDINFO_TAG ?= $(shell echo $$(git describe --long --all | tr '/' '-')$$(git diff-index --quiet HEAD -- || echo '-dirty-'$$(git diff-index -u HEAD | openssl sha1 | cut -c 10-17)))
-VCS_TAG := $(shell git describe --tags)
+BUILDINFO_TAG ?= $(shell echo $$(git describe --long --all | tr '/' '-')$$(git diff-index --quiet HEAD -- || echo '-dirty-'$$(git diff-index -u HEAD | openssl sha1 | tr -s ' ' | cut -d ' ' -f 2 | cut -c 1-7)))
+
+VCS_TAG := $(shell git describe --tags 2>/dev/null)
 ifeq ($(VCS_TAG),)
 VCS_TAG := $(BUILDINFO_TAG)
 endif

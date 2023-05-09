@@ -10,7 +10,7 @@ import (
 	"fry.org/cmo/cli/internal/application"
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/cli/common"
-	"fry.org/cmo/cli/internal/cli/uxperi"
+	"fry.org/cmo/cli/internal/cli/kuberium"
 	"fry.org/cmo/cli/internal/cli/versio"
 	"fry.org/cmo/cli/internal/infrastructure"
 
@@ -20,7 +20,7 @@ import (
 	"github.com/workanator/go-floc/v3/run"
 )
 
-func initializeCmd(cli *uxperi.CLI, cmd string) (common.Cmdctx, error) {
+func initializeCmd(cli *kuberium.CLI, cmd string) (common.Cmdctx, error) {
 	var err, rcerror error
 	var output string
 
@@ -59,7 +59,7 @@ func main() {
 	var result floc.Result
 	var data interface{}
 
-	cli := uxperi.CLI{
+	cli := kuberium.CLI{
 		Logging: common.Log{},
 	}
 
@@ -77,7 +77,7 @@ func main() {
 		kong.Bind(pCtxcmd),
 		kong.Bind(&rcerror),
 		kong.Name(bin),
-		kong.Description("Cucumber based Prometheus exporter"),
+		kong.Description("KMS manager"),
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{
 			Tree: true,
@@ -103,7 +103,8 @@ func main() {
 
 	flocCtx := floc.NewContext()
 	common.CommonSetCmdCtx(flocCtx, *pCtxcmd)
-	uxperi.UxperiSetTestCmd(flocCtx, cli.Test)
+	kuberium.KuberiumSetKubeCmd(flocCtx, cli.Kube)
+	kuberium.KuberiumSetKmzCmd(flocCtx, cli.Kmz)
 	versio.VersioSetVersionCmd(flocCtx, cli.Version)
 	ctrl := floc.NewControl(flocCtx)
 
@@ -137,7 +138,7 @@ func main() {
 	//Last command quit waitInterrupt
 	jobs = append(jobs,
 		func(ctx floc.Context, ctrl floc.Control) error {
-			if rcerror, err := uxperi.UxperiRCErrorTree(ctx); err != nil {
+			if rcerror, err := kuberium.KuberiumRCErrorTree(ctx); err != nil {
 				ctrl.Fail(fmt.Sprintf("Command '%s' internal error", pCtxcmd.Cmd), err)
 				return err
 			} else if *rcerror != nil {
@@ -157,7 +158,7 @@ func main() {
 
 	//TODO: validate RunWith when the job finish with errors
 	if result, data, err = floc.RunWith(flocCtx, ctrl, flow); err != nil {
-		if rcerr, e := uxperi.UxperiRCErrorTree(flocCtx); e != nil {
+		if rcerr, e := kuberium.KuberiumRCErrorTree(flocCtx); e != nil {
 			rcerror = errortree.Add(rcerror, "context", e)
 			rcerror = errortree.Add(rcerror, "cmd", fmt.Errorf("%s", ctx.Command()))
 			rcerror = errortree.Add(rcerror, "msg", fmt.Errorf("error retrieving context values"))
@@ -181,7 +182,7 @@ func main() {
 		pCtxcmd.Apps.Logger.Debug("Flow failure")
 	default:
 		pCtxcmd.Apps.Logger.Debug("Flow finished with improper state")
-		if rcerror, err := uxperi.UxperiRCErrorTree(flocCtx); err != nil {
+		if rcerror, err := kuberium.KuberiumRCErrorTree(flocCtx); err != nil {
 			ctx.FatalIfErrorf(err)
 		} else {
 			ctx.FatalIfErrorf(*rcerror)

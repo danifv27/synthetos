@@ -2,6 +2,7 @@ package printer
 
 import (
 	"fry.org/cmo/cli/internal/application/kms"
+	"fry.org/cmo/cli/internal/application/provider"
 	"fry.org/cmo/cli/internal/application/version"
 )
 
@@ -17,4 +18,5 @@ const (
 type Printer interface {
 	PrintVersion(v version.Version, mode PrinterMode) error
 	ListKmsGroups(groups []kms.Group, mode PrinterMode) error
+	PrintResourceSummary(receiveCh <-chan provider.Summary, mode PrinterMode) error
 }

@@ -17,6 +17,7 @@ import (
 	"fry.org/cmo/cli/internal/application/kms"
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/application/printer"
+	"fry.org/cmo/cli/internal/application/provider"
 	"fry.org/cmo/cli/internal/application/version"
 	"github.com/speijnik/go-errortree"
 )
@@ -35,12 +36,14 @@ func (o ApplicationOptionFunc) Apply(a *Applications) error {
 
 // Queries operations that request data
 type Queries struct {
-	ListGroups actions.ListGroupsQueryHandler
+	ListGroups  actions.ListGroupsQueryHandler
+	ShowSummary actions.ShowSummaryQueryHandler
 }
 
 // Commands operations that accept data to make a change or trigger an action
 type Commands struct {
-	PrintVersion actions.PrintVersionCommandHandler
+	PrintVersion         actions.PrintVersionCommandHandler
+	PrintResourceSummary actions.PrintResourceSummaryCommand
 }
 
 // Applications contains all exposed services of the application layer
@@ -111,11 +114,31 @@ func WithPrintVersionCommand(v version.Version, p printer.Printer) ApplicationOp
 	})
 }
 
-func WithListGroupsQuery(l logger.Logger, k kms.KeyManager, p printer.Printer) ApplicationOption {
+func WithPrintResourceSummaryCommand(l logger.Logger, p printer.Printer) ApplicationOption {
 
 	return ApplicationOptionFunc(func(a *Applications) error {
 
-		a.Queries.ListGroups = actions.NewListGroupsQueryHandler(l, k, p)
+		a.Commands.PrintResourceSummary = actions.NewPrintResourceSummaryCommandHandler(l, p)
+
+		return nil
+	})
+}
+
+func WithListGroupsQuery(l logger.Logger, p printer.Printer, k kms.KeyManager) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ListGroups = actions.NewListGroupsQueryHandler(l, p, k)
+
+		return nil
+	})
+}
+
+func WithShowSummaryQuery(l logger.Logger, pr provider.ResourceProvider) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ShowSummary = actions.NewShowSummaryQueryHandler(l, pr)
 
 		return nil
 	})
