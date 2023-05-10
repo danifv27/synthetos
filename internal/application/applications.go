@@ -37,6 +37,7 @@ func (o ApplicationOptionFunc) Apply(a *Applications) error {
 // Queries operations that request data
 type Queries struct {
 	ListGroups  actions.ListGroupsQueryHandler
+	ListSecrets actions.ListSecretsQuery
 	ShowSummary actions.ShowSummaryQueryHandler
 }
 
@@ -44,6 +45,7 @@ type Queries struct {
 type Commands struct {
 	PrintVersion         actions.PrintVersionCommandHandler
 	PrintResourceSummary actions.PrintResourceSummaryCommand
+	PrintSecret          actions.PrintSecretCommand
 }
 
 // Applications contains all exposed services of the application layer
@@ -114,6 +116,16 @@ func WithPrintVersionCommand(v version.Version, p printer.Printer) ApplicationOp
 	})
 }
 
+func WithPrintSecretCommand(l logger.Logger, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.PrintSecret = actions.NewPrintSecretCommandHandler(l, p)
+
+		return nil
+	})
+}
+
 func WithPrintResourceSummaryCommand(l logger.Logger, p printer.Printer) ApplicationOption {
 
 	return ApplicationOptionFunc(func(a *Applications) error {
@@ -129,6 +141,16 @@ func WithListGroupsQuery(l logger.Logger, p printer.Printer, k kms.KeyManager) A
 	return ApplicationOptionFunc(func(a *Applications) error {
 
 		a.Queries.ListGroups = actions.NewListGroupsQueryHandler(l, p, k)
+
+		return nil
+	})
+}
+
+func WithListSecretsQuery(l logger.Logger, k kms.KeyManager) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ListSecrets = actions.NewListSecretsQueryHandler(l, k)
 
 		return nil
 	})

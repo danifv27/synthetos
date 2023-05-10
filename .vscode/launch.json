@@ -32,6 +32,47 @@
                 "--probes.enable"
             ],
             "showLog": true
+        },
+        {
+            "name": "kms list fortanix group",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/secretum",
+            "env": {
+                "SC_LOGGING_LEVEL": "debug",
+                "SC_KMS_LIST_FORTANIX_API_KEY": "NWJmZmEzYzctN2E3My00NDU0LWIzYzUtYmM4NDkzMTRlOGI0OjFVdTR6OVlJa0RqWkV4V0pRZFQwUTZuanl0TE56ZXYyYW1Nb29ZWEI5ZE1BQkl2d3dtOUdpYkpmczJ4U08zSDhmYUVhR0JpWkVLTk5ldzlrQ19mS3Nn",
+                "SC_KMS_LIST_FORTANIX_API_ENDPOINT_URL": "https://api.fortanix.com"
+            },
+            "args": [
+                "kms",
+                "--probes.enable",
+                "list",
+                "fortanix",
+                "groups"
+            ],
+            "showLog": true
+        },
+        {
+            "name": "kms list fortanix secret",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/secretum",
+            "env": {
+                "SC_LOGGING_LEVEL": "debug",
+                "SC_KMS_LIST_FORTANIX_API_KEY": "NWJmZmEzYzctN2E3My00NDU0LWIzYzUtYmM4NDkzMTRlOGI0OjFVdTR6OVlJa0RqWkV4V0pRZFQwUTZuanl0TE56ZXYyYW1Nb29ZWEI5ZE1BQkl2d3dtOUdpYkpmczJ4U08zSDhmYUVhR0JpWkVLTk5ldzlrQ19mS3Nn",
+                "SC_KMS_LIST_FORTANIX_API_ENDPOINT_URL": "https://kms-test.adidas-group.com"
+            },
+            "args": [
+                "kms",
+                "--no-probes.enable",
+                "list",
+                "fortanix",
+                "secrets",
+                "kkdlvk"
+            ],
+            "showLog": true
         }
     ]
 }

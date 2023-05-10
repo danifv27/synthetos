@@ -13,9 +13,9 @@ type Log struct {
 }
 
 type Probes struct {
-	Enable     bool   `help:"enable actuator?." env:"SC_TEST_PROBES_ENABLE" default:"true" negatable:"" group:"probes"`
-	Address    string `help:"actuator adress with port" default:":8081" env:"SC_TEST_PROBES_ADDRESS" optional:"" group:"probes"`
-	RootPrefix string `help:"Prefix for the internal routes of web endpoints." env:"SC_TEST_PROBES_ROOT_PREFIX" default:"/actuator" optional:"" group:"probes"`
+	Enable     bool   `help:"enable actuator?." env:"SC_PROBES_ENABLE" default:"true" negatable:"" group:"probes"`
+	Address    string `help:"actuator adress with port" default:":8081" env:"SC_PROBES_ADDRESS" optional:"" group:"probes"`
+	RootPrefix string `help:"Prefix for the internal routes of web endpoints." env:"SC_PROBES_ROOT_PREFIX" default:"/actuator" optional:"" group:"probes"`
 }
 
 type Cmdctx struct {

@@ -20,7 +20,7 @@ type KmsCmd struct {
 }
 
 type KmsFlags struct {
-	Probes common.Probes `embed:"" group:"probes"`
+	Probes common.Probes `embed:"" prefix:"probes."`
 }
 
 func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {

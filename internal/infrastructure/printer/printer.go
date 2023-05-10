@@ -29,6 +29,7 @@ func NewPrinter(opts ...PrinterOption) (*PrinterClient, error) {
 	t := PrinterClient{
 		table: simpletable.New(),
 	}
+	t.table.SetStyle(simpletable.StyleMarkdown)
 	// Loop through each option
 	for _, option := range opts {
 		if err := option.Apply(&t); err != nil {
