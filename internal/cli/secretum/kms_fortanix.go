@@ -1,6 +1,9 @@
 package secretum
 
 import (
+	"fmt"
+	"net/url"
+
 	"fry.org/cmo/cli/internal/cli/common"
 	"fry.org/cmo/cli/internal/infrastructure"
 	"github.com/speijnik/go-errortree"
@@ -8,8 +11,9 @@ import (
 )
 
 type KmsFortanixCmd struct {
-	Flags KmsFortanixFlags   `embed:""`
-	List  KmsFortanixListCmd `cmd:"" help:"List fortanix objects."`
+	Flags   KmsFortanixFlags      `embed:""`
+	List    KmsFortanixListCmd    `cmd:"" help:"List fortanix objects."`
+	Decrypt KmsFortanixDecryptCmd `cmd:"" help:"Decrypt fortanix objects."`
 }
 
 type KmsFortanixFlags struct {
@@ -20,6 +24,7 @@ type KmsFortanixFlags struct {
 func initializeKmsFortanixCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
+	var cmd KmsCmd
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		if e := SecretumSetRCErrorTree(ctx, "initializeKmsFortanixCmd", err); e != nil {
@@ -27,7 +32,15 @@ func initializeKmsFortanixCmd(ctx floc.Context, ctrl floc.Control) error {
 		}
 		return err
 	}
+	if cmd, err = SecretumKmsCmd(ctx); err != nil {
+		if e := SecretumSetRCErrorTree(ctx, "initializeKmsFortanixListGroupsCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsFortanixListGroupsCmd", e)
+		}
+		return err
+	}
+	uri := fmt.Sprintf("keymanager:fortanix?endpoint=%s&apikey=%s", url.QueryEscape(cmd.Fortanix.Flags.ApiEndpointURL), url.QueryEscape(cmd.Fortanix.Flags.ApiKey))
 	infraOptions := []infrastructure.AdapterOption{
+		infrastructure.WithKeyManager(uri, c.Apps.Logger),
 		infrastructure.WithTablePrinter(),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {

@@ -36,9 +36,10 @@ func (o ApplicationOptionFunc) Apply(a *Applications) error {
 
 // Queries operations that request data
 type Queries struct {
-	ListGroups  actions.ListGroupsQueryHandler
-	ListSecrets actions.ListSecretsQuery
-	ShowSummary actions.ShowSummaryQueryHandler
+	ListGroups    actions.ListGroupsQueryHandler
+	ListSecrets   actions.ListSecretsQuery
+	DecryptSecret actions.DecryptSecretQuery
+	ShowSummary   actions.ShowSummaryQueryHandler
 }
 
 // Commands operations that accept data to make a change or trigger an action
@@ -161,6 +162,16 @@ func WithShowSummaryQuery(l logger.Logger, pr provider.ResourceProvider) Applica
 	return ApplicationOptionFunc(func(a *Applications) error {
 
 		a.Queries.ShowSummary = actions.NewShowSummaryQueryHandler(l, pr)
+
+		return nil
+	})
+}
+
+func WithDecryptSecretsQuery(l logger.Logger, k kms.KeyManager) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.DecryptSecret = actions.NewDecryptSecretQueryHandler(l, k)
 
 		return nil
 	})
