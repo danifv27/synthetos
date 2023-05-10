@@ -71,7 +71,7 @@ func kmsFortanixListGroupsJob(ctx floc.Context, ctrl floc.Control) error {
 	req := actions.ListGroupsRequest{
 		Mode: printer.PrinterModeNone,
 	}
-	m := cmd.Fortanix.Flags.Output
+	m := cmd.Flags.Output
 	switch {
 	case m == "json":
 		req.Mode = printer.PrinterModeJSON

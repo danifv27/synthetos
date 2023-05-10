@@ -68,7 +68,7 @@ func KmsFortanixListSecretsJob(ctx floc.Context, ctrl floc.Control) error {
 	secretCh := make(chan kms.Secret, 3)
 	quit := make(chan struct{})
 	// Let's start the printer consumer
-	m := cmd.Fortanix.Flags.Output
+	m := cmd.Flags.Output
 	reqPrint := actions.PrintSecretRequest{
 		Mode:      printer.PrinterModeNone,
 		ReceiveCh: secretCh,

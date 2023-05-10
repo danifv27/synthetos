@@ -20,6 +20,7 @@ type KmsCmd struct {
 }
 
 type KmsFlags struct {
+	Output string        `prefix:"kms." help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KMS_OUTPUT"`
 	Probes common.Probes `embed:"" prefix:"probes."`
 }
 

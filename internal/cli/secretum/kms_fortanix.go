@@ -12,9 +12,7 @@ type KmsFortanixCmd struct {
 	List  KmsFortanixListCmd `cmd:"" help:"List fortanix objects."`
 }
 
-type KmsFortanixFlags struct {
-	Output string `prefix:"kms.fortanix." help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KMS_FORTANIX_OUTPUT"`
-}
+type KmsFortanixFlags struct{}
 
 func initializeKmsFortanixCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
