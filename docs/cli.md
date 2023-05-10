@@ -1,15 +1,22 @@
 # Command-Line Interface
 
-"Synthetos" is derived from the Greek word "synthetos" (συνθετος), which means "put together," "combined," or "composed." In the context of creating something synthetic or artificial, it could be interpreted as "constructed," "fabricated," or "built." 
-It supports several commands, each accessible through the application binary. It can be configured in three different ways:
+Comprehensive Swiss Army Knife for DevOps and SRE teams, featuring a variety of tools. Named after Atlas, the Greek titan who carried the weight of the world on his shoulders, this name suggests this app can handle any task. It supports several commands, each accessible through the application binary. It can be configured in three different ways:
 
-* Using a configuration file in Json format. This file should be placed in one of these paths: `/etc/synthetos.json`, `$HOME/.synthetos.json` or `<BINARY PATH>/.synthetos.json`
+* Using a configuration file in Json format. This file should be placed in one of these paths: `/etc/<binary_name>.json`, `$HOME/.<binary_name>.json` or `<BINARY PATH>/.<binary_name>.json`
 * Through commands flags.
 * Via environment variables
 
 ℹ️ command flags have precedence over environment values
 
-## Common Flags
+This cli has the particularity of building diferent binaries with diferent functionality. Right now we have available three different binaries:
+
+* atlas: contains all the commands.
+* uxperi: user experience exporter commands.
+* secretum: kms management commands.
+
+## Flags
+
+ℹ️ Flags are inherited from parent commands.
 
 CLI commands support both local (specific to the given command) and global (works for every command available) flags. Some of the most common global flags are:
 
@@ -25,7 +32,7 @@ CLI commands support both local (specific to the given command) and global (work
 {
     "logging": {
         "level": "debug",
-        "format": "logger:stdout?json=false"
+        "json": "true"
     }
 }
 ```
@@ -34,13 +41,15 @@ CLI commands support both local (specific to the given command) and global (work
 
 For help on individual commands, add --help following the command name.
 
-When run with no arguments (or with -h/-help), `synthetos` prints an usage message.
+When run with no arguments (or with -h/-help), `atlas` prints an usage message.
 
 
 ```bash
-synthetos <command> <subcommand> [flags]
+atlas <command> <subcommand> [flags]
 ```
 
 # Available Commands
+
+* [kms](./kms.md)
 * [version](./version.md)
 * [test](./test.md)
