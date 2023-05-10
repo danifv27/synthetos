@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
 
 	"fry.org/cmo/cli/internal/application/kms"
 	"fry.org/cmo/cli/internal/application/printer"
@@ -13,7 +15,7 @@ import (
 	"github.com/tidwall/pretty"
 )
 
-func (t *PrinterClient) printListGroupsTable(groups []kms.Group) error {
+func (t *PrinterClient) listKmsGroupsTable(groups []kms.Group) error {
 	var rcerror error
 
 	t.table.Header = &simpletable.Header{
@@ -69,24 +71,53 @@ func (t *PrinterClient) printListGroupsTable(groups []kms.Group) error {
 	return nil
 }
 
-func (t *PrinterClient) ListKmsGroups(groups []kms.Group, mode printer.PrinterMode) error {
+func listKmsGroupsJSON(groups []kms.Group) error {
 	var rcerror error
 
-	switch mode {
-	case printer.PrinterModeJSON:
-		// Convert structs to JSON.
-		if j, err := json.Marshal(groups); err != nil {
-			return errortree.Add(rcerror, "ListKmsGroups", err)
-		} else {
-			fmt.Printf("%s\n", pretty.Pretty(j))
-		}
-	case printer.PrinterModeTable:
-		return t.printListGroupsTable(groups)
-	default:
-		fmt.Printf("%v", groups)
+	//Sort by groupID
+	sort.Slice(groups, func(i int, j int) bool {
+		rc := strings.Compare(groups[i].GroupID, groups[j].GroupID)
+
+		return rc < 0
+	})
+	// Convert structs to JSON.
+	if j, err := json.Marshal(groups); err != nil {
+		return errortree.Add(rcerror, "listKmsGroupsJSON", err)
+	} else {
+		fmt.Printf("%s\n", pretty.Pretty(j))
 	}
 
 	return nil
+}
+
+func listKmsGroupsText(groups []kms.Group) error {
+
+	//Sort by groupID
+	sort.Slice(groups, func(i int, j int) bool {
+		rc := strings.Compare(groups[i].GroupID, groups[j].GroupID)
+
+		return rc < 0
+	})
+	fmt.Printf("%v\n", groups)
+
+	return nil
+}
+
+func (t *PrinterClient) ListKmsGroups(groups []kms.Group, mode printer.PrinterMode) error {
+	var rcerror error
+
+	rcerror = errortree.Add(rcerror, "ListKmsGroups", fmt.Errorf("printer mode %v not supported", mode))
+
+	switch mode {
+	case printer.PrinterModeJSON:
+		rcerror = listKmsGroupsJSON(groups)
+	case printer.PrinterModeTable:
+		rcerror = t.listKmsGroupsTable(groups)
+	case printer.PrinterModeText:
+		rcerror = listKmsGroupsText(groups)
+	}
+
+	return rcerror
 }
 
 func listKmsSecretsJSON(ch <-chan kms.Secret) error {
@@ -96,6 +127,12 @@ func listKmsSecretsJSON(ch <-chan kms.Secret) error {
 	for r := range ch {
 		secrets = append(secrets, r)
 	} //for
+	//Sort by groupID
+	sort.Slice(secrets, func(i int, j int) bool {
+		rc := strings.Compare(*secrets[i].GroupID, *secrets[j].GroupID)
+
+		return rc < 0
+	})
 	// Convert structs to JSON.
 	if j, err := json.Marshal(secrets); err != nil {
 		return errortree.Add(rcerror, "listKmsSecretsJSON", err)
@@ -107,7 +144,7 @@ func listKmsSecretsJSON(ch <-chan kms.Secret) error {
 }
 
 func (t *PrinterClient) listKmsSecretsTable(ch <-chan kms.Secret) error {
-	// var rcerror error
+	var secrets []kms.Secret
 
 	t.table.Header = &simpletable.Header{
 		Cells: []*simpletable.Cell{
@@ -120,6 +157,16 @@ func (t *PrinterClient) listKmsSecretsTable(ch <-chan kms.Secret) error {
 		},
 	}
 	for r := range ch {
+		secrets = append(secrets, r)
+	} //for
+	//Sort by groupID
+	sort.Slice(secrets, func(i int, j int) bool {
+		rc := strings.Compare(*secrets[i].GroupID, *secrets[j].GroupID)
+
+		return rc < 0
+	})
+
+	for _, r := range secrets {
 		groupID := new(bytes.Buffer)
 		p := linesprinter.NewLinesPrinter(groupID, 48, []byte("\r\n"))
 		if _, err := p.Write([]byte(*r.GroupID)); err != nil {
@@ -146,13 +193,13 @@ func (t *PrinterClient) listKmsSecretsTable(ch <-chan kms.Secret) error {
 		p.Close()
 		createAt := new(bytes.Buffer)
 		p = linesprinter.NewLinesPrinter(createAt, 96, []byte("\r\n"))
-		if _, err := p.Write([]byte(*&r.CreatedAt)); err != nil {
+		if _, err := p.Write([]byte(r.CreatedAt)); err != nil {
 			continue
 		}
 		p.Close()
 		lastUsedAt := new(bytes.Buffer)
 		p = linesprinter.NewLinesPrinter(lastUsedAt, 96, []byte("\r\n"))
-		if _, err := p.Write([]byte(*&r.LastusedAt)); err != nil {
+		if _, err := p.Write([]byte(r.LastusedAt)); err != nil {
 			continue
 		}
 		p.Close()
@@ -177,6 +224,12 @@ func listKmsSecretsText(ch <-chan kms.Secret) error {
 	for r := range ch {
 		secrets = append(secrets, r)
 	} //for
+	//Sort by groupID
+	sort.Slice(secrets, func(i int, j int) bool {
+		rc := strings.Compare(*secrets[i].GroupID, *secrets[j].GroupID)
+
+		return rc < 0
+	})
 	fmt.Printf("%v\n", secrets)
 
 	return nil
