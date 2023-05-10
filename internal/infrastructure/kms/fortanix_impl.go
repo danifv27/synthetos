@@ -144,8 +144,8 @@ func (f *fortanixClient) ListSecrets(ctx context.Context) ([]kms.Secret, error) 
 			Description: g.Description,
 			Name:        g.Name,
 			GroupID:     g.GroupID,
-			Blob:        g.Value,
-			SecretID:    g.Kid,
+			// Blob:        g.Value,m
+			SecretID: g.Kid,
 		})
 	}
 

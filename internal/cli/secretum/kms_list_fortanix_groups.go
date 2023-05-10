@@ -19,8 +19,7 @@ type KmsListFortanixGroupsCmd struct {
 	Flags KmsListFortanixGroupsFlags `embed:""`
 }
 
-type KmsListFortanixGroupsFlags struct {
-}
+type KmsListFortanixGroupsFlags struct{}
 
 func initializeKmsListFortanixGroupsCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
