@@ -7,7 +7,7 @@ type KeyManager interface {
 	Get(ctx context.Context) error
 	ListGroups(ctx context.Context) ([]Group, error)
 	ListSecrets(ctx context.Context, groupID *string) ([]Secret, error)
-	Decrypt(ctx context.Context) error
+	DecryptSecretByName(ctx context.Context, name *string) (Secret, error)
 }
 
 type Group struct {

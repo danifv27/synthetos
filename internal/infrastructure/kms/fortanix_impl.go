@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -117,18 +118,18 @@ func (f *fortanixClient) ListGroups(ctx context.Context) ([]kms.Group, error) {
 	return groups, nil
 }
 
-func (f *fortanixClient) ListSecrets(ctx context.Context, groupID *string) ([]kms.Secret, error) {
-	var rcerror error
-	var secrets []kms.Secret
+func (f *fortanixClient) listSobjects(ctx context.Context, groupID *string) ([]sdkms.Sobject, error) {
+	var rcerror, err error
+	var objects []sdkms.Sobject
 
 	cx, cancelfn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancelfn()
 	// Establish a session
-	if _, err := f.client.AuthenticateWithAPIKey(cx, f.apikey); err != nil {
+	if _, err = f.client.AuthenticateWithAPIKey(cx, f.apikey); err != nil {
 		f.l.WithFields(logger.Fields{
 			"err": err,
 		}).Info("Authentication failed")
-		return []kms.Secret{}, errortree.Add(rcerror, "fortanix.ListSecrets", err)
+		return objects, errortree.Add(rcerror, "fortanix.listSobjects", err)
 	}
 	// Terminate the session on exit
 	defer f.client.TerminateSession(ctx)
@@ -141,7 +142,18 @@ func (f *fortanixClient) ListSecrets(ctx context.Context, groupID *string) ([]km
 	if groupID != nil {
 		queryParams.GroupID = groupID
 	}
-	gs, err := f.client.ListSobjects(ctx, &queryParams)
+	if objects, err = f.client.ListSobjects(ctx, &queryParams); err != nil {
+		return objects, errortree.Add(rcerror, "fortanix.listSobjects", err)
+	}
+
+	return objects, nil
+}
+
+func (f *fortanixClient) ListSecrets(ctx context.Context, groupID *string) ([]kms.Secret, error) {
+	var rcerror error
+	var secrets []kms.Secret
+
+	gs, err := f.listSobjects(ctx, groupID)
 	if err != nil {
 		return []kms.Secret{}, errortree.Add(rcerror, "fortanix.ListSecrets", err)
 	}
@@ -152,7 +164,7 @@ func (f *fortanixClient) ListSecrets(ctx context.Context, groupID *string) ([]km
 			Description: g.Description,
 			Name:        g.Name,
 			GroupID:     g.GroupID,
-			// Blob:        g.Value,m
+			// Blob:        g.Value,
 			SecretID: g.Kid,
 		})
 	}
@@ -160,18 +172,26 @@ func (f *fortanixClient) ListSecrets(ctx context.Context, groupID *string) ([]km
 	return secrets, nil
 }
 
-// func sobjectToString(sobject *sdkms.Sobject) string {
-// 	created, err := sobject.CreatedAt.Std()
-// 	if err != nil {
-// 		return err.Error()
-// 	}
-// 	return fmt.Sprintf("{ %v %#v group(%v) enabled: %v created: %v }",
-// 		*sobject.Kid, *sobject.Name, *sobject.GroupID, sobject.Enabled,
-// 		created.Local())
-// }
-
-func (f *fortanixClient) Decrypt(ctx context.Context) error {
+func (f *fortanixClient) DecryptSecretByName(ctx context.Context, name *string) (kms.Secret, error) {
 	var rcerror error
 
-	return errortree.Add(rcerror, "fortanix.Decrypt", errors.New("method not implemented"))
+	gs, err := f.listSobjects(ctx, nil)
+	if err != nil {
+		return kms.Secret{}, errortree.Add(rcerror, "fortanix.DecryptSecretByName", err)
+	}
+	for _, g := range gs {
+		if *g.Name == *name {
+			return kms.Secret{
+				CreatedAt:   string(g.CreatedAt),
+				LastusedAt:  string(g.LastusedAt),
+				Description: g.Description,
+				Name:        g.Name,
+				GroupID:     g.GroupID,
+				Blob:        g.Value,
+				SecretID:    g.Kid,
+			}, nil
+		}
+	}
+
+	return kms.Secret{}, errortree.Add(rcerror, "fortanix.DecryptSecretByName", fmt.Errorf("secret %s not found", *name))
 }
