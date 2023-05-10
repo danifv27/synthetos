@@ -16,10 +16,7 @@ type KmsFortanixListCmd struct {
 	Secrets KmsFortanixListSecretsCmd `cmd:"" help:"List Fortanix secrets."`
 }
 
-type KmsFortanixListFlags struct {
-	ApiEndpointURL string `help:"The URL for the Fortanix API endpoint. Make sure to include the trailing slash." prefix:"kms.fortanix.list." env:"SC_KMS_FORTANIX_LIST_API_ENDPOINT_URL" default:"https://kms-test.adidas-group.com"`
-	ApiKey         string `help:"Your Fortanix API access key. You can obtain this key by logging into your Fortanix account and navigating to the 'API Keys' page in the 'Settings' section." prefix:"kms.fortanix.list." env:"SC_KMS_FORTANIX_LIST_API_KEY" required:""`
-}
+type KmsFortanixListFlags struct{}
 
 func initializeKmsFortanixListCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
@@ -38,7 +35,7 @@ func initializeKmsFortanixListCmd(ctx floc.Context, ctrl floc.Control) error {
 		}
 		return err
 	}
-	uri := fmt.Sprintf("keymanager:fortanix?endpoint=%s&apikey=%s", url.QueryEscape(cmd.Fortanix.List.Flags.ApiEndpointURL), url.QueryEscape(cmd.Fortanix.List.Flags.ApiKey))
+	uri := fmt.Sprintf("keymanager:fortanix?endpoint=%s&apikey=%s", url.QueryEscape(cmd.Fortanix.Flags.ApiEndpointURL), url.QueryEscape(cmd.Fortanix.Flags.ApiKey))
 	infraOptions := []infrastructure.AdapterOption{
 		infrastructure.WithKeyManager(uri, c.Apps.Logger),
 	}

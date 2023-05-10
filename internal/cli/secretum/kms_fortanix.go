@@ -12,7 +12,10 @@ type KmsFortanixCmd struct {
 	List  KmsFortanixListCmd `cmd:"" help:"List fortanix objects."`
 }
 
-type KmsFortanixFlags struct{}
+type KmsFortanixFlags struct {
+	ApiEndpointURL string `help:"The URL for the Fortanix API endpoint. Make sure to include the trailing slash." prefix:"kms.fortanix." env:"SC_KMS_FORTANIX_API_ENDPOINT_URL" default:"https://kms-test.adidas-group.com"`
+	ApiKey         string `help:"Your Fortanix API access key. You can obtain this key by logging into your Fortanix account and navigating to the 'API Keys' page in the 'Settings' section." prefix:"kms.fortanix." env:"SC_KMS_FORTANIX_API_KEY" required:""`
+}
 
 func initializeKmsFortanixCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error

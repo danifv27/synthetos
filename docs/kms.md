@@ -21,5 +21,4 @@ The following flags can be used to configure this command:
 
 # Available Commands
 
-* [kms fortanix decrypt](./kms.fortanix.decrypt.md)
-* [kms fortanix list](./kms.fortanix.list.md)
+* [kms fortanix](./kms.fortanix.md)
