@@ -12,7 +12,7 @@ Overall, this Golang CLI application is a powerful and flexible tool for buildin
 
 # Quick Start
 
-Installation of `uxperi` is dead-simple, just download the release for your system and run the binary. The binaries are published in Artifactory, under `pc-maven/com/adidas/devops/uxperi/` package.
+Installation of `atlas` is dead-simple, just download the release for your system and run the binary. The binaries are published in Artifactory, under `pc-maven/com/adidas/devops/atlas/` package.
 
 The binaries are classified by operating system (darwin, linux or windows), architecture (amd64) and version.
 
@@ -23,7 +23,7 @@ export VERSION=0.0.1
 export GOOS=darwin
 export GOARCH=amd64
 
-curl -Lo uxperi https://tools.adidas-group.com/artifactory/pc-maven/com/adidas/devops/atlas/${GOOS}/${GOARCH}/${VERSION}/bin/uxperi
+curl -Lo atlas https://tools.adidas-group.com/artifactory/pc-maven/com/adidas/devops/atlas/${GOOS}/${GOARCH}/${VERSION}/bin/atlas
 
 # make the binary executable
 chmod +x optimo
@@ -35,14 +35,14 @@ Clone this repo and:
 
 ```bash
 git clone https://tools.adidas-group.com/bitbucket/scm/cmodevops/cmo-atlas.git
-cd cmd/uxperi
+cd cmd/atlas
 make local
 
 # to 'install' the optimo binary, make it executable and either call it directy, put 
 # it in your PATH, or move it to a location which is already in your PATH:
 
-chmod +x uxperi
-mv uxperi /usr/local/bin
+chmod +x atlas
+mv atlas /usr/local/bin
 ```
 
 ### Cross compile
@@ -85,5 +85,3 @@ When developing, you can use the `Makefile` for doing the following operations:
 We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://tools.adidas-group.com/bitbucket/scm/cmodevops/cmo-atlas.git). 
 
 # Acknowledgement
-
-* [synthetos](https://github.com/danifv27/synthetos
