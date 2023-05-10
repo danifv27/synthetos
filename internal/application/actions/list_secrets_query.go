@@ -10,7 +10,8 @@ import (
 
 // ListSecretsRequest query params
 type ListSecretsRequest struct {
-	SendCh chan<- kms.Secret
+	SendCh  chan<- kms.Secret
+	GroupID *string
 }
 
 type ListSecretsQuery interface {
@@ -37,7 +38,7 @@ func (h listSecretsQueryHandler) Handle(request ListSecretsRequest) error {
 	var secrets []kms.Secret
 
 	ctx := context.Background()
-	if secrets, err = h.kmngr.ListSecrets(ctx); err != nil {
+	if secrets, err = h.kmngr.ListSecrets(ctx, request.GroupID); err != nil {
 		close(request.SendCh)
 		return errortree.Add(rcerror, "Handle", err)
 	}

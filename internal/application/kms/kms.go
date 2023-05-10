@@ -6,7 +6,7 @@ type KeyManager interface {
 	// Authenticate(ctx context.Context) error
 	Get(ctx context.Context) error
 	ListGroups(ctx context.Context) ([]Group, error)
-	ListSecrets(ctx context.Context) ([]Secret, error)
+	ListSecrets(ctx context.Context, groupID *string) ([]Secret, error)
 	Decrypt(ctx context.Context) error
 }
 

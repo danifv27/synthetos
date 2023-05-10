@@ -17,7 +17,7 @@ import (
 )
 
 type KmsListFortanixSecretsCmd struct {
-	GroupID string                      `arg:"" help:"Group ID to be scanned"`
+	GroupID *string                     `arg:"" help:"Group ID to be scanned" optional:""`
 	Flags   KmsListFortanixSecretsFlags `embed:""`
 }
 
@@ -89,7 +89,8 @@ func KmsListFortanixSecretsJob(ctx floc.Context, ctrl floc.Control) error {
 	}(reqPrint)
 	//Start the producer
 	reqListSecrets := actions.ListSecretsRequest{
-		SendCh: secretCh,
+		SendCh:  secretCh,
+		GroupID: cmd.List.Fortanix.Secrets.GroupID,
 	}
 	go func(req actions.ListSecretsRequest) {
 		if err = c.Apps.Queries.ListSecrets.Handle(req); err != nil {

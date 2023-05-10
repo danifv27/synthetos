@@ -117,7 +117,7 @@ func (f *fortanixClient) ListGroups(ctx context.Context) ([]kms.Group, error) {
 	return groups, nil
 }
 
-func (f *fortanixClient) ListSecrets(ctx context.Context) ([]kms.Secret, error) {
+func (f *fortanixClient) ListSecrets(ctx context.Context, groupID *string) ([]kms.Secret, error) {
 	var rcerror error
 	var secrets []kms.Secret
 
@@ -133,7 +133,15 @@ func (f *fortanixClient) ListSecrets(ctx context.Context) ([]kms.Secret, error) 
 	// Terminate the session on exit
 	defer f.client.TerminateSession(ctx)
 	// List groups
-	gs, err := f.client.ListSobjects(ctx, nil)
+	queryParams := sdkms.ListSobjectsParams{
+		Sort: sdkms.SobjectSort{
+			ByName: &sdkms.SobjectSortByName{},
+		},
+	}
+	if groupID != nil {
+		queryParams.GroupID = groupID
+	}
+	gs, err := f.client.ListSobjects(ctx, &queryParams)
 	if err != nil {
 		return []kms.Secret{}, errortree.Add(rcerror, "fortanix.ListSecrets", err)
 	}
