@@ -7,22 +7,22 @@ import (
 	"github.com/workanator/go-floc/v3"
 )
 
-type KmsListCmd struct {
-	Flags    KmsListFlags       `embed:""`
-	Fortanix KmsListFortanixCmd `cmd:"" help:"List fortanix objects."`
+type KmsFortanixCmd struct {
+	Flags KmsFortanixFlags   `embed:""`
+	List  KmsFortanixListCmd `cmd:"" help:"List fortanix objects."`
 }
 
-type KmsListFlags struct {
-	Output string `prefix:"kms.list." help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KMS_LIST_OUTPUT"`
+type KmsFortanixFlags struct {
+	Output string `prefix:"kms.fortanix." help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KMS_FORTANIX_OUTPUT"`
 }
 
-func initializeKmsListCmd(ctx floc.Context, ctrl floc.Control) error {
+func initializeKmsFortanixCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeKmsListCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmsListCmd", e)
+		if e := SecretumSetRCErrorTree(ctx, "initializeKmsFortanixCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsFortanixCmd", e)
 		}
 		return err
 	}
@@ -30,8 +30,8 @@ func initializeKmsListCmd(ctx floc.Context, ctrl floc.Control) error {
 		infrastructure.WithTablePrinter(),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeKmsListCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmsListCmd", e)
+		if e := SecretumSetRCErrorTree(ctx, "initializeKmsFortanixCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsFortanixCmd", e)
 		}
 		return err
 	}
@@ -46,9 +46,9 @@ func initializeKmsListCmd(ctx floc.Context, ctrl floc.Control) error {
 	return nil
 }
 
-func (cmd *KmsListCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
+func (cmd *KmsFortanixCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 
-	c.InitSeq = append([]floc.Job{initializeKmsListCmd}, c.InitSeq...)
+	c.InitSeq = append([]floc.Job{initializeKmsFortanixCmd}, c.InitSeq...)
 
 	return nil
 }

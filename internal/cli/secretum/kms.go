@@ -15,8 +15,8 @@ import (
 )
 
 type KmsCmd struct {
-	Flags KmsFlags   `embed:""`
-	List  KmsListCmd `cmd:"" help:"KMS list."`
+	Flags    KmsFlags       `embed:""`
+	Fortanix KmsFortanixCmd `cmd:"" help:"Manage Fortanix KMS instance."`
 }
 
 type KmsFlags struct {
