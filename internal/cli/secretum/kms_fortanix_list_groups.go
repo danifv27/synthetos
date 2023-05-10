@@ -7,7 +7,6 @@ import (
 
 	"fry.org/cmo/cli/internal/application"
 	"fry.org/cmo/cli/internal/application/actions"
-	"fry.org/cmo/cli/internal/application/kms"
 	"fry.org/cmo/cli/internal/application/printer"
 	"fry.org/cmo/cli/internal/cli/common"
 	"github.com/speijnik/go-errortree"
@@ -16,30 +15,34 @@ import (
 	"github.com/workanator/go-floc/v3/run"
 )
 
-type KmsListFortanixSecretsCmd struct {
-	GroupID *string                     `arg:"" help:"Group ID to be scanned" optional:""`
-	Flags   KmsListFortanixSecretsFlags `embed:""`
+type KmsFortanixListGroupsCmd struct {
+	Flags KmsFortanixListGroupsFlags `embed:""`
 }
 
-type KmsListFortanixSecretsFlags struct {
-}
+type KmsFortanixListGroupsFlags struct{}
 
-func initializeKmsListFortanixSecretsCmd(ctx floc.Context, ctrl floc.Control) error {
+func initializeKmsFortanixListGroupsCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
 	// var cli CLI
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeKmsListFortanixSecretsCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmsListFortanixSecretsCmd", e)
+		if e := SecretumSetRCErrorTree(ctx, "initializeKmsFortanixListGroupsCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsFortanixListGroupsCmd", e)
 		}
 		return err
 	}
+	// if cli, err = SecretumFlags(ctx); err != nil {
+	// 	if e := SecretumSetRCErrorTree(ctx, "initializeKmsFortanixListGroupsCmd", err); e != nil {
+	// 		return errortree.Add(rcerror, "initializeKmsFortanixListGroupsCmd", e)
+	// 	}
+	// 	return err
+	// }
+
 	if err = application.WithOptions(&c.Apps,
-		application.WithListSecretsQuery(c.Apps.Logger, c.Adapters.KeyManager),
-		application.WithPrintSecretCommand(c.Apps.Logger, c.Adapters.Printer),
+		application.WithListGroupsQuery(c.Apps.Logger, c.Adapters.Printer, c.Adapters.KeyManager),
 	); err != nil {
-		return errortree.Add(rcerror, "initializeKmsListFortanixSecretsCmd", err)
+		return errortree.Add(rcerror, "initializeKmsFortanixListGroupsCmd", err)
 	}
 	*c = common.Cmdctx{
 		Cmd:      c.Cmd,
@@ -52,68 +55,50 @@ func initializeKmsListFortanixSecretsCmd(ctx floc.Context, ctrl floc.Control) er
 	return nil
 }
 
-func KmsListFortanixSecretsJob(ctx floc.Context, ctrl floc.Control) error {
+func kmsFortanixListGroupsJob(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
 	var cmd KmsCmd
 	var err error
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.KmsListFortanixSecretsJob", err)
+		SecretumSetRCErrorTree(ctx, "secretum.kmsFortanixListGroupsJob", err)
 		return err
 	}
 	if cmd, err = SecretumKmsCmd(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.KmsListFortanixSecretsJob", err)
+		SecretumSetRCErrorTree(ctx, "secretum.kmsFortanixListGroupsJob", err)
 		return err
 	}
-	secretCh := make(chan kms.Secret, 3)
-	quit := make(chan struct{})
-	// Let's start the printer consumer
-	m := cmd.List.Flags.Output
-	reqPrint := actions.PrintSecretRequest{
-		Mode:      printer.PrinterModeNone,
-		ReceiveCh: secretCh,
+	req := actions.ListGroupsRequest{
+		Mode: printer.PrinterModeNone,
 	}
+	m := cmd.Flags.Output
 	switch {
 	case m == "json":
-		reqPrint.Mode = printer.PrinterModeJSON
+		req.Mode = printer.PrinterModeJSON
 	case m == "text":
-		reqPrint.Mode = printer.PrinterModeText
+		req.Mode = printer.PrinterModeText
 	case m == "table":
-		reqPrint.Mode = printer.PrinterModeTable
+		req.Mode = printer.PrinterModeTable
 	}
-	go func(req actions.PrintSecretRequest) {
-		if err = c.Apps.Commands.PrintSecret.Handle(reqPrint); err != nil {
-			SecretumSetRCErrorTree(ctx, "KmsListFortanixSecretsJob", err)
-		}
-		close(quit)
-	}(reqPrint)
-	//Start the producer
-	reqListSecrets := actions.ListSecretsRequest{
-		SendCh:  secretCh,
-		GroupID: cmd.List.Fortanix.Secrets.GroupID,
+	if _, err = c.Apps.Queries.ListGroups.Handle(req); err != nil {
+		SecretumSetRCErrorTree(ctx, "kmsFortanixListGroupsJob", err)
+		return err
 	}
-	go func(req actions.ListSecretsRequest) {
-		if err = c.Apps.Queries.ListSecrets.Handle(req); err != nil {
-			SecretumSetRCErrorTree(ctx, "KmsListFortanixSecretsJob", err)
-		}
-	}(reqListSecrets)
-	//Wait until printer finish it work
-	<-quit
 
 	return nil
 }
 
-func (cmd *KmsListFortanixSecretsCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
+func (cmd *KmsFortanixListGroupsCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 
 	p := cli.Kms.Flags.Probes
 	//We need to append at the beginning to traverse the initseq in the right order
-	c.InitSeq = append([]floc.Job{initializeKmsListFortanixSecretsCmd}, c.InitSeq...)
+	c.InitSeq = append([]floc.Job{initializeKmsFortanixListGroupsCmd}, c.InitSeq...)
 	c.RunSeq = guard.OnTimeout(
 		guard.ConstTimeout(5*time.Minute),
 		nil, // No need for timeout data
 		run.Sequence(
 			run.If(p.AreProbesEnabled, run.Background(startSecretumProbesServer)),
-			KmsListFortanixSecretsJob,
+			kmsFortanixListGroupsJob,
 			func(ctx floc.Context, ctrl floc.Control) error {
 				if rcerror, err := SecretumRCErrorTree(ctx); err != nil {
 					ctrl.Fail(fmt.Sprintf("Command '%s' internal error", c.Cmd), err)

@@ -1,4 +1,4 @@
-# synthetos test scenario
+# atlas test scenario
 
 This command loads the specified Cucumber feature configuration, runs the tests, updates the Prometheus metric with the test results, and starts an HTTP server that listens on the specified port number. 
 This command implements the multi-target exporter pattern, so we advice to read the guide [Understanding and using the multi-target exporter pattern](https://prometheus.io/docs/guides/multi-target-exporter/) to get the general idea about the configuration.
@@ -25,7 +25,7 @@ There are two ways of querying the exporter:
 
 ```json
 {
-    "synthetos": {
+    "atlas": {
         "test": {
             "scenario": {
             }

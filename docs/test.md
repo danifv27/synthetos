@@ -1,4 +1,4 @@
-# synthetos test
+# atlas test
 
 If the command runs inside a Kubernetes cluster there is the option to provides a liveness and readiness endpoint.
 
