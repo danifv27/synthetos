@@ -41,7 +41,7 @@ func (h decryptSecretQueryHandler) Handle(request DecryptSecretRequest) error {
 
 	ctx := context.Background()
 	if request.Name != nil {
-		if secret, err = h.kmngr.DecryptSecretByName(ctx, request.Name); err != nil {
+		if secret, err = h.kmngr.DecryptSecret(ctx, request.Name); err != nil {
 			close(request.SendCh)
 			return errortree.Add(rcerror, "Handle", err)
 		}

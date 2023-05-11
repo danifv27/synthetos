@@ -89,7 +89,7 @@ func kmsFortanixDecryptSecretsJob(ctx floc.Context, ctrl floc.Control) error {
 	//Start the producer
 	reqDecryptSecret := actions.DecryptSecretRequest{
 		SendCh: secretCh,
-		Name:   &cmd.Fortanix.Decrypt.Secrets.ID,
+		Name:   &cmd.Fortanix.Decrypt.Secret.ID,
 	}
 	go func(req actions.DecryptSecretRequest) {
 		if err = c.Apps.Queries.DecryptSecret.Handle(req); err != nil {

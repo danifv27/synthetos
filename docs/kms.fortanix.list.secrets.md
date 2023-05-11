@@ -1,4 +1,4 @@
-# atlas kms fortnix list secrets 
+# atlas kms fortanix list secrets 
 
 List Fortanix available secure objects, associated to an API key.
 

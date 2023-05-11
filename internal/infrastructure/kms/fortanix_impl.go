@@ -11,6 +11,7 @@ import (
 	"fry.org/cmo/cli/internal/application/kms"
 	"fry.org/cmo/cli/internal/application/logger"
 	"github.com/fortanix/sdkms-client-go/sdkms"
+	"github.com/google/uuid"
 	"github.com/speijnik/go-errortree"
 )
 
@@ -78,12 +79,12 @@ func WithEndpoint(url string) KmsOption {
 	})
 }
 
-// TODO: implement keymanager interface
-func (f *fortanixClient) Get(ctx context.Context) error {
-	var rcerror error
+// // TODO: implement keymanager interface
+// func (f *fortanixClient) Get(ctx context.Context) error {
+// 	var rcerror error
 
-	return errortree.Add(rcerror, "fortanix.Get", errors.New("method not implemented"))
-}
+// 	return errortree.Add(rcerror, "fortanix.Get", errors.New("method not implemented"))
+// }
 
 func (f *fortanixClient) ListGroups(ctx context.Context) ([]kms.Group, error) {
 	var rcerror error
@@ -172,15 +173,17 @@ func (f *fortanixClient) ListSecrets(ctx context.Context, groupID *string) ([]km
 	return secrets, nil
 }
 
-func (f *fortanixClient) DecryptSecretByName(ctx context.Context, name *string) (kms.Secret, error) {
-	var rcerror error
+func (f *fortanixClient) DecryptSecret(ctx context.Context, id *string) (kms.Secret, error) {
+	var rcerror, err error
+	var gs []sdkms.Sobject
 
-	gs, err := f.listSobjects(ctx, nil)
-	if err != nil {
-		return kms.Secret{}, errortree.Add(rcerror, "fortanix.DecryptSecretByName", err)
+	if gs, err = f.listSobjects(ctx, nil); err != nil {
+		return kms.Secret{}, errortree.Add(rcerror, "fortanix.DecryptSecret", err)
 	}
+	// Parse the string as a UUID
+	_, err = uuid.Parse(*id)
 	for _, g := range gs {
-		if *g.Name == *name {
+		if ((err != nil) && (*g.Name == *id)) || (*g.Kid == *id) {
 			return kms.Secret{
 				CreatedAt:   string(g.CreatedAt),
 				LastusedAt:  string(g.LastusedAt),
@@ -193,5 +196,5 @@ func (f *fortanixClient) DecryptSecretByName(ctx context.Context, name *string) 
 		}
 	}
 
-	return kms.Secret{}, errortree.Add(rcerror, "fortanix.DecryptSecretByName", fmt.Errorf("secret %s not found", *name))
+	return kms.Secret{}, errortree.Add(rcerror, "fortanix.DecryptSecret", fmt.Errorf("secret %s not found", *id))
 }

@@ -6,8 +6,8 @@ import (
 )
 
 type KmsFortanixDecryptCmd struct {
-	Flags   KmsFortanixDecryptFlags      `embed:""`
-	Secrets KmsFortanixDecryptSecretsCmd `cmd:"" help:"Decrypt Fortanix secrets."`
+	Flags  KmsFortanixDecryptFlags      `embed:""`
+	Secret KmsFortanixDecryptSecretsCmd `cmd:"" help:"Decrypt Fortanix secrets."`
 }
 
 type KmsFortanixDecryptFlags struct{}

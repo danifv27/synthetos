@@ -12,6 +12,7 @@ require (
 	github.com/cucumber/godog v0.12.6
 	github.com/fortanix/sdkms-client-go v0.2.2
 	github.com/gonejack/linesprinter v0.0.1
+	github.com/google/uuid v1.3.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/prometheus/client_golang v1.14.0
 	github.com/robert-nix/ansihtml v1.0.1
@@ -83,7 +84,6 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/gostaticanalysis/analysisutil v0.0.0-20190318220348-4088753ea4d3 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
 	github.com/hashicorp/go-memdb v1.3.2 // indirect
