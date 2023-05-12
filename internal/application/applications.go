@@ -48,6 +48,8 @@ type Commands struct {
 	PrintVersion         actions.PrintVersionCommandHandler
 	PrintResourceSummary actions.PrintResourceSummaryCommand
 	PrintSecret          actions.PrintSecretCommand
+	DecryptManifests     actions.DecryptManifestsCommand
+	PrintManifests       actions.PrintManifestsCommand
 }
 
 // Applications contains all exposed services of the application layer
@@ -177,11 +179,32 @@ func WithDecryptSecretsQuery(l logger.Logger, k kms.KeyManager) ApplicationOptio
 		return nil
 	})
 }
+
+func WithDecryptManifestsCommand(l logger.Logger) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.DecryptManifests = actions.NewDecryptManifestsCommandHandler(l)
+
+		return nil
+	})
+}
+
 func WithListManifestsCommand(l logger.Logger, pr provider.ManifestProvider) ApplicationOption {
 
 	return ApplicationOptionFunc(func(a *Applications) error {
 
 		a.Queries.ListManifests = actions.NewListManifestsObjectsQueryHandler(l, pr)
+
+		return nil
+	})
+}
+
+func WithPrintManifestsCommand(l logger.Logger, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.PrintManifests = actions.NewPrintManifestsCommandHandler(l, p)
 
 		return nil
 	})
