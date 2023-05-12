@@ -40,6 +40,7 @@ type Queries struct {
 	ListSecrets   actions.ListSecretsQuery
 	DecryptSecret actions.DecryptSecretQuery
 	ShowSummary   actions.ShowSummaryQueryHandler
+	ListManifests actions.ListManifestsObjectsQuery
 }
 
 // Commands operations that accept data to make a change or trigger an action
@@ -172,6 +173,15 @@ func WithDecryptSecretsQuery(l logger.Logger, k kms.KeyManager) ApplicationOptio
 	return ApplicationOptionFunc(func(a *Applications) error {
 
 		a.Queries.DecryptSecret = actions.NewDecryptSecretQueryHandler(l, k)
+
+		return nil
+	})
+}
+func WithListManifestsCommand(l logger.Logger, pr provider.ManifestProvider) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ListManifests = actions.NewListManifestsObjectsQueryHandler(l, pr)
 
 		return nil
 	})
