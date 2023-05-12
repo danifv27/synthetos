@@ -203,13 +203,13 @@ func (c *kubernetesClient) GetResources(ctx context.Context, location string, se
 			} //select
 		}(ch, list[idx])
 	} //for range
-	c.l.Debug("Waiting for kubernetes producers to stop...")
+	// c.l.Debug("Waiting for kubernetes producers to stop...")
 	wg.Wait()
-	c.l.Debug("Kubernetes producers closed. Closing channel...")
+	// c.l.Debug("Kubernetes producers closed. Closing channel...")
 	close(ch)
-	c.l.Debug("Channel closed. Waiting for kubernetes consumer to close")
+	// c.l.Debug("Channel closed. Waiting for kubernetes consumer to close")
 	<-quit
-	c.l.Debug("Kubernetes consumer closed")
+	// c.l.Debug("Kubernetes consumer closed")
 
 	return uItems, nil
 }
