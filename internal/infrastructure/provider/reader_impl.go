@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -65,7 +64,6 @@ func getReaderFromInput(input string) (io.Reader, error) {
 		if fi, err = os.Stdin.Stat(); err != nil {
 			return nil, errortree.Add(rcerror, "getReaderFromInput", err)
 		}
-		fmt.Printf("[DBG]mode: %v", fi.Mode())
 		if fi.Mode()&os.ModeNamedPipe == 0 {
 			return nil, errortree.Add(rcerror, "getReaderFromInput", errors.New("not a stdin pipe"))
 		}

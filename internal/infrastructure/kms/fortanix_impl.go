@@ -173,6 +173,7 @@ func (f *fortanixClient) ListSecrets(ctx context.Context, groupID *string) ([]km
 	return secrets, nil
 }
 
+// FIXME: If there a secret with same name in two different groups, we are going into trouble
 func (f *fortanixClient) DecryptSecret(ctx context.Context, id *string) (kms.Secret, error) {
 	var rcerror, err error
 	var gs []sdkms.Sobject

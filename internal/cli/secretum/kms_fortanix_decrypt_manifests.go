@@ -53,6 +53,7 @@ func initializeKmsFortanixDecryptManifestsCmd(ctx floc.Context, ctrl floc.Contro
 	}
 	if err = application.WithOptions(&c.Apps,
 		application.WithListManifestsCommand(c.Apps.Logger, c.Adapters.ManifestProvider),
+		application.WithDecryptManifestsCommand(c.Apps.Logger, c.Adapters.KeyManager),
 		application.WithPrintManifestsCommand(c.Apps.Logger, c.Adapters.Printer),
 	); err != nil {
 		if e := SecretumSetRCErrorTree(ctx, "initializeKmsFortanixDecryptManifestsCmd", err); e != nil {
@@ -90,10 +91,11 @@ func kmsFortanixDecryptManifestsJob(ctx floc.Context, ctrl floc.Control) error {
 	// }
 
 	manifestCh := make(chan provider.Manifest, 3)
+	printerCh := make(chan provider.Manifest, 3)
 	quit := make(chan struct{})
 	// // Let's start the printer consumer
 	reqPrint := actions.PrintManifestsRequest{
-		ReceiveCh: manifestCh,
+		ReceiveCh: printerCh,
 	}
 	go func(req actions.PrintManifestsRequest) {
 		if err = c.Apps.Commands.PrintManifests.Handle(reqPrint); err != nil {
@@ -101,6 +103,16 @@ func kmsFortanixDecryptManifestsJob(ctx floc.Context, ctrl floc.Control) error {
 		}
 		close(quit)
 	}(reqPrint)
+	//Start the middleware
+	reqDecryptObjects := actions.DecryptManifestsRequest{
+		SendCh:     printerCh,
+		ReceiverCh: manifestCh,
+	}
+	go func(req actions.DecryptManifestsRequest) {
+		if err = c.Apps.Commands.DecryptManifests.Handle(req); err != nil {
+			SecretumSetRCErrorTree(ctx, "kmsFortanixDecryptManifestsJob", err)
+		}
+	}(reqDecryptObjects)
 	//Start the producer
 	reqListObjects := actions.ListManifestsObjectsRequest{
 		SendCh:    manifestCh,

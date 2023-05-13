@@ -180,11 +180,11 @@ func WithDecryptSecretsQuery(l logger.Logger, k kms.KeyManager) ApplicationOptio
 	})
 }
 
-func WithDecryptManifestsCommand(l logger.Logger) ApplicationOption {
+func WithDecryptManifestsCommand(l logger.Logger, k kms.KeyManager) ApplicationOption {
 
 	return ApplicationOptionFunc(func(a *Applications) error {
 
-		a.Commands.DecryptManifests = actions.NewDecryptManifestsCommandHandler(l)
+		a.Commands.DecryptManifests = actions.NewDecryptManifestsCommandHandler(l, k)
 
 		return nil
 	})
