@@ -37,7 +37,6 @@ func (h listManifestsObjectsQueryHandler) Handle(request ListManifestsObjectsReq
 
 	ctx := context.Background()
 	if err = h.prvdr.GetManifests(ctx, request.SendCh); err != nil {
-		close(request.SendCh)
 		return errortree.Add(rcerror, "Handle", err)
 	}
 

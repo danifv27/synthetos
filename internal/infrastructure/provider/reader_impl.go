@@ -142,6 +142,10 @@ func (r yamlReader) GetManifests(ctx context.Context, sendCh chan<- aProvider.Ma
 
 	defer close(sendCh)
 	scanner = bufio.NewScanner(r.reader)
+	buf := make([]byte, 0, 64*1024)
+	//Sets the maximum token size.
+	//We will be able to scan the file as long as none of the lines is larger than 1MB.
+	scanner.Buffer(buf, 1024*1024)
 	scanner.Split(splitYAMLDocument)
 	for scanner.Scan() {
 		decode := scheme.Codecs.UniversalDeserializer().Decode
@@ -154,7 +158,7 @@ func (r yamlReader) GetManifests(ctx context.Context, sendCh chan<- aProvider.Ma
 		}
 		sendCh <- m
 	}
-	if scanner.Err() != nil {
+	if err = scanner.Err(); err != nil {
 		return errortree.Add(rcerror, "GetManifests", err)
 	}
 
