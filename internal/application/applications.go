@@ -40,6 +40,7 @@ type Queries struct {
 	ListSecrets   actions.ListSecretsQuery
 	DecryptSecret actions.DecryptSecretQuery
 	ShowSummary   actions.ShowSummaryQueryHandler
+	ListManifests actions.ListManifestsObjectsQuery
 }
 
 // Commands operations that accept data to make a change or trigger an action
@@ -47,6 +48,8 @@ type Commands struct {
 	PrintVersion         actions.PrintVersionCommandHandler
 	PrintResourceSummary actions.PrintResourceSummaryCommand
 	PrintSecret          actions.PrintSecretCommand
+	DecryptManifests     actions.DecryptManifestsCommand
+	PrintManifests       actions.PrintManifestsCommand
 }
 
 // Applications contains all exposed services of the application layer
@@ -172,6 +175,36 @@ func WithDecryptSecretsQuery(l logger.Logger, k kms.KeyManager) ApplicationOptio
 	return ApplicationOptionFunc(func(a *Applications) error {
 
 		a.Queries.DecryptSecret = actions.NewDecryptSecretQueryHandler(l, k)
+
+		return nil
+	})
+}
+
+func WithDecryptManifestsCommand(l logger.Logger, k kms.KeyManager) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.DecryptManifests = actions.NewDecryptManifestsCommandHandler(l, k)
+
+		return nil
+	})
+}
+
+func WithListManifestsCommand(l logger.Logger, pr provider.ManifestProvider) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ListManifests = actions.NewListManifestsObjectsQueryHandler(l, pr)
+
+		return nil
+	})
+}
+
+func WithPrintManifestsCommand(l logger.Logger, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.PrintManifests = actions.NewPrintManifestsCommandHandler(l, p)
 
 		return nil
 	})

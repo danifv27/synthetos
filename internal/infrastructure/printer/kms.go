@@ -1,7 +1,9 @@
 package printer
 
 import (
+	"bufio"
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"sort"
@@ -10,6 +12,7 @@ import (
 	"fry.org/cmo/cli/internal/application/kms"
 	"fry.org/cmo/cli/internal/application/printer"
 	"github.com/alexeyco/simpletable"
+	"github.com/aquilax/truncate"
 	"github.com/gonejack/linesprinter"
 	"github.com/speijnik/go-errortree"
 	"github.com/tidwall/pretty"
@@ -120,11 +123,44 @@ func (t *PrinterClient) ListKmsGroups(groups []kms.Group, mode printer.PrinterMo
 	return rcerror
 }
 
-func listKmsSecretsJSON(ch <-chan kms.Secret) error {
+func decodeString(input string) string {
+	var err error
+	var decoded []byte
+	var b strings.Builder
+
+	if decoded, err = base64.StdEncoding.DecodeString(input); err != nil {
+		fmt.Printf("[DBG]clear text\n")
+		//If there is a key value string, try to decode only the value
+		scanner := bufio.NewScanner(strings.NewReader(input))
+		for scanner.Scan() {
+			line := scanner.Text()
+			split := strings.Split(line, ":")
+			if len(split) == 2 {
+				if value, e := base64.StdEncoding.DecodeString(strings.TrimSpace(split[1])); e != nil {
+					fmt.Fprintf(&b, "%s\n", string(line))
+				} else {
+					fmt.Fprintf(&b, "%s: %s\n", split[0], string(value))
+				}
+			}
+		}
+
+	} else {
+		fmt.Fprintf(&b, "%s", string(decoded))
+	}
+
+	return b.String()
+}
+
+func listKmsSecretsJSON(ch <-chan kms.Secret, decode bool) error {
 	var rcerror error
 	var secrets []kms.Secret
 
 	for r := range ch {
+		if decode {
+			r.Value = decodeString(string(*r.Blob))
+		} else {
+			r.Value = string(*r.Blob)
+		}
 		secrets = append(secrets, r)
 	} //for
 	//Sort by groupID
@@ -143,7 +179,7 @@ func listKmsSecretsJSON(ch <-chan kms.Secret) error {
 	return nil
 }
 
-func (t *PrinterClient) listKmsSecretsTable(ch <-chan kms.Secret) error {
+func (t *PrinterClient) listKmsSecretsTable(ch <-chan kms.Secret, decode bool) error {
 	var secrets []kms.Secret
 
 	t.table.Header = &simpletable.Header{
@@ -151,12 +187,18 @@ func (t *PrinterClient) listKmsSecretsTable(ch <-chan kms.Secret) error {
 			{Align: simpletable.AlignCenter, Text: "Group ID"},
 			{Align: simpletable.AlignCenter, Text: "Secret ID"},
 			{Align: simpletable.AlignCenter, Text: "Name"},
+			{Align: simpletable.AlignCenter, Text: "Value"},
 			{Align: simpletable.AlignCenter, Text: "Description"},
 			{Align: simpletable.AlignCenter, Text: "Created At"},
 			{Align: simpletable.AlignCenter, Text: "Last Used At"},
 		},
 	}
 	for r := range ch {
+		if decode {
+			r.Value = decodeString(string(*r.Blob))
+		} else {
+			r.Value = string(*r.Blob)
+		}
 		secrets = append(secrets, r)
 	} //for
 	//Sort by groupID
@@ -185,6 +227,13 @@ func (t *PrinterClient) listKmsSecretsTable(ch <-chan kms.Secret) error {
 			continue
 		}
 		p.Close()
+		value := new(bytes.Buffer)
+		p = linesprinter.NewLinesPrinter(value, 96, []byte("\r\n"))
+		truncated := truncate.Truncate(r.Value, 512, "...", truncate.PositionEnd)
+		if _, err := p.Write([]byte(truncated)); err != nil {
+			continue
+		}
+		p.Close()
 		description := new(bytes.Buffer)
 		p = linesprinter.NewLinesPrinter(description, 96, []byte("\r\n"))
 		if _, err := p.Write([]byte(*r.Description)); err != nil {
@@ -207,6 +256,7 @@ func (t *PrinterClient) listKmsSecretsTable(ch <-chan kms.Secret) error {
 			{Text: groupID.String()},
 			{Text: secretID.String()},
 			{Text: name.String()},
+			{Text: value.String()},
 			{Text: description.String()},
 			{Text: createAt.String()},
 			{Text: lastUsedAt.String()},
@@ -222,6 +272,11 @@ func listKmsSecretsText(ch <-chan kms.Secret) error {
 	var secrets []kms.Secret
 
 	for r := range ch {
+		if decoded, err := base64.StdEncoding.DecodeString(string(*r.Blob)); err == nil {
+			r.Value = string(decoded)
+		} else {
+			r.Value = string(*r.Blob)
+		}
 		secrets = append(secrets, r)
 	} //for
 	//Sort by groupID
@@ -235,16 +290,16 @@ func listKmsSecretsText(ch <-chan kms.Secret) error {
 	return nil
 }
 
-func (t *PrinterClient) ListKmsSecrets(ch <-chan kms.Secret, mode printer.PrinterMode) error {
+func (t *PrinterClient) ListKmsSecrets(ch <-chan kms.Secret, mode printer.PrinterMode, decode bool) error {
 	var rcerror error
 
 	rcerror = errortree.Add(rcerror, "ListKmsSecrets", fmt.Errorf("printer mode %v not supported", mode))
 
 	switch mode {
 	case printer.PrinterModeJSON:
-		rcerror = listKmsSecretsJSON(ch)
+		rcerror = listKmsSecretsJSON(ch, decode)
 	case printer.PrinterModeTable:
-		rcerror = t.listKmsSecretsTable(ch)
+		rcerror = t.listKmsSecretsTable(ch, decode)
 	case printer.PrinterModeText:
 		rcerror = listKmsSecretsText(ch)
 	}

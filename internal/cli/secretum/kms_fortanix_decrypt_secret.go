@@ -16,20 +16,22 @@ import (
 	"github.com/workanator/go-floc/v3/run"
 )
 
-type KmsFortanixDecryptSecretsCmd struct {
-	ID    string                         `arg:"" help:"Secret ID or name of the secret to be decrypted"`
-	Flags KmsFortanixDecryptSecretsFlags `embed:""`
+type KmsFortanixDecryptSecretCmd struct {
+	ID    string                        `arg:"" help:"Secret ID or name of the secret to be decrypted"`
+	Flags KmsFortanixDecryptSecretFlags `embed:"" prefix:"kms.fortanix.decrypt.secret."`
 }
 
-type KmsFortanixDecryptSecretsFlags struct{}
+type KmsFortanixDecryptSecretFlags struct {
+	Decode bool `help:"decode secret value?." env:"SC_KMS_FORTANIX_DECRYPT_SECRET_DECODE" default:"true" negatable:""`
+}
 
-func initializeKmsFortanixDecryptSecretsCmd(ctx floc.Context, ctrl floc.Control) error {
+func initializeKmsFortanixDecryptSecretCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeKmsFortanixDecryptSecretsCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmsFortanixDecryptSecretsCmd", e)
+		if e := SecretumSetRCErrorTree(ctx, "initializeKmsFortanixDecryptSecretCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsFortanixDecryptSecretCmd", e)
 		}
 		return err
 	}
@@ -38,7 +40,7 @@ func initializeKmsFortanixDecryptSecretsCmd(ctx floc.Context, ctrl floc.Control)
 		application.WithDecryptSecretsQuery(c.Apps.Logger, c.Adapters.KeyManager),
 		application.WithPrintSecretCommand(c.Apps.Logger, c.Adapters.Printer),
 	); err != nil {
-		return errortree.Add(rcerror, "initializeKmsFortanixDecryptSecretsCmd", err)
+		return errortree.Add(rcerror, "initializeKmsFortanixDecryptSecretCmd", err)
 	}
 	*c = common.Cmdctx{
 		Cmd:      c.Cmd,
@@ -51,17 +53,17 @@ func initializeKmsFortanixDecryptSecretsCmd(ctx floc.Context, ctrl floc.Control)
 	return nil
 }
 
-func kmsFortanixDecryptSecretsJob(ctx floc.Context, ctrl floc.Control) error {
+func kmsFortanixDecryptSecretJob(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
 	var cmd KmsCmd
 	var err error
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.kmsFortanixDecryptSecretsJob", err)
+		SecretumSetRCErrorTree(ctx, "secretum.kmsFortanixDecryptSecretJob", err)
 		return err
 	}
 	if cmd, err = SecretumKmsCmd(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.kmsFortanixDecryptSecretsJob", err)
+		SecretumSetRCErrorTree(ctx, "secretum.kmsFortanixDecryptSecretJob", err)
 		return err
 	}
 	secretCh := make(chan kms.Secret, 3)
@@ -71,6 +73,7 @@ func kmsFortanixDecryptSecretsJob(ctx floc.Context, ctrl floc.Control) error {
 	reqPrint := actions.PrintSecretRequest{
 		Mode:      printer.PrinterModeNone,
 		ReceiveCh: secretCh,
+		Decode:    cmd.Fortanix.Decrypt.Secret.Flags.Decode,
 	}
 	switch {
 	case m == "json":
@@ -82,7 +85,7 @@ func kmsFortanixDecryptSecretsJob(ctx floc.Context, ctrl floc.Control) error {
 	}
 	go func(req actions.PrintSecretRequest) {
 		if err = c.Apps.Commands.PrintSecret.Handle(reqPrint); err != nil {
-			SecretumSetRCErrorTree(ctx, "kmsFortanixDecryptSecretsJob", err)
+			SecretumSetRCErrorTree(ctx, "kmsFortanixDecryptSecretJob", err)
 		}
 		close(quit)
 	}(reqPrint)
@@ -93,7 +96,7 @@ func kmsFortanixDecryptSecretsJob(ctx floc.Context, ctrl floc.Control) error {
 	}
 	go func(req actions.DecryptSecretRequest) {
 		if err = c.Apps.Queries.DecryptSecret.Handle(req); err != nil {
-			SecretumSetRCErrorTree(ctx, "kmsFortanixDecryptSecretsJob", err)
+			SecretumSetRCErrorTree(ctx, "kmsFortanixDecryptSecretJob", err)
 		}
 	}(reqDecryptSecret)
 	//Wait until printer finish it work
@@ -102,17 +105,17 @@ func kmsFortanixDecryptSecretsJob(ctx floc.Context, ctrl floc.Control) error {
 	return nil
 }
 
-func (cmd *KmsFortanixDecryptSecretsCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
+func (cmd *KmsFortanixDecryptSecretCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 
 	p := cli.Kms.Flags.Probes
 	//We need to append at the beginning to traverse the initseq in the right order
-	c.InitSeq = append([]floc.Job{initializeKmsFortanixDecryptSecretsCmd}, c.InitSeq...)
+	c.InitSeq = append([]floc.Job{initializeKmsFortanixDecryptSecretCmd}, c.InitSeq...)
 	c.RunSeq = guard.OnTimeout(
 		guard.ConstTimeout(5*time.Minute),
 		nil, // No need for timeout data
 		run.Sequence(
 			run.If(p.AreProbesEnabled, run.Background(startSecretumProbesServer)),
-			kmsFortanixDecryptSecretsJob,
+			kmsFortanixDecryptSecretJob,
 			func(ctx floc.Context, ctrl floc.Control) error {
 				if rcerror, err := SecretumRCErrorTree(ctx); err != nil {
 					ctrl.Fail(fmt.Sprintf("Command '%s' internal error", c.Cmd), err)

@@ -18,10 +18,11 @@ import (
 
 type KmsFortanixListSecretsCmd struct {
 	GroupID *string                     `arg:"" help:"Group ID to be scanned" optional:""`
-	Flags   KmsFortanixListSecretsFlags `embed:""`
+	Flags   KmsFortanixListSecretsFlags `embed:"" prefix:"kms.fortanix.list.secrets."`
 }
 
 type KmsFortanixListSecretsFlags struct {
+	Decode bool `help:"decode secret value?." env:"SC_KMS_FORTANIX_LIST_SECRETS_DECODE" default:"false"`
 }
 
 func initializeKmsFortanixListSecretsCmd(ctx floc.Context, ctrl floc.Control) error {
@@ -72,6 +73,7 @@ func KmsFortanixListSecretsJob(ctx floc.Context, ctrl floc.Control) error {
 	reqPrint := actions.PrintSecretRequest{
 		Mode:      printer.PrinterModeNone,
 		ReceiveCh: secretCh,
+		Decode:    cmd.Fortanix.List.Secrets.Flags.Decode,
 	}
 	switch {
 	case m == "json":

@@ -21,6 +21,8 @@
 package infrastructure
 
 import (
+	"os"
+
 	"fry.org/cmo/cli/internal/application/exporters"
 	"fry.org/cmo/cli/internal/application/healthchecker"
 	"fry.org/cmo/cli/internal/application/kms"
@@ -60,6 +62,7 @@ type Adapters struct {
 	exporters.CucumberExporter
 	kms.KeyManager
 	provider.ResourceProvider
+	provider.ManifestProvider
 }
 
 // NewAdapters
@@ -123,9 +126,10 @@ func WithTablePrinter() AdapterOption {
 
 	return AdapterOptionFunc(func(a *Adapters) error {
 		var err, rcerror error
-
-		options := []itableprinter.PrinterOption{}
-
+		//TODO: pass proper io.writer
+		options := []itableprinter.PrinterOption{
+			itableprinter.WithWriter(os.Stdout),
+		}
 		if a.Printer, err = itableprinter.NewPrinter(options...); err != nil {
 			return errortree.Add(rcerror, "WithTablePrinter", err)
 		}
@@ -171,7 +175,18 @@ func WithResourceProvider(url string, l logger.Logger) AdapterOption {
 	return AdapterOptionFunc(func(a *Adapters) error {
 		var err error
 
-		a.ResourceProvider, err = iprovider.Parse(url, l)
+		a.ResourceProvider, err = iprovider.ParseResourceProvider(url, l)
+
+		return err
+	})
+}
+
+func WithManifestProvider(url string, l logger.Logger) AdapterOption {
+
+	return AdapterOptionFunc(func(a *Adapters) error {
+		var err error
+
+		a.ManifestProvider, err = iprovider.ParseManifestProvider(url, l)
 
 		return err
 	})

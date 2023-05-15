@@ -65,7 +65,7 @@ func (l *loginPageImpl) loadUserAndPasswordWindow(ctx context.Context, user stri
 			if errors.Is(err, context.Canceled) {
 				return errortree.Add(rcerror, "loadUserAndPasswordWindow:submitPassword", err)
 			} else {
-				fmt.Println("[DBG]retry loadUserAndPasswordWindow:submitPassword")
+				// fmt.Println("[DBG]retry loadUserAndPasswordWindow:submitPassword")
 				// This marks the error as retryable
 				return retry.RetryableError(err)
 			}

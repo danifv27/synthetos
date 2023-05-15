@@ -53,25 +53,45 @@ func initializeCmd(cli *secretum.CLI, cmd string) (common.Cmdctx, error) {
 	return ctx, nil
 }
 
+func getConfigPaths() ([]string, error) {
+	var rcerror, err error
+	var ex string
+	var paths []string
+
+	for i, s := range os.Args {
+		if (s == "--config") && (len(os.Args) > i) {
+			paths = append(paths, os.Args[i+1])
+		}
+	}
+
+	bin := filepath.Base(os.Args[0])
+	if ex, err = os.Executable(); err != nil {
+		return paths, errortree.Add(rcerror, "getConfigPaths", err)
+	}
+	exPath := filepath.Dir(ex)
+	exBin := filepath.Base(ex)
+	paths = append(paths, fmt.Sprintf("/etc/%s.json", bin))
+	paths = append(paths, fmt.Sprintf("~/.%s.json", bin))
+	paths = append(paths, fmt.Sprintf("%s/.%s.json", exPath, exBin))
+
+	return paths, nil
+}
+
 func main() {
 	var err, rcerror error
 	var pCtxcmd *common.Cmdctx
 	var result floc.Result
 	var data interface{}
+	var configs []string
 
 	cli := secretum.CLI{
 		Logging: common.Log{},
 	}
-
-	bin := filepath.Base(os.Args[0])
-	ex, err := os.Executable()
-	if err != nil {
+	pCtxcmd = new(common.Cmdctx)
+	if configs, err = getConfigPaths(); err != nil {
 		panic(err)
 	}
-	exPath := filepath.Dir(ex)
-	exBin := filepath.Base(ex)
-	//fmt.Printf("[DBG]path: %s, bin: %s\n", exPath, exBin)
-	pCtxcmd = new(common.Cmdctx)
+	bin := filepath.Base(os.Args[0])
 	//config file has precedence over envars
 	ctx := kong.Parse(&cli,
 		kong.Bind(pCtxcmd),
@@ -83,15 +103,13 @@ func main() {
 			Tree: true,
 		}),
 		// kong.TypeMapper(reflect.TypeOf([]common.K8sResource{}), common.K8sResource{}),
-		kong.Configuration(kong.JSON, fmt.Sprintf("/etc/%s.json", bin), fmt.Sprintf("~/.%s.json", bin), fmt.Sprintf("%s/.%s.json", exPath, exBin)),
+		kong.Configuration(kong.JSON, configs...),
 	)
 	if *pCtxcmd, err = initializeCmd(&cli, ctx.Command()); err != nil {
 		ctx.FatalIfErrorf(err)
 	}
 	pCtxcmd.Apps.Logger.WithFields(logger.Fields{
-		"folder":     exPath,
-		"executable": exBin,
-		"cmd":        pCtxcmd.Cmd,
+		"cmd": pCtxcmd.Cmd,
 	}).Debug("Run CLI command")
 	//Run should create the job flow that will be executed as a sequence
 	if err = ctx.Run(&cli); err != nil {
@@ -152,7 +170,7 @@ func main() {
 	//Run command are traversed starting from kms/list/fortanix/groups to kms
 	flow := run.Parallel(
 		waitInterrupt,
-		run.Sequence(append(pCtxcmd.InitSeq, pCtxcmd.RunSeq)...),
+		run.Sequence(jobs...),
 	)
 
 	//TODO: validate RunWith when the job finish with errors
