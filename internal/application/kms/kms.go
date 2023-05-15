@@ -23,6 +23,7 @@ type Secret struct {
 	Description *string `json:"description,omitempty"`
 	GroupID     *string `json:"group_id,omitempty"`
 	Name        *string `json:"name,omitempty"`
-	Blob        *[]byte `json:"value,omitempty"`
+	Blob        *[]byte `json:"-"`
+	Value       string  `json:"value,omitempty"`
 	SecretID    *string `json:"kid,omitempty"`
 }

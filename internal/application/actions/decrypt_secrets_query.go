@@ -10,10 +10,10 @@ import (
 
 // DecryptSecretRequest query params
 type DecryptSecretRequest struct {
-	ReceiveCh <-chan kms.Secret
-	SendCh    chan<- kms.Secret
-	SecretID  *string
-	Name      *string
+	// ReceiveCh <-chan kms.Secret
+	SendCh   chan<- kms.Secret
+	SecretID *string
+	Name     *string
 }
 
 type DecryptSecretQuery interface {

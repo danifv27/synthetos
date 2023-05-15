@@ -11,6 +11,7 @@ import (
 type PrintSecretRequest struct {
 	Mode      printer.PrinterMode
 	ReceiveCh <-chan kms.Secret
+	Decode    bool
 }
 
 type PrintSecretCommand interface {

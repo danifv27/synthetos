@@ -18,10 +18,12 @@ import (
 
 type KmsFortanixDecryptSecretCmd struct {
 	ID    string                        `arg:"" help:"Secret ID or name of the secret to be decrypted"`
-	Flags KmsFortanixDecryptSecretFlags `embed:""`
+	Flags KmsFortanixDecryptSecretFlags `embed:"" prefix:"kms.fortanix.decrypt.secret."`
 }
 
-type KmsFortanixDecryptSecretFlags struct{}
+type KmsFortanixDecryptSecretFlags struct {
+	Decode bool `help:"decode secret value?." env:"SC_KMS_FORTANIX_DECRYPT_SECRET_DECODE" default:"false"`
+}
 
 func initializeKmsFortanixDecryptSecretCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error

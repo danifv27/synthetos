@@ -78,23 +78,25 @@
             "showLog": true
         },
         {
-            "name": "kms fortanix decrypt secrets",
+            "name": "kms fortanix decrypt secret",
             "type": "go",
             "request": "launch",
             "mode": "debug",
             "program": "${workspaceFolder}/cmd/secretum",
             "env": {
-                "SC_LOGGING_LEVEL": "debug",
-                "SC_KMS_FORTANIX_API_KEY": "ZDQ1Y2Y3MDMtYzVlOC00MGUyLWFkMTItMGU4YjBkZjViMjUwOnNsczhRUzBOd3d6UnlhU0x2OC1JMmdoN1RhWXIzLXJvNnN2Wk1uOEpFblgwOXB5c0dndEZNVGtWV1pkeFE5SVNjd1FjNFcyV1dHUDBBZmR1MUZqcmxR",
-                "SC_KMS_FORTANIX_API_ENDPOINT_URL": "https://kms-test.adidas-group.com"
+                // "SC_LOGGING_LEVEL": "debug",
+                // "SC_KMS_FORTANIX_API_KEY": "ZDQ1Y2Y3MDMtYzVlOC00MGUyLWFkMTItMGU4YjBkZjViMjUwOnNsczhRUzBOd3d6UnlhU0x2OC1JMmdoN1RhWXIzLXJvNnN2Wk1uOEpFblgwOXB5c0dndEZNVGtWV1pkeFE5SVNjd1FjNFcyV1dHUDBBZmR1MUZqcmxR",
+                // "SC_KMS_FORTANIX_API_ENDPOINT_URL": "https://kms-test.adidas-group.com"
             },
             "args": [
+                "--config",
+                "/Users/fraildan/.secretum/secretum_pdm_stg.json",
                 "kms",
                 "--no-probes.enable",
                 "fortanix",
                 "decrypt",
-                "secrets",
-                "5f96f8d0-f06d-4ef8-b136-0c3bebe1124e"
+                "secret",
+                "40edf4ff-9439-49e1-ae90-4494ee552388"
             ],
             "showLog": true
         },

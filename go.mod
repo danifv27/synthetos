@@ -6,6 +6,7 @@ require (
 	github.com/alecthomas/kong v0.7.1
 	github.com/alexeyco/simpletable v1.0.0
 	github.com/antifuchs/o v1.1.0
+	github.com/aquilax/truncate v1.0.0
 	github.com/avast/retry-go/v4 v4.3.4
 	github.com/chromedp/cdproto v0.0.0-20230220211738-2b1ec77315c9
 	github.com/chromedp/chromedp v0.9.1
