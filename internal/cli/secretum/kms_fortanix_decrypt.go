@@ -8,7 +8,7 @@ import (
 type KmsFortanixDecryptCmd struct {
 	Flags     KmsFortanixDecryptFlags        `embed:""`
 	Secret    KmsFortanixDecryptSecretCmd    `cmd:"" help:"Decrypt Fortanix secrets."`
-	Manifests KmsFortanixDecryptManifestsCmd `cmd:"" help:"Decrypt manifests with proper Kubernetes annotations,."`
+	Manifests KmsFortanixDecryptManifestsCmd `cmd:"" help:"Decrypt manifests. Only manifests with proper Kubernetes annotations will be processed. The rest will be output unmodified."`
 }
 
 type KmsFortanixDecryptFlags struct{}

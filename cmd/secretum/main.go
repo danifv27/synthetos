@@ -58,6 +58,12 @@ func getConfigPaths() ([]string, error) {
 	var ex string
 	var paths []string
 
+	for i, s := range os.Args {
+		if (s == "--config") && (len(os.Args) > i) {
+			paths = append(paths, os.Args[i+1])
+		}
+	}
+
 	bin := filepath.Base(os.Args[0])
 	if ex, err = os.Executable(); err != nil {
 		return paths, errortree.Add(rcerror, "getConfigPaths", err)
@@ -67,12 +73,6 @@ func getConfigPaths() ([]string, error) {
 	paths = append(paths, fmt.Sprintf("/etc/%s.json", bin))
 	paths = append(paths, fmt.Sprintf("~/.%s.json", bin))
 	paths = append(paths, fmt.Sprintf("%s/.%s.json", exPath, exBin))
-
-	c := secretum.CLI{}
-	kong.Parse(&c)
-	if c.Config.Path != "" {
-		paths = append(paths, c.Config.Path)
-	}
 
 	return paths, nil
 }

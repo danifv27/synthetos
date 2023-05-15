@@ -19,7 +19,7 @@ type Probes struct {
 }
 
 type Config struct {
-	Path string `help:"Configuration file path." env:"SC_CONFIG_PATH" optional:"" type:"path"`
+	Config string `help:"Configuration file path." env:"SC_CONFIG_PATH" optional:"" type:"path"`
 }
 
 type Cmdctx struct {
