@@ -22,7 +22,7 @@ type KmsFortanixDecryptSecretCmd struct {
 }
 
 type KmsFortanixDecryptSecretFlags struct {
-	Decode bool `help:"decode secret value?." env:"SC_KMS_FORTANIX_DECRYPT_SECRET_DECODE" default:"false"`
+	Decode bool `help:"decode secret value?." env:"SC_KMS_FORTANIX_DECRYPT_SECRET_DECODE" default:"true" negatable:""`
 }
 
 func initializeKmsFortanixDecryptSecretCmd(ctx floc.Context, ctrl floc.Control) error {
@@ -73,6 +73,7 @@ func kmsFortanixDecryptSecretJob(ctx floc.Context, ctrl floc.Control) error {
 	reqPrint := actions.PrintSecretRequest{
 		Mode:      printer.PrinterModeNone,
 		ReceiveCh: secretCh,
+		Decode:    cmd.Fortanix.Decrypt.Secret.Flags.Decode,
 	}
 	switch {
 	case m == "json":
