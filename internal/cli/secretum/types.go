@@ -7,6 +7,7 @@ import (
 
 type CLI struct {
 	Logging common.Log        `embed:"" prefix:"logging."`
+	Config  common.Config     `embed:""`
 	Version versio.VersionCmd `cmd:"" help:"Show version information"`
 	Kms     KmsCmd            `cmd:"" help:"Manage KMS"`
 }

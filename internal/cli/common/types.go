@@ -18,6 +18,10 @@ type Probes struct {
 	RootPrefix string `help:"Prefix for the internal routes of web endpoints." env:"SC_PROBES_ROOT_PREFIX" default:"/actuator" optional:"" group:"probes"`
 }
 
+type Config struct {
+	Path string `help:"Configuration file path." env:"SC_CONFIG_PATH" optional:"" type:"path"`
+}
+
 type Cmdctx struct {
 	Cmd      string
 	InitSeq  []floc.Job

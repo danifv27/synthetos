@@ -61,7 +61,7 @@
             "program": "${workspaceFolder}/cmd/secretum",
             "env": {
                 "SC_LOGGING_LEVEL": "debug",
-                "SC_KMS_LIST_FORTANIX_API_KEY": "NWJmZmEzYzctN2E3My00NDU0LWIzYzUtYmM4NDkzMTRlOGI0OjFVdTR6OVlJa0RqWkV4V0pRZFQwUTZuanl0TE56ZXYyYW1Nb29ZWEI5ZE1BQkl2d3dtOUdpYkpmczJ4U08zSDhmYUVhR0JpWkVLTk5ldzlrQ19mS3Nn",
+                "SC_KMS_FORTANIX_API_KEY": "ZDQ1Y2Y3MDMtYzVlOC00MGUyLWFkMTItMGU4YjBkZjViMjUwOnNsczhRUzBOd3d6UnlhU0x2OC1JMmdoN1RhWXIzLXJvNnN2Wk1uOEpFblgwOXB5c0dndEZNVGtWV1pkeFE5SVNjd1FjNFcyV1dHUDBBZmR1MUZqcmxR",
                 "SC_KMS_LIST_FORTANIX_API_ENDPOINT_URL": "https://kms-test.adidas-group.com"
             },
             "args": [
@@ -80,7 +80,7 @@
             "program": "${workspaceFolder}/cmd/secretum",
             "env": {
                 "SC_LOGGING_LEVEL": "debug",
-                "SC_KMS_FORTANIX_API_KEY": "NWJmZmEzYzctN2E3My00NDU0LWIzYzUtYmM4NDkzMTRlOGI0OjFVdTR6OVlJa0RqWkV4V0pRZFQwUTZuanl0TE56ZXYyYW1Nb29ZWEI5ZE1BQkl2d3dtOUdpYkpmczJ4U08zSDhmYUVhR0JpWkVLTk5ldzlrQ19mS3Nn",
+                "SC_KMS_FORTANIX_API_KEY": "ZDQ1Y2Y3MDMtYzVlOC00MGUyLWFkMTItMGU4YjBkZjViMjUwOnNsczhRUzBOd3d6UnlhU0x2OC1JMmdoN1RhWXIzLXJvNnN2Wk1uOEpFblgwOXB5c0dndEZNVGtWV1pkeFE5SVNjd1FjNFcyV1dHUDBBZmR1MUZqcmxR",
                 "SC_KMS_FORTANIX_API_ENDPOINT_URL": "https://kms-test.adidas-group.com"
             },
             "args": [
@@ -93,5 +93,27 @@
             ],
             "showLog": true
         },
+        {
+            "name": "kms fortanix decrypt manifests",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/secretum",
+            "env": {
+                "SC_LOGGING_LEVEL": "debug",
+                "SC_KMS_FORTANIX_API_KEY": "ZDQ1Y2Y3MDMtYzVlOC00MGUyLWFkMTItMGU4YjBkZjViMjUwOnNsczhRUzBOd3d6UnlhU0x2OC1JMmdoN1RhWXIzLXJvNnN2Wk1uOEpFblgwOXB5c0dndEZNVGtWV1pkeFE5SVNjd1FjNFcyV1dHUDBBZmR1MUZqcmxR",
+                "SC_KMS_FORTANIX_API_ENDPOINT_URL": "https://kms.adidas-group.com"
+            },
+            "args": [
+                "--path=/Users/fraildan/.secretum-rcs_stg.json",
+                "kms",
+                "--no-probes.enable",
+                "fortanix",
+                "decrypt",
+                "manifests",
+                "/Users/fraildan/Proyectos/packagesGit/bitbucket/cmodevops/cmo-atlas/kustomize/configmap.yaml"
+            ],
+            "showLog": true
+        }
     ]
 }
