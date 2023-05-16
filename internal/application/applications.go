@@ -12,9 +12,12 @@
 package application
 
 import (
+	"fry.org/cmo/cli/internal/application/actions"
 	"fry.org/cmo/cli/internal/application/healthchecker"
+	"fry.org/cmo/cli/internal/application/kms"
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/application/printer"
+	"fry.org/cmo/cli/internal/application/provider"
 	"fry.org/cmo/cli/internal/application/version"
 	"github.com/speijnik/go-errortree"
 )
@@ -33,11 +36,20 @@ func (o ApplicationOptionFunc) Apply(a *Applications) error {
 
 // Queries operations that request data
 type Queries struct {
+	ListGroups    actions.ListGroupsQueryHandler
+	ListSecrets   actions.ListSecretsQuery
+	DecryptSecret actions.DecryptSecretQuery
+	ShowSummary   actions.ShowSummaryQueryHandler
+	ListManifests actions.ListManifestsObjectsQuery
 }
 
 // Commands operations that accept data to make a change or trigger an action
 type Commands struct {
-	PrintVersion PrintVersionRequestHandler
+	PrintVersion         actions.PrintVersionCommandHandler
+	PrintResourceSummary actions.PrintResourceSummaryCommand
+	PrintSecret          actions.PrintSecretCommand
+	DecryptManifests     actions.DecryptManifestsCommand
+	PrintManifests       actions.PrintManifestsCommand
 }
 
 // Applications contains all exposed services of the application layer
@@ -102,7 +114,97 @@ func WithPrintVersionCommand(v version.Version, p printer.Printer) ApplicationOp
 
 	return ApplicationOptionFunc(func(a *Applications) error {
 
-		a.Commands.PrintVersion = NewPrintVersionRequestHandler(v, p)
+		a.Commands.PrintVersion = actions.NewPrintVersionCommandHandler(v, p)
+
+		return nil
+	})
+}
+
+func WithPrintSecretCommand(l logger.Logger, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.PrintSecret = actions.NewPrintSecretCommandHandler(l, p)
+
+		return nil
+	})
+}
+
+func WithPrintResourceSummaryCommand(l logger.Logger, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.PrintResourceSummary = actions.NewPrintResourceSummaryCommandHandler(l, p)
+
+		return nil
+	})
+}
+
+func WithListGroupsQuery(l logger.Logger, p printer.Printer, k kms.KeyManager) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ListGroups = actions.NewListGroupsQueryHandler(l, p, k)
+
+		return nil
+	})
+}
+
+func WithListSecretsQuery(l logger.Logger, k kms.KeyManager) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ListSecrets = actions.NewListSecretsQueryHandler(l, k)
+
+		return nil
+	})
+}
+
+func WithShowSummaryQuery(l logger.Logger, pr provider.ResourceProvider) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ShowSummary = actions.NewShowSummaryQueryHandler(l, pr)
+
+		return nil
+	})
+}
+
+func WithDecryptSecretsQuery(l logger.Logger, k kms.KeyManager) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.DecryptSecret = actions.NewDecryptSecretQueryHandler(l, k)
+
+		return nil
+	})
+}
+
+func WithDecryptManifestsCommand(l logger.Logger, k kms.KeyManager) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.DecryptManifests = actions.NewDecryptManifestsCommandHandler(l, k)
+
+		return nil
+	})
+}
+
+func WithListManifestsCommand(l logger.Logger, pr provider.ManifestProvider) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ListManifests = actions.NewListManifestsObjectsQueryHandler(l, pr)
+
+		return nil
+	})
+}
+
+func WithPrintManifestsCommand(l logger.Logger, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.PrintManifests = actions.NewPrintManifestsCommandHandler(l, p)
 
 		return nil
 	})

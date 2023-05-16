@@ -21,16 +21,22 @@
 package infrastructure
 
 import (
+	"os"
+
 	"fry.org/cmo/cli/internal/application/exporters"
 	"fry.org/cmo/cli/internal/application/healthchecker"
+	"fry.org/cmo/cli/internal/application/kms"
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/application/printer"
+	"fry.org/cmo/cli/internal/application/provider"
 	"fry.org/cmo/cli/internal/application/version"
 
 	ihealthchecker "fry.org/cmo/cli/internal/infrastructure/endpoints/healthchecker"
 	iexporters "fry.org/cmo/cli/internal/infrastructure/exporters"
+	ikms "fry.org/cmo/cli/internal/infrastructure/kms"
 	ilogger "fry.org/cmo/cli/internal/infrastructure/logger"
 	itableprinter "fry.org/cmo/cli/internal/infrastructure/printer"
+	iprovider "fry.org/cmo/cli/internal/infrastructure/provider"
 	istorage "fry.org/cmo/cli/internal/infrastructure/storage"
 	"github.com/speijnik/go-errortree"
 )
@@ -54,6 +60,9 @@ type Adapters struct {
 	printer.Printer
 	healthchecker.Healthchecker
 	exporters.CucumberExporter
+	kms.KeyManager
+	provider.ResourceProvider
+	provider.ManifestProvider
 }
 
 // NewAdapters
@@ -117,10 +126,11 @@ func WithTablePrinter() AdapterOption {
 
 	return AdapterOptionFunc(func(a *Adapters) error {
 		var err, rcerror error
-
-		options := []itableprinter.TablePrinterOption{}
-
-		if a.Printer, err = itableprinter.NewTablePrinter(options...); err != nil {
+		//TODO: pass proper io.writer
+		options := []itableprinter.PrinterOption{
+			itableprinter.WithWriter(os.Stdout),
+		}
+		if a.Printer, err = itableprinter.NewPrinter(options...); err != nil {
 			return errortree.Add(rcerror, "WithTablePrinter", err)
 		}
 
@@ -144,6 +154,39 @@ func WithCucumberExporter(opts ...iexporters.ExporterOption) AdapterOption {
 		var err error
 
 		a.CucumberExporter, err = iexporters.NewCucumberExporter(opts...)
+
+		return err
+	})
+}
+
+func WithKeyManager(url string, l logger.Logger) AdapterOption {
+
+	return AdapterOptionFunc(func(a *Adapters) error {
+		var err error
+
+		a.KeyManager, err = ikms.Parse(url, l)
+
+		return err
+	})
+}
+
+func WithResourceProvider(url string, l logger.Logger) AdapterOption {
+
+	return AdapterOptionFunc(func(a *Adapters) error {
+		var err error
+
+		a.ResourceProvider, err = iprovider.ParseResourceProvider(url, l)
+
+		return err
+	})
+}
+
+func WithManifestProvider(url string, l logger.Logger) AdapterOption {
+
+	return AdapterOptionFunc(func(a *Adapters) error {
+		var err error
+
+		a.ManifestProvider, err = iprovider.ParseManifestProvider(url, l)
 
 		return err
 	})

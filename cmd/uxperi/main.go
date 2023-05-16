@@ -1,8 +1,3 @@
-// ZEN DECALOGUE
-// Do only one thing at a time.
-// Do it slowly.
-// Do less.
-// Leave space between activities.
 package main
 
 import (
@@ -16,6 +11,7 @@ import (
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/cli/common"
 	"fry.org/cmo/cli/internal/cli/uxperi"
+	"fry.org/cmo/cli/internal/cli/versio"
 	"fry.org/cmo/cli/internal/infrastructure"
 
 	"github.com/alecthomas/kong"
@@ -106,8 +102,9 @@ func main() {
 	}
 
 	flocCtx := floc.NewContext()
-	uxperi.SetCmdCtx(flocCtx, *pCtxcmd)
-	uxperi.SetFlags(flocCtx, cli)
+	common.CommonSetCmdCtx(flocCtx, *pCtxcmd)
+	uxperi.UxperiSetTestCmd(flocCtx, cli.Test)
+	versio.VersioSetVersionCmd(flocCtx, cli.Version)
 	ctrl := floc.NewControl(flocCtx)
 
 	// Wait for SIGINT OS signal and cancel the flow
@@ -130,14 +127,37 @@ func main() {
 		return nil
 	}
 
+	seq := append(pCtxcmd.InitSeq, pCtxcmd.RunSeq)
+	jobs := make([]floc.Job, 0)
+	for _, item := range seq {
+		if item != nil {
+			jobs = append(jobs, item)
+		}
+	}
+	//Last command quit waitInterrupt
+	jobs = append(jobs,
+		func(ctx floc.Context, ctrl floc.Control) error {
+			if rcerror, err := uxperi.UxperiRCErrorTree(ctx); err != nil {
+				ctrl.Fail(fmt.Sprintf("Command '%s' internal error", pCtxcmd.Cmd), err)
+				return err
+			} else if *rcerror != nil {
+				ctrl.Fail(fmt.Sprintf("Command '%s' failed", pCtxcmd.Cmd), *rcerror)
+				return *rcerror
+			}
+			ctrl.Complete(fmt.Sprintf("Command '%s' completed", pCtxcmd.Cmd))
+
+			return nil
+		},
+	)
+	//Run command are traversed starting from kms/list/fortanix/groups to kms
 	flow := run.Parallel(
 		waitInterrupt,
-		run.Sequence(append(pCtxcmd.InitSeq, pCtxcmd.RunSeq)...),
+		run.Sequence(jobs...),
 	)
 
 	//TODO: validate RunWith when the job finish with errors
 	if result, data, err = floc.RunWith(flocCtx, ctrl, flow); err != nil {
-		if rcerr, e := uxperi.RCErrorTree(flocCtx); e != nil {
+		if rcerr, e := uxperi.UxperiRCErrorTree(flocCtx); e != nil {
 			rcerror = errortree.Add(rcerror, "context", e)
 			rcerror = errortree.Add(rcerror, "cmd", fmt.Errorf("%s", ctx.Command()))
 			rcerror = errortree.Add(rcerror, "msg", fmt.Errorf("error retrieving context values"))
@@ -161,7 +181,7 @@ func main() {
 		pCtxcmd.Apps.Logger.Debug("Flow failure")
 	default:
 		pCtxcmd.Apps.Logger.Debug("Flow finished with improper state")
-		if rcerror, err := uxperi.RCErrorTree(flocCtx); err != nil {
+		if rcerror, err := uxperi.UxperiRCErrorTree(flocCtx); err != nil {
 			ctx.FatalIfErrorf(err)
 		} else {
 			ctx.FatalIfErrorf(*rcerror)

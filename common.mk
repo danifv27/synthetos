@@ -21,8 +21,9 @@ clean: ARCH ?= $(shell go env GOOS)-$(shell go env GOARCH)
 ARCH ?= linux-amd64
 
 REVISION := $(shell echo $$(git rev-parse --short HEAD) ||echo "Unknown Revision")
-BUILDINFO_TAG ?= $(shell echo $$(git describe --long --all | tr '/' '-')$$(git diff-index --quiet HEAD -- || echo '-dirty-'$$(git diff-index -u HEAD | openssl sha1 | cut -c 10-17)))
-VCS_TAG := $(shell git describe --tags)
+BUILDINFO_TAG ?= $(shell echo $$(git describe --long --all | tr '/' '-')$$(git diff-index --quiet HEAD -- || echo '-dirty-'$$(git diff-index -u HEAD | openssl sha1 | tr -s ' ' | cut -d ' ' -f 2 | cut -c 1-7)))
+
+VCS_TAG := $(shell git describe --tags 2>/dev/null)
 ifeq ($(VCS_TAG),)
 VCS_TAG := $(BUILDINFO_TAG)
 endif
@@ -180,8 +181,8 @@ $(ARTIFACTORY_PHONY_TARGETS): artifactory-%:
 	$(Q)$(MAKE) --no-print-directory ARCH=$* artifactory
 
 artifactory: ## Push binary to Artifactory
-	$(Q)curl -u $(ARTIFACTORY_CREDENTIALS) -X PUT https://<cloudsmith.io>/artifactory/<path>/$(BIN)/$(VERSION)/$(GOOS)/$(GOARCH)/bin/$(BIN) -T $(TOP_LEVEL)/output/$(GOOS)/$(GOARCH)/bin/$(BIN)
+	$(Q)curl -u $(ARTIFACTORY_CREDENTIALS) -X PUT https://tools.adidas-group.com/artifactory/pc-maven/com/adidas/devops/$(BIN)/$(VERSION)/$(GOOS)/$(GOARCH)/bin/$(BIN) -T $(TOP_LEVEL)/output/$(GOOS)/$(GOARCH)/bin/$(BIN)
 
 artifactory-docs: ## Push doc to Artifactory
-	$(Q)curl -u $(ARTIFACTORY_CREDENTIALS) -X PUT https://<cloudsmith.io>/artifactory/<path>/$(BIN)/README.md -T $(TOP_LEVEL)/README.md
-	$(Q)$(foreach file, $(wildcard $(TOP_LEVEL)/docs/*.md), curl -u $(ARTIFACTORY_CREDENTIALS) -X PUT https://<cloudsmith.io>/artifactory/<path>/$(BIN)/$(VERSION)/docs/$(notdir $(file)) $(file);)
+	$(Q)curl -u $(ARTIFACTORY_CREDENTIALS) -X PUT https://tools.adidas-group.com/artifactory/pc-maven/com/adidas/devops/$(BIN)/README.md -T $(TOP_LEVEL)/README.md
+	$(Q)$(foreach file, $(wildcard $(TOP_LEVEL)/docs/*.md), curl -u $(ARTIFACTORY_CREDENTIALS) -X PUT https://tools.adidas-group.com/artifactory/pc-maven/com/adidas/devops/$(BIN)/$(VERSION)/docs/$(notdir $(file)) $(file);)

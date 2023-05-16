@@ -52,3 +52,24 @@ func HTTPGetCheck(url string, timeout time.Duration) Check {
 		return nil
 	}
 }
+
+// DNSResolveCheck returns a Check that makes sure the provided host can resolve
+// to at least one IP address within the specified timeout.
+func DNSResolveCheck(host string, timeout time.Duration) Check {
+	var rcerror error
+
+	resolver := net.Resolver{}
+	return func(ctx context.Context) error {
+		ct, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+		addrs, err := resolver.LookupHost(ct, host)
+		if err != nil {
+			return errortree.Add(rcerror, "DNSResolveCheck", err)
+		}
+		if len(addrs) < 1 {
+			errortree.Add(rcerror, "HTTPGetCheck", fmt.Errorf("could not resolve host"))
+		}
+
+		return nil
+	}
+}

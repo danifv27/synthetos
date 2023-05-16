@@ -1,4 +1,4 @@
-package application
+package actions
 
 import (
 	"fry.org/cmo/cli/internal/application/printer"
@@ -10,26 +10,26 @@ type PrintVersionRequest struct {
 	Format string
 }
 
-type PrintVersionRequestHandler interface {
+type PrintVersionCommandHandler interface {
 	Handle(command PrintVersionRequest) error
 }
 
-type printVersionRequestHandler struct {
+type printVersionCommandHandler struct {
 	v version.Version
 	p printer.Printer
 }
 
-// NewPrintVersionRequestHandler Constructor
-func NewPrintVersionRequestHandler(version version.Version, printer printer.Printer) PrintVersionRequestHandler {
+// NewPrintVersionCommandHandler Constructor
+func NewPrintVersionCommandHandler(version version.Version, printer printer.Printer) PrintVersionCommandHandler {
 
-	return printVersionRequestHandler{
+	return printVersionCommandHandler{
 		v: version,
 		p: printer,
 	}
 }
 
 // Handle Handles the update request
-func (h printVersionRequestHandler) Handle(command PrintVersionRequest) error {
+func (h printVersionCommandHandler) Handle(command PrintVersionRequest) error {
 	var err, rcerror error
 	var mode printer.PrinterMode
 
