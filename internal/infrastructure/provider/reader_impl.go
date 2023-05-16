@@ -14,7 +14,6 @@ import (
 	"fry.org/cmo/cli/internal/application/logger"
 	aProvider "fry.org/cmo/cli/internal/application/provider"
 	"github.com/speijnik/go-errortree"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type yamlReader struct {
@@ -148,16 +147,19 @@ func (r yamlReader) GetManifests(ctx context.Context, sendCh chan<- aProvider.Ma
 	scanner.Buffer(buf, 1024*1024)
 	scanner.Split(splitYAMLDocument)
 	for scanner.Scan() {
-		decode := scheme.Codecs.UniversalDeserializer().Decode
-		if m.Obj, _, err = decode(scanner.Bytes(), nil, nil); err != nil {
-			//an unknown CRD will trigger an error decoding the yaml
-			r.l.WithFields(logger.Fields{
-				"err": err,
-			}).Debug("unable to decode yaml object")
-			continue
-		}
+		// decode := scheme.Codecs.UniversalDeserializer().Decode
+		o := scanner.Bytes()
+		// if m.Obj, _, err = decode(o, nil, nil); err != nil {
+		// 	//an unknown CRD will trigger an error decoding the yaml
+		// 	r.l.WithFields(logger.Fields{
+		// 		"err": err,
+		// 	}).Debug("unable to decode yaml object")
+		// 	continue
+		// }
+		m.Yaml = string(o)
 		sendCh <- m
 	}
+	//After we exit the loop, we have have either hit the end of the input, or encountered an error.
 	if err = scanner.Err(); err != nil {
 		return errortree.Add(rcerror, "GetManifests", err)
 	}

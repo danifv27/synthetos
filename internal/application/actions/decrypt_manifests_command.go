@@ -14,6 +14,8 @@ import (
 	"github.com/speijnik/go-errortree"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/cli-runtime/pkg/printers"
+	"k8s.io/kubectl/pkg/scheme"
 )
 
 type DecryptManifestsRequest struct {
@@ -119,11 +121,17 @@ func setSecretDataFromKeyValueString(s *v1.Secret, data string) error {
 	return nil
 }
 
-func (h decryptManifestsCommandHandler) decryptSecuredObjects(obj *runtime.Object) error {
+func (h decryptManifestsCommandHandler) decryptSecuredObjects(yaml string) (string, error) {
 	var rcerror, err error
 	var secret kms.Secret
+	var rObject runtime.Object
 
-	rObject := *obj
+	decode := scheme.Codecs.UniversalDeserializer().Decode
+	if rObject, _, err = decode([]byte(yaml), nil, nil); err != nil {
+		//an unknown CRD will trigger an error decoding the yaml
+		return "", errortree.Add(rcerror, "decryptSecuredObjects", err)
+	}
+
 	switch o := rObject.(type) {
 	case *v1.Secret:
 		if _, found := o.ObjectMeta.Annotations["fortanixGroupId"]; found {
@@ -131,27 +139,32 @@ func (h decryptManifestsCommandHandler) decryptSecuredObjects(obj *runtime.Objec
 				ctx := context.Background()
 
 				if secret, err = h.kmngr.DecryptSecret(ctx, &name); err != nil {
-					return errortree.Add(rcerror, "decryptSecuredObjects", err)
+					return "", errortree.Add(rcerror, "decryptSecuredObjects", err)
 				}
 				if err = setSecretDataFromKeyValueString(o, string(*secret.Blob)); err != nil {
-					return errortree.Add(rcerror, "decryptSecuredObjects", err)
+					return "", errortree.Add(rcerror, "decryptSecuredObjects", err)
 				}
-				return nil
+				//convert object to its yaml representation
+				y := printers.YAMLPrinter{}
+				builder := strings.Builder{}
+				y.PrintObj(o, &builder)
+
+				return builder.String(), nil
 			}
 		}
 
-		return errortree.Add(rcerror, "decryptSecuredObjects", errors.New("removing secret from input"))
+		return "", errortree.Add(rcerror, "decryptSecuredObjects", errors.New("removing secret from input"))
 	}
 
-	return nil
+	return yaml, nil
 }
 
 // Handle Handles the update request
 func (h decryptManifestsCommandHandler) Handle(request DecryptManifestsRequest) error {
-	var rcerror error
+	var rcerror, err error
 
 	for r := range request.ReceiverCh {
-		if err := h.decryptSecuredObjects(&r.Obj); err != nil {
+		if r.Yaml, err = h.decryptSecuredObjects(r.Yaml); err != nil {
 			//FIXME: decide what to do when there is an error decrypting a secret
 			close(request.SendCh)
 			return errortree.Add(rcerror, "Handle", err)

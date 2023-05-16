@@ -181,8 +181,8 @@ $(ARTIFACTORY_PHONY_TARGETS): artifactory-%:
 	$(Q)$(MAKE) --no-print-directory ARCH=$* artifactory
 
 artifactory: ## Push binary to Artifactory
-	$(Q)curl -u $(ARTIFACTORY_CREDENTIALS) -X PUT https://<cloudsmith.io>/artifactory/<path>/$(BIN)/$(VERSION)/$(GOOS)/$(GOARCH)/bin/$(BIN) -T $(TOP_LEVEL)/output/$(GOOS)/$(GOARCH)/bin/$(BIN)
+	$(Q)curl -u $(ARTIFACTORY_CREDENTIALS) -X PUT https://tools.adidas-group.com/artifactory/pc-maven/com/adidas/devops/$(BIN)/$(VERSION)/$(GOOS)/$(GOARCH)/bin/$(BIN) -T $(TOP_LEVEL)/output/$(GOOS)/$(GOARCH)/bin/$(BIN)
 
 artifactory-docs: ## Push doc to Artifactory
-	$(Q)curl -u $(ARTIFACTORY_CREDENTIALS) -X PUT https://<cloudsmith.io>/artifactory/<path>/$(BIN)/README.md -T $(TOP_LEVEL)/README.md
-	$(Q)$(foreach file, $(wildcard $(TOP_LEVEL)/docs/*.md), curl -u $(ARTIFACTORY_CREDENTIALS) -X PUT https://<cloudsmith.io>/artifactory/<path>/$(BIN)/$(VERSION)/docs/$(notdir $(file)) $(file);)
+	$(Q)curl -u $(ARTIFACTORY_CREDENTIALS) -X PUT https://tools.adidas-group.com/artifactory/pc-maven/com/adidas/devops/$(BIN)/README.md -T $(TOP_LEVEL)/README.md
+	$(Q)$(foreach file, $(wildcard $(TOP_LEVEL)/docs/*.md), curl -u $(ARTIFACTORY_CREDENTIALS) -X PUT https://tools.adidas-group.com/artifactory/pc-maven/com/adidas/devops/$(BIN)/$(VERSION)/docs/$(notdir $(file)) $(file);)

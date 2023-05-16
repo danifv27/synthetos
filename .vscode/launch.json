@@ -107,17 +107,19 @@
             "mode": "debug",
             "program": "${workspaceFolder}/cmd/secretum",
             "env": {
-                "SC_LOGGING_LEVEL": "debug",
-                "SC_KMS_FORTANIX_API_KEY": "ZDQ1Y2Y3MDMtYzVlOC00MGUyLWFkMTItMGU4YjBkZjViMjUwOnNsczhRUzBOd3d6UnlhU0x2OC1JMmdoN1RhWXIzLXJvNnN2Wk1uOEpFblgwOXB5c0dndEZNVGtWV1pkeFE5SVNjd1FjNFcyV1dHUDBBZmR1MUZqcmxR",
-                "SC_KMS_FORTANIX_API_ENDPOINT_URL": "https://kms.adidas-group.com"
+                // "SC_LOGGING_LEVEL": "debug",
+                // "SC_KMS_FORTANIX_API_KEY": "ZDQ1Y2Y3MDMtYzVlOC00MGUyLWFkMTItMGU4YjBkZjViMjUwOnNsczhRUzBOd3d6UnlhU0x2OC1JMmdoN1RhWXIzLXJvNnN2Wk1uOEpFblgwOXB5c0dndEZNVGtWV1pkeFE5SVNjd1FjNFcyV1dHUDBBZmR1MUZqcmxR",
+                // "SC_KMS_FORTANIX_API_ENDPOINT_URL": "https://kms.adidas-group.com"
             },
             "args": [
+                "--config",
+                "/Users/fraildan/.secretum/secretum_pdm_stg.json",
                 "kms",
                 "--no-probes.enable",
                 "fortanix",
                 "decrypt",
                 "manifests",
-                "/Users/fraildan/Proyectos/packagesGit/bitbucket/cmodevops/cmo-atlas/kustomize/configmap.yaml"
+                "/Users/fraildan/Proyectos/packagesGit/bitbucket/cmodevops/cmo-atlas/kustomize.nogit/servicemonitor.yaml"
             ],
             "showLog": true
         }

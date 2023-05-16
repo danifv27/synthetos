@@ -24,7 +24,9 @@ require (
 	github.com/workanator/go-floc/v3 v3.0.1
 	k8s.io/api v0.27.1
 	k8s.io/apimachinery v0.27.1
+	k8s.io/cli-runtime v0.27.1
 	k8s.io/client-go v0.27.1
+	k8s.io/kubectl v0.27.1
 	sigs.k8s.io/kustomize/api v0.13.3
 	sigs.k8s.io/kustomize/kyaml v0.14.2
 
@@ -92,12 +94,13 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jingyugao/rowserrcheck v0.0.0-20191204022205-72ab7603b68a // indirect
 	github.com/jirfag/go-printf-func-name v0.0.0-20191110105641-45db9963cdd3 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kisielk/gotool v1.0.0 // indirect
+	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matoous/godox v0.0.0-20190911065817-5d6d842e92eb // indirect
@@ -123,7 +126,7 @@ require (
 	github.com/sourcegraph/go-diff v0.5.1 // indirect
 	github.com/spf13/afero v1.1.2 // indirect
 	github.com/spf13/cast v1.3.0 // indirect
-	github.com/spf13/cobra v1.4.0 // indirect
+	github.com/spf13/cobra v1.6.0 // indirect
 	github.com/spf13/jwalterweatherman v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.1 // indirect
