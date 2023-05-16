@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type ResourceProvider interface {
@@ -22,5 +21,6 @@ type Summary struct {
 }
 
 type Manifest struct {
-	Obj runtime.Object `json:"object,omitempty"`
+	Yaml string `json:"yaml,omitempty"`
+	// Obj  runtime.Object `json:"object,omitempty"`
 }
