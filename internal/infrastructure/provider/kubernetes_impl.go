@@ -97,6 +97,18 @@ func WithKubernetesLabelSelector(selector string) ProviderOption {
 		return errortree.Add(rcerror, "provider.WithK8sLabelSelector", errors.New("type mismatch, kustomizeClient expected"))
 	})
 }
+func (c *kubernetesClient) AllImages(ctx context.Context) ([]provider.Image, error) {
+	var rcerror, err error
+	var images []provider.Image
+
+	namespaces, err := c.Client.KubeInterface.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return images, errortree.Add(rcerror, "AllImages", err)
+	}
+	fmt.Printf("[DBG]namespaces: %v", namespaces)
+
+	return images, errortree.Add(rcerror, "AllImages", errors.New("AllImages method not implemented"))
+}
 
 func (c *kubernetesClient) GetResources(ctx context.Context, location string, selector string) ([]*unstructured.Unstructured, error) {
 	var rcerror, err error

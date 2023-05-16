@@ -3,7 +3,6 @@ package kuberium
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"time"
 
 	"fry.org/cmo/cli/internal/application"
@@ -11,7 +10,6 @@ import (
 	"fry.org/cmo/cli/internal/application/printer"
 	"fry.org/cmo/cli/internal/application/provider"
 	"fry.org/cmo/cli/internal/cli/common"
-	"fry.org/cmo/cli/internal/infrastructure"
 	"github.com/speijnik/go-errortree"
 	"github.com/workanator/go-floc/v3"
 	"github.com/workanator/go-floc/v3/guard"
@@ -22,14 +20,12 @@ type KubeSummaryCmd struct {
 	Flags KubeSummaryFlags `embed:""`
 }
 
-type KubeSummaryFlags struct {
-	Output string `prefix:"kube.summary." help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KUBE_SUMMARY_OUTPUT"`
-}
+type KubeSummaryFlags struct{}
 
 func initializeKubeSummaryCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
-	var cmd KubeCmd
+	// var cmd KubeCmd
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		if e := KuberiumSetRCErrorTree(ctx, "initializeKubeSummaryCmd", err); e != nil {
@@ -37,30 +33,13 @@ func initializeKubeSummaryCmd(ctx floc.Context, ctrl floc.Control) error {
 		}
 		return err
 	}
-	if cmd, err = KuberiumKubeCmd(ctx); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "initializeKubeSummaryCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKubeSummaryCmd", e)
-		}
-		return err
-	}
-	// provider:k8s?path=<kubeconfig_path>&context=<kubernetes_context>&namespace=<kubernetes_namespace>&selector=<kubernetes_object_selector>
-	uri := fmt.Sprintf("provider:k8s?path=%s&context=%s&namespace=%s",
-		url.QueryEscape(cmd.Flags.Path),
-		url.QueryEscape(cmd.Flags.Context),
-		url.QueryEscape(cmd.Flags.Namespace))
-	if cmd.Flags.Selector != nil {
-		uri = fmt.Sprintf("%s&selector=%s", uri, url.QueryEscape(*cmd.Flags.Selector))
-	}
-	infraOptions := []infrastructure.AdapterOption{
-		infrastructure.WithTablePrinter(),
-		infrastructure.WithResourceProvider(uri, c.Apps.Logger),
-	}
-	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "initializeKubeSummaryCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKubeSummaryCmd", e)
-		}
-		return err
-	}
+	// if cmd, err = KuberiumKubeCmd(ctx); err != nil {
+	// 	if e := KuberiumSetRCErrorTree(ctx, "initializeKubeSummaryCmd", err); e != nil {
+	// 		return errortree.Add(rcerror, "initializeKubeSummaryCmd", e)
+	// 	}
+	// 	return err
+	// }
+
 	if err = application.WithOptions(&c.Apps,
 		application.WithShowSummaryQuery(c.Apps.Logger, c.Adapters.ResourceProvider),
 		application.WithPrintResourceSummaryCommand(c.Apps.Logger, c.Adapters.Printer),
@@ -98,7 +77,7 @@ func kubeSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 	quit := make(chan struct{})
 
 	// Let's start the printer consumer
-	m := cmd.Summary.Flags.Output
+	m := cmd.Flags.Output
 	reqPrint := actions.PrintResourceSummaryRequest{
 		Mode: printer.PrinterModeNone,
 		Ch:   summaryCh,

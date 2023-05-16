@@ -105,6 +105,13 @@ func WithKustomizationPath(path string) ProviderOption {
 	})
 }
 
+func (c *kustomizeClient) AllImages(ctx context.Context) ([]provider.Image, error) {
+	var rcerror error
+	var images []provider.Image
+
+	return images, errortree.Add(rcerror, "provider.WithK8sLabelSelector", errors.New("AllImages method not implemented"))
+}
+
 func (c *kustomizeClient) GetResources(ctx context.Context, location string, selector string) ([]*unstructured.Unstructured, error) {
 	var err, rcerror error
 	var resources []*unstructured.Unstructured

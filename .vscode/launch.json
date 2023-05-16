@@ -127,6 +127,32 @@
                 "/Users/fraildan/Proyectos/packagesGit/bitbucket/cmodevops/cmo-atlas/kustomize.nogit/servicemonitor.yaml"
             ],
             "showLog": true
+        },
+        {
+            "name": "kube images",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/kuberium",
+            "env": {
+                // "SC_LOGGING_LEVEL": "debug",
+                // "SC_KMS_FORTANIX_API_KEY": "ZDQ1Y2Y3MDMtYzVlOC00MGUyLWFkMTItMGU4YjBkZjViMjUwOnNsczhRUzBOd3d6UnlhU0x2OC1JMmdoN1RhWXIzLXJvNnN2Wk1uOEpFblgwOXB5c0dndEZNVGtWV1pkeFE5SVNjd1FjNFcyV1dHUDBBZmR1MUZqcmxR",
+                // "SC_KMS_FORTANIX_API_ENDPOINT_URL": "https://kms.adidas-group.com"
+            },
+            "args": [
+                // "--config",
+                // "/Users/fraildan/.secretum/secretum_pdm_stg.json",
+                "kube",
+                "--no-probes.enable",
+                "--kube.path",
+                "/Users/fraildan/.kube/config",
+                "--kube.namespace",
+                "pc-pdm-sit",
+                "--kube.context",
+                "pvt-pdm-sit"
+                "images"
+            ],
+            "showLog": true
         }
     ]
 }
