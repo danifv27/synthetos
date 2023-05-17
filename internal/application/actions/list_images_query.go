@@ -2,7 +2,6 @@ package actions
 
 import (
 	"context"
-	"fmt"
 
 	"fry.org/cmo/cli/internal/application/logger"
 	"fry.org/cmo/cli/internal/application/provider"
@@ -11,7 +10,8 @@ import (
 
 // ListImagesRequest query params
 type ListImagesRequest struct {
-	SendCh chan<- provider.Image
+	SendCh   chan<- provider.Image
+	Selector string
 }
 
 type ListImagesQuery interface {
@@ -35,16 +35,11 @@ func NewListImagesQueryHandler(l logger.Logger, pr provider.ResourceProvider) Li
 
 func (h listImagesQueryHandler) Handle(request ListImagesRequest) error {
 	var err, rcerror error
-	var images []provider.Image
 
 	ctx := context.Background()
-	if images, err = h.prvdr.AllImages(ctx); err != nil {
-		close(request.SendCh)
+	if err = h.prvdr.AllImages(ctx, request.SendCh, request.Selector); err != nil {
 		return errortree.Add(rcerror, "Handle", err)
 	}
-	fmt.Printf("[DBG]images: %v", images)
-	//Let's signal there is no more resources to process
-	close(request.SendCh)
 
 	return nil
 }

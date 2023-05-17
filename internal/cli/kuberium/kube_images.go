@@ -8,6 +8,7 @@ import (
 
 	"fry.org/cmo/cli/internal/application"
 	"fry.org/cmo/cli/internal/application/actions"
+	"fry.org/cmo/cli/internal/application/printer"
 	"fry.org/cmo/cli/internal/application/provider"
 	"fry.org/cmo/cli/internal/cli/common"
 	"fry.org/cmo/cli/internal/infrastructure"
@@ -60,7 +61,7 @@ func initializeKubeImagesCmd(ctx floc.Context, ctrl floc.Control) error {
 	}
 	if err = application.WithOptions(&c.Apps,
 		application.WithListImagesQuery(c.Apps.Logger, c.Adapters.ResourceProvider),
-		// application.WithPrintImagesCommand(c.Apps.Logger, c.Adapters.Printer),
+		application.WithPrintImagesCommand(c.Apps.Logger, c.Adapters.Printer),
 	); err != nil {
 		if e := KuberiumSetRCErrorTree(ctx, "initializeKubeImagesCmd", err); e != nil {
 			return errortree.Add(rcerror, "initializeKubeImagesCmd", e)
@@ -80,50 +81,52 @@ func initializeKubeImagesCmd(ctx floc.Context, ctrl floc.Control) error {
 
 func kubeImagesJob(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
-	// var cmd KubeCmd
+	var cmd KubeCmd
 	var err error
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
 		KuberiumSetRCErrorTree(ctx, "kubeImagesJob", err)
 		return err
 	}
-	// if cmd, err = KuberiumKubeCmd(ctx); err != nil {
-	// 	KuberiumSetRCErrorTree(ctx, "kubeImagesJob", err)
-	// 	return err
-	// }
+	if cmd, err = KuberiumKubeCmd(ctx); err != nil {
+		KuberiumSetRCErrorTree(ctx, "kubeImagesJob", err)
+		return err
+	}
 	imagesCh := make(chan provider.Image, 3)
 	quit := make(chan struct{})
 
 	// Let's start the printer consumer
-	// m := cmd.Flags.Output
-	// reqPrint := actions.PrintResourceSummaryRequest{
-	// 	Mode: printer.PrinterModeNone,
-	// 	Ch:   imagesCh,
-	// }
-	// switch {
-	// case m == "json":
-	// 	reqPrint.Mode = printer.PrinterModeJSON
-	// case m == "text":
-	// 	reqPrint.Mode = printer.PrinterModeText
-	// case m == "table":
-	// 	reqPrint.Mode = printer.PrinterModeTable
-	// }
-	// go func(req actions.PrintResourceImagesRequest) {
-	// if err = c.Apps.Commands.PrintResourceImages.Handle(req); err != nil {
-	// 	KuberiumSetRCErrorTree(ctx, "kubeImagesJob", err)
-	// }
-	// close(quit)
-	// }(reqPrint)
+	m := cmd.Flags.Output
+	reqPrint := actions.PrintImagesRequest{
+		Mode:      printer.PrinterModeNone,
+		ReceiveCh: imagesCh,
+	}
+	switch {
+	case m == "json":
+		reqPrint.Mode = printer.PrinterModeJSON
+	case m == "text":
+		reqPrint.Mode = printer.PrinterModeText
+	case m == "table":
+		reqPrint.Mode = printer.PrinterModeTable
+	}
+	go func(req actions.PrintImagesRequest) {
+		if err = c.Apps.Commands.PrintImages.Handle(req); err != nil {
+			KuberiumSetRCErrorTree(ctx, "kubeImagesJob", err)
+		}
+		close(quit)
+	}(reqPrint)
 	//Start the producer
 	reqShow := actions.ListImagesRequest{
 		SendCh: imagesCh,
+	}
+	if cmd.Flags.Selector != nil {
+		reqShow.Selector = *cmd.Flags.Selector
 	}
 	go func(req actions.ListImagesRequest) {
 		if err = c.Apps.Queries.ListImages.Handle(req); err != nil {
 			KuberiumSetRCErrorTree(ctx, "kubeImagesJob", err)
 		}
 	}(reqShow)
-	close(quit)
 	//Wait until printer finish it work
 	<-quit
 

@@ -8,7 +8,7 @@ import (
 
 type ResourceProvider interface {
 	GetResources(ctx context.Context, location string, selector string) ([]*unstructured.Unstructured, error)
-	AllImages(ctx context.Context) ([]Image, error)
+	AllImages(ctx context.Context, ch chan<- Image, selector string) error
 }
 
 type ManifestProvider interface {

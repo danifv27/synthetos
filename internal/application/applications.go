@@ -51,6 +51,7 @@ type Commands struct {
 	PrintSecret          actions.PrintSecretCommand
 	DecryptManifests     actions.DecryptManifestsCommand
 	PrintManifests       actions.PrintManifestsCommand
+	PrintImages          actions.PrintImagesCommand
 }
 
 // Applications contains all exposed services of the application layer
@@ -136,6 +137,16 @@ func WithPrintResourceSummaryCommand(l logger.Logger, p printer.Printer) Applica
 	return ApplicationOptionFunc(func(a *Applications) error {
 
 		a.Commands.PrintResourceSummary = actions.NewPrintResourceSummaryCommandHandler(l, p)
+
+		return nil
+	})
+}
+
+func WithPrintImagesCommand(l logger.Logger, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.PrintImages = actions.NewPrintImagesCommandHandler(l, p)
 
 		return nil
 	})

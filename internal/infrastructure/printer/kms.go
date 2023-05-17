@@ -128,6 +128,7 @@ func decodeString(input string) string {
 	var b strings.Builder
 
 	if decoded, err = base64.StdEncoding.DecodeString(input); err != nil {
+		// fmt.Printf("[DBG]clear text\n")
 		//If there is a key value string, try to decode only the value
 		scanner := bufio.NewScanner(strings.NewReader(input))
 		for scanner.Scan() {
