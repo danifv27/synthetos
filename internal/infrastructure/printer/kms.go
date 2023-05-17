@@ -156,10 +156,12 @@ func listKmsSecretsJSON(ch <-chan kms.Secret, decode bool) error {
 	var secrets []kms.Secret
 
 	for r := range ch {
-		if decode {
-			r.Value = decodeString(string(*r.Blob))
-		} else {
-			r.Value = string(*r.Blob)
+		if r.Blob != nil {
+			if decode {
+				r.Value = decodeString(string(*r.Blob))
+			} else {
+				r.Value = string(*r.Blob)
+			}
 		}
 		secrets = append(secrets, r)
 	} //for
