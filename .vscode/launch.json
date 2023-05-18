@@ -136,19 +136,17 @@
             "program": "${workspaceFolder}/cmd/kuberium",
             "env": {
                 // "SC_LOGGING_LEVEL": "debug",
-                "SC_KUBE_IMAGES_CMD": "kube --no-probes.enable --kube.path /Users/fraildan/.kube/config --kube.namespace pc-pdm-sit --kube.context pdm01-pdm-sit images"
+                "SC_KUBE_IMAGES_CMD": "kube --no-probes.enable --kube.path /Users/fraildan/.kube/config --kube.context aws-rcs-sit --kube.namespace dc-cp-sit images"
             },
             "args": [
-                // "--config",
-                // "/Users/fraildan/.secretum/secretum_pdm_stg.json",
                 "kube",
                 "--no-probes.enable",
                 "--kube.path",
                 "/Users/fraildan/.kube/config",
-                "--kube.namespace",
-                "pc-pdm-sit",
                 "--kube.context",
-                "pdm01-pdm-sit",
+                "aws-rcs-sit",
+                "--kube.namespace",
+                "dc-cp-sit",
                 "images"
             ],
             "showLog": true
