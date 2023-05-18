@@ -12,7 +12,6 @@ import (
 	"fry.org/cmo/cli/internal/application/kms"
 	"fry.org/cmo/cli/internal/application/printer"
 	"github.com/alexeyco/simpletable"
-	"github.com/aquilax/truncate"
 	"github.com/gonejack/linesprinter"
 	"github.com/speijnik/go-errortree"
 	"github.com/tidwall/pretty"
@@ -189,17 +188,18 @@ func (t *PrinterClient) listKmsSecretsTable(ch <-chan kms.Secret, decode bool) e
 			{Align: simpletable.AlignCenter, Text: "Group ID"},
 			{Align: simpletable.AlignCenter, Text: "Secret ID"},
 			{Align: simpletable.AlignCenter, Text: "Name"},
-			{Align: simpletable.AlignCenter, Text: "Value"},
 			{Align: simpletable.AlignCenter, Text: "Description"},
 			{Align: simpletable.AlignCenter, Text: "Created At"},
 			{Align: simpletable.AlignCenter, Text: "Last Used At"},
 		},
 	}
 	for r := range ch {
-		if decode {
-			r.Value = decodeString(string(*r.Blob))
-		} else {
-			r.Value = string(*r.Blob)
+		if r.Blob != nil {
+			if decode {
+				r.Value = decodeString(string(*r.Blob))
+			} else {
+				r.Value = string(*r.Blob)
+			}
 		}
 		secrets = append(secrets, r)
 	} //for
@@ -229,13 +229,6 @@ func (t *PrinterClient) listKmsSecretsTable(ch <-chan kms.Secret, decode bool) e
 			continue
 		}
 		p.Close()
-		value := new(bytes.Buffer)
-		p = linesprinter.NewLinesPrinter(value, 96, []byte("\r\n"))
-		truncated := truncate.Truncate(r.Value, 512, "...", truncate.PositionEnd)
-		if _, err := p.Write([]byte(truncated)); err != nil {
-			continue
-		}
-		p.Close()
 		description := new(bytes.Buffer)
 		p = linesprinter.NewLinesPrinter(description, 96, []byte("\r\n"))
 		if _, err := p.Write([]byte(*r.Description)); err != nil {
@@ -258,7 +251,6 @@ func (t *PrinterClient) listKmsSecretsTable(ch <-chan kms.Secret, decode bool) e
 			{Text: groupID.String()},
 			{Text: secretID.String()},
 			{Text: name.String()},
-			{Text: value.String()},
 			{Text: description.String()},
 			{Text: createAt.String()},
 			{Text: lastUsedAt.String()},
@@ -292,16 +284,16 @@ func listKmsSecretsText(ch <-chan kms.Secret) error {
 	return nil
 }
 
-func (t *PrinterClient) ListKmsSecrets(ch <-chan kms.Secret, mode printer.PrinterMode, decode bool) error {
+func (t *PrinterClient) ListKmsSecrets(ch <-chan kms.Secret, mode printer.PrinterMode, encode bool) error {
 	var rcerror error
 
 	rcerror = errortree.Add(rcerror, "ListKmsSecrets", fmt.Errorf("printer mode %v not supported", mode))
 
 	switch mode {
 	case printer.PrinterModeJSON:
-		rcerror = listKmsSecretsJSON(ch, decode)
+		rcerror = listKmsSecretsJSON(ch, !encode)
 	case printer.PrinterModeTable:
-		rcerror = t.listKmsSecretsTable(ch, decode)
+		rcerror = t.listKmsSecretsTable(ch, !encode)
 	case printer.PrinterModeText:
 		rcerror = listKmsSecretsText(ch)
 	}

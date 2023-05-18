@@ -72,6 +72,8 @@
                 "/Users/fraildan/.secretum/secretum_pdm_stg.json",
                 "kms",
                 "--no-probes.enable",
+                "--kms.output",
+                "table",
                 "fortanix",
                 "list",
                 "secrets",
