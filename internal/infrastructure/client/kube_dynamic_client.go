@@ -5,6 +5,7 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
 )
@@ -13,6 +14,7 @@ type KubeDynamicClient struct {
 	DiscoveryClient  *discovery.DiscoveryClient
 	DiscoveryMapper  *restmapper.DeferredDiscoveryRESTMapper
 	DynamicInterface dynamic.Interface
+	KubeInterface    kubernetes.Interface
 }
 
 func NewKubeDynamicClient(config *rest.Config) (*KubeDynamicClient, error) {
@@ -36,9 +38,15 @@ func NewKubeDynamicClient(config *rest.Config) (*KubeDynamicClient, error) {
 		return nil, errortree.Add(rcerror, "NewKubeDynamicClient", err)
 	}
 
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, errortree.Add(rcerror, "NewKubeDynamicClient", err)
+	}
+
 	return &KubeDynamicClient{
 		DiscoveryClient:  disC,
 		DiscoveryMapper:  dm,
 		DynamicInterface: dynC,
+		KubeInterface:    clientset,
 	}, nil
 }

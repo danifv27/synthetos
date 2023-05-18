@@ -105,6 +105,12 @@ func WithKustomizationPath(path string) ProviderOption {
 	})
 }
 
+func (c *kustomizeClient) AllImages(ctx context.Context, sendCh chan<- provider.Image, selector string) error {
+	var rcerror error
+
+	return errortree.Add(rcerror, "provider.AllImages", errors.New("AllImages method not implemented"))
+}
+
 func (c *kustomizeClient) GetResources(ctx context.Context, location string, selector string) ([]*unstructured.Unstructured, error) {
 	var err, rcerror error
 	var resources []*unstructured.Unstructured
