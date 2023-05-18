@@ -3,6 +3,7 @@ package printer
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -105,6 +106,25 @@ func (t *PrinterClient) ListKbomImages(ch <-chan provider.Image, mode printer.Pr
 	case printer.PrinterModeText:
 		rcerror = listKbomImagesText(ch)
 	}
+
+	return rcerror
+}
+
+func (t *PrinterClient) ListKbomResources(receiveCh <-chan provider.Resource, mode printer.PrinterMode) error {
+	var rcerror error
+
+	rcerror = errortree.Add(rcerror, "listKbomImagesJSON", errors.New("ListKbomResources method not implemented"))
+
+	// rcerror = errortree.Add(rcerror, "ListKbomImages", fmt.Errorf("printer mode %v not supported", mode))
+
+	// switch mode {
+	// case printer.PrinterModeJSON:
+	// 	rcerror = listKbomImagesJSON(ch)
+	// case printer.PrinterModeTable:
+	// 	rcerror = t.listKbomImagesTable(ch)
+	// case printer.PrinterModeText:
+	// 	rcerror = listKbomImagesText(ch)
+	// }
 
 	return rcerror
 }

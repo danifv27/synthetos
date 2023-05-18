@@ -111,6 +111,12 @@ func (c *kustomizeClient) AllImages(ctx context.Context, sendCh chan<- provider.
 	return errortree.Add(rcerror, "provider.AllImages", errors.New("AllImages method not implemented"))
 }
 
+func (c *kustomizeClient) AllResources(ctx context.Context, ch chan<- provider.Resource, ns string, selector string, full bool) error {
+	var rcerror error
+
+	return errortree.Add(rcerror, "provider.AllImages", errors.New("AllImages method not implemented"))
+}
+
 func (c *kustomizeClient) GetResources(ctx context.Context, location string, selector string) ([]*unstructured.Unstructured, error) {
 	var err, rcerror error
 	var resources []*unstructured.Unstructured

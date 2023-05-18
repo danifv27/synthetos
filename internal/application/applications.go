@@ -42,6 +42,7 @@ type Queries struct {
 	ShowSummary   actions.ShowSummaryQueryHandler
 	ListManifests actions.ListManifestsObjectsQuery
 	ListImages    actions.ListImagesQuery
+	ListResources actions.ListResourcesQuery
 }
 
 // Commands operations that accept data to make a change or trigger an action
@@ -52,6 +53,7 @@ type Commands struct {
 	DecryptManifests     actions.DecryptManifestsCommand
 	PrintManifests       actions.PrintManifestsCommand
 	PrintImages          actions.PrintImagesCommand
+	PrintResources       actions.PrintResourcesCommand
 }
 
 // Applications contains all exposed services of the application layer
@@ -152,6 +154,16 @@ func WithPrintImagesCommand(l logger.Logger, p printer.Printer) ApplicationOptio
 	})
 }
 
+func WithPrintResourcesCommand(l logger.Logger, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.PrintResources = actions.NewPrintResourcesCommandHandler(l, p)
+
+		return nil
+	})
+}
+
 func WithListGroupsQuery(l logger.Logger, p printer.Printer, k kms.KeyManager) ApplicationOption {
 
 	return ApplicationOptionFunc(func(a *Applications) error {
@@ -227,6 +239,16 @@ func WithListImagesQuery(l logger.Logger, pr provider.ResourceProvider) Applicat
 	return ApplicationOptionFunc(func(a *Applications) error {
 
 		a.Queries.ListImages = actions.NewListImagesQueryHandler(l, pr)
+
+		return nil
+	})
+}
+
+func WithListResourcesQuery(l logger.Logger, pr provider.ResourceProvider) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ListResources = actions.NewListResourcesQueryHandler(l, pr)
 
 		return nil
 	})

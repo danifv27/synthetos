@@ -17,9 +17,10 @@ import (
 )
 
 type KubeCmd struct {
-	Flags   KubeFlags      `embed:""`
-	Images  KubeImagesCmd  `cmd:"" help:"List images used in deployed kubernetes pod."`
-	Summary KubeSummaryCmd `cmd:"" help:"Show a summary of the objects deployed in a namespace or present in a kubernetes manifests."`
+	Flags     KubeFlags        `embed:""`
+	Images    KubeImagesCmd    `cmd:"" help:"List images used in deployed kubernetes pods."`
+	Resources KubeResourcesCmd `cmd:"" help:"List resources associated with deployed kubernetes objects."`
+	Summary   KubeSummaryCmd   `cmd:"" help:"Show a summary of the objects deployed in a namespace or present in a kubernetes manifests."`
 }
 
 type KubeFlags struct {

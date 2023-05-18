@@ -21,5 +21,6 @@ type Printer interface {
 	ListKmsSecrets(receiveCh <-chan kms.Secret, mode PrinterMode, decode bool) error
 	ListManifests(receiveCh <-chan provider.Manifest) error
 	ListKbomImages(receiveCh <-chan provider.Image, mode PrinterMode) error
+	ListKbomResources(receiveCh <-chan provider.Resource, mode PrinterMode) error
 	PrintResourceSummary(receiveCh <-chan provider.Summary, mode PrinterMode) error
 }

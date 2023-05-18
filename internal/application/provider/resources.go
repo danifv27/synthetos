@@ -9,6 +9,7 @@ import (
 type ResourceProvider interface {
 	GetResources(ctx context.Context, location string, selector string) ([]*unstructured.Unstructured, error)
 	AllImages(ctx context.Context, ch chan<- Image, selector string) error
+	AllResources(ctx context.Context, ch chan<- Resource, namespace string, selector string, full bool) error
 }
 
 type ManifestProvider interface {
