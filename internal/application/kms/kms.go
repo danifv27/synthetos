@@ -18,12 +18,13 @@ type Group struct {
 }
 
 type Secret struct {
-	CreatedAt   string  `json:"created_at"`
-	LastusedAt  string  `json:"lastused_at"`
-	Description *string `json:"description,omitempty"`
-	GroupID     *string `json:"group_id,omitempty"`
-	Name        *string `json:"name,omitempty"`
-	Blob        *[]byte `json:"-"`
-	Value       string  `json:"value,omitempty"`
-	SecretID    *string `json:"kid,omitempty"`
+	GroupID     *string  `json:"group_id,omitempty"`
+	SecretID    *string  `json:"kid,omitempty"`
+	Name        *string  `json:"name,omitempty"`
+	Description *string  `json:"description,omitempty"`
+	CreatedAt   string   `json:"created_at"`
+	LastusedAt  string   `json:"lastused_at"`
+	Splitted    []string `json:"splitted,omitempty"` //Blob splitted line by line
+	Value       string   `json:"value,omitempty"`    //Blob as a single string
+	Blob        *[]byte  `json:"-"`
 }

@@ -65,13 +65,15 @@
                 // "SC_LOGGING_LEVEL": "debug",
                 // "SC_KMS_FORTANIX_API_KEY": "ZDQ1Y2Y3MDMtYzVlOC00MGUyLWFkMTItMGU4YjBkZjViMjUwOnNsczhRUzBOd3d6UnlhU0x2OC1JMmdoN1RhWXIzLXJvNnN2Wk1uOEpFblgwOXB5c0dndEZNVGtWV1pkeFE5SVNjd1FjNFcyV1dHUDBBZmR1MUZqcmxR",
                 // "SC_KMS_LIST_FORTANIX_API_ENDPOINT_URL": "https://kms-test.adidas-group.com"
-                "SC_KMS_FORTANIX_LIST_CMD": "secretum --config /Users/fraildan/.secretum/secretum_pdm_stg.json kms --no-probes.enable fortanix list secrets 7899b4e1-719d-4461-8e25-1b18cbd120d1"
+                "SC_KMS_FORTANIX_LIST_SECRET_CMD": "secretum --config /Users/fraildan/.secretum/secretum_pdm_stg.json kms --no-probes.enable fortanix list secrets 7899b4e1-719d-4461-8e25-1b18cbd120d1"
             },
             "args": [
                 "--config",
                 "/Users/fraildan/.secretum/secretum_pdm_stg.json",
                 "kms",
                 "--no-probes.enable",
+                "--kms.output",
+                "table",
                 "fortanix",
                 "list",
                 "secrets",
@@ -89,6 +91,7 @@
                 // "SC_LOGGING_LEVEL": "debug",
                 // "SC_KMS_FORTANIX_API_KEY": "ZDQ1Y2Y3MDMtYzVlOC00MGUyLWFkMTItMGU4YjBkZjViMjUwOnNsczhRUzBOd3d6UnlhU0x2OC1JMmdoN1RhWXIzLXJvNnN2Wk1uOEpFblgwOXB5c0dndEZNVGtWV1pkeFE5SVNjd1FjNFcyV1dHUDBBZmR1MUZqcmxR",
                 // "SC_KMS_FORTANIX_API_ENDPOINT_URL": "https://kms-test.adidas-group.com"
+                "SC_KMS_FORTANIX_DECRYPT_SECRET_CMD": "secretum --config /Users/fraildan/.secretum/secretum_pdm_stg.json kms --no-probes.enable fortanix decrypt secret b8988820-e18e-4196-8cbe-ec41138dffd7"
             },
             "args": [
                 "--config",
