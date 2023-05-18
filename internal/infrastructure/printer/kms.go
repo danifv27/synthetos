@@ -129,7 +129,6 @@ func decodeString(input string) string {
 	var b strings.Builder
 
 	if decoded, err = base64.StdEncoding.DecodeString(input); err != nil {
-		fmt.Printf("[DBG]clear text\n")
 		//If there is a key value string, try to decode only the value
 		scanner := bufio.NewScanner(strings.NewReader(input))
 		for scanner.Scan() {
@@ -162,6 +161,7 @@ func listKmsSecretsJSON(ch <-chan kms.Secret, decode bool) error {
 			} else {
 				r.Value = string(*r.Blob)
 			}
+			r.Splitted = strings.SplitAfter(strings.TrimSuffix(r.Value, "\n"), "\n")
 		}
 		secrets = append(secrets, r)
 	} //for
