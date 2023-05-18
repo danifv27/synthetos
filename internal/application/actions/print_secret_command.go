@@ -11,7 +11,7 @@ import (
 type PrintSecretRequest struct {
 	Mode      printer.PrinterMode
 	ReceiveCh <-chan kms.Secret
-	Decode    bool
+	Encode    bool
 }
 
 type PrintSecretCommand interface {
@@ -37,7 +37,7 @@ func (h printSecretCommand) Handle(request PrintSecretRequest) error {
 	var err, rcerror error
 
 	if request.Mode != printer.PrinterModeNone {
-		if err = h.printer.ListKmsSecrets(request.ReceiveCh, request.Mode, request.Decode); err != nil {
+		if err = h.printer.ListKmsSecrets(request.ReceiveCh, request.Mode, request.Encode); err != nil {
 			return errortree.Add(rcerror, "Handle", err)
 		}
 	}

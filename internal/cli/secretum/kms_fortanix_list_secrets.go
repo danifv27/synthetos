@@ -22,7 +22,7 @@ type KmsFortanixListSecretsCmd struct {
 }
 
 type KmsFortanixListSecretsFlags struct {
-	Decode bool `help:"decode secret value?." env:"SC_KMS_FORTANIX_LIST_SECRETS_DECODE" default:"false"`
+	// Decode bool `help:"decode secret value?." env:"SC_KMS_FORTANIX_LIST_SECRETS_DECODE" default:"false"`
 }
 
 func initializeKmsFortanixListSecretsCmd(ctx floc.Context, ctrl floc.Control) error {
@@ -73,7 +73,7 @@ func KmsFortanixListSecretsJob(ctx floc.Context, ctrl floc.Control) error {
 	reqPrint := actions.PrintSecretRequest{
 		Mode:      printer.PrinterModeNone,
 		ReceiveCh: secretCh,
-		Decode:    cmd.Fortanix.List.Secrets.Flags.Decode,
+		Encode:    true, //it's not used because values are not shown when listing
 	}
 	switch {
 	case m == "json":
