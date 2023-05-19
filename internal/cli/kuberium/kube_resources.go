@@ -8,6 +8,7 @@ import (
 
 	"fry.org/cmo/cli/internal/application"
 	"fry.org/cmo/cli/internal/application/actions"
+	"fry.org/cmo/cli/internal/application/printer"
 	"fry.org/cmo/cli/internal/application/provider"
 	"fry.org/cmo/cli/internal/cli/common"
 	"fry.org/cmo/cli/internal/infrastructure"
@@ -22,7 +23,7 @@ type KubeResourcesCmd struct {
 }
 
 type KubeResourcesFlags struct {
-	Concise bool `help:"Do not include a detailed resource list." env:"SC_KUBE_RESOURCES_DETAILED" default:"true" negatable:""`
+	Concise bool `help:"Do not include a detailed resource list." env:"SC_KUBE_RESOURCES_CONCISE" default:"true" negatable:""`
 }
 
 func initializeKubeResourcesCmd(ctx floc.Context, ctrl floc.Control) error {
@@ -93,33 +94,35 @@ func kubeResourcesJob(ctx floc.Context, ctrl floc.Control) error {
 		KuberiumSetRCErrorTree(ctx, "kubeResourcesJob", err)
 		return err
 	}
-	resourcesCh := make(chan provider.Resource, 3)
+	resourcesCh := make(chan provider.ResourceList, 3)
 	quit := make(chan struct{})
 
-	// // Let's start the printer consumer
-	// m := cmd.Flags.Output
-	// reqPrint := actions.PrintResourcesRequest{
-	// 	Mode:      printer.PrinterModeNone,
-	// 	ReceiveCh: resourcesCh,
-	// }
-	// switch {
-	// case m == "json":
-	// 	reqPrint.Mode = printer.PrinterModeJSON
-	// case m == "text":
-	// 	reqPrint.Mode = printer.PrinterModeText
-	// case m == "table":
-	// 	reqPrint.Mode = printer.PrinterModeTable
-	// }
-	// go func(req actions.PrintResourcesRequest) {
-	// 	if err = c.Apps.Commands.PrintResources.Handle(req); err != nil {
-	// 		KuberiumSetRCErrorTree(ctx, "kubeResourcesJob", err)
-	// 	}
-	// 	close(quit)
-	// }(reqPrint)
+	// Let's start the printer consumer
+	m := cmd.Flags.Output
+	reqPrint := actions.PrintResourcesRequest{
+		Mode:      printer.PrinterModeNone,
+		ReceiveCh: resourcesCh,
+	}
+	switch {
+	case m == "json":
+		reqPrint.Mode = printer.PrinterModeJSON
+	case m == "text":
+		reqPrint.Mode = printer.PrinterModeText
+	case m == "table":
+		reqPrint.Mode = printer.PrinterModeTable
+	}
+	go func(req actions.PrintResourcesRequest) {
+		if err = c.Apps.Commands.PrintResources.Handle(req); err != nil {
+			KuberiumSetRCErrorTree(ctx, "kubeResourcesJob", err)
+		}
+		close(quit)
+	}(reqPrint)
 	//Start the producer
+	ns := new(string)
+	*ns = cmd.Flags.Namespace
 	reqShow := actions.ListResourcesRequest{
 		SendCh:    resourcesCh,
-		Namespace: cmd.Flags.Namespace,
+		Namespace: ns,
 		Concise:   cmd.Resources.Flags.Concise,
 	}
 	if cmd.Flags.Selector != nil {

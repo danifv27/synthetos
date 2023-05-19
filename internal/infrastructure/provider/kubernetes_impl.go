@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -13,7 +12,6 @@ import (
 	iClient "fry.org/cmo/cli/internal/infrastructure/client"
 	"github.com/avast/retry-go/v4"
 	"github.com/speijnik/go-errortree"
-	"github.com/tidwall/pretty"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -194,43 +192,50 @@ func (c *kubernetesClient) AllImages(ctx context.Context, sendCh chan<- provider
 	return nil
 }
 
-func (c *kubernetesClient) AllResources(ctx context.Context, ch chan<- provider.Resource, ns string, selector string, concise bool) error {
+func (c *kubernetesClient) AllResources(ctx context.Context, sendCh chan<- provider.ResourceList, ns *string, selector string, concise bool) error {
 	var rcerror, err error
 	var apiResourceList []*metav1.APIResourceList
 
 	if apiResourceList, err = c.Client.KubeInterface.Discovery().ServerPreferredResources(); err != nil {
 		return errortree.Add(rcerror, "provider.AllResources", err)
 	}
-
+	defer close(sendCh)
+	listOptions := metav1.ListOptions{
+		LabelSelector: selector,
+	}
 	resourceMap := make(map[string]provider.ResourceList)
 	for _, apiResource := range apiResourceList {
-
-		gv, err := schema.ParseGroupVersion(apiResource.GroupVersion)
-		if err != nil {
-			return errortree.Add(rcerror, "provider.AllResources", err)
+		gv, e := schema.ParseGroupVersion(apiResource.GroupVersion)
+		if e != nil {
+			return errortree.Add(rcerror, "provider.AllResources", e)
 		}
-
 		for i := range apiResource.APIResources {
+			var resourceList *unstructured.UnstructuredList
+			var e1 error
 			res := apiResource.APIResources[i]
 			gvr := schema.GroupVersionResource{
 				Group:    gv.Group,
 				Version:  gv.Version,
 				Resource: res.Name,
 			}
-
-			resourceList, err := c.Client.DynamicInterface.Resource(gvr).Namespace(ns).List(ctx, metav1.ListOptions{})
-			if err != nil {
-				c.l.WithFields(logger.Fields{
-					"err": err,
-					"gvr": gvr,
-				}).Debug("failed to list resources")
+			if ns == nil {
+				resourceList, e1 = c.Client.DynamicInterface.Resource(gvr).List(ctx, listOptions)
+			} else {
+				resourceList, e1 = c.Client.DynamicInterface.Resource(gvr).Namespace(*ns).List(ctx, listOptions)
+			}
+			// Most of the errors are due to do not have rights to list them (they are usually out of the namespace)
+			if e1 != nil {
+				// c.l.WithFields(logger.Fields{
+				// 	"err": e1,
+				// 	"gvr": gvr,
+				// }).Debug("failed to list resources")
 				continue
 			}
-			c.l.WithFields(logger.Fields{
-				"gvr":   gvr,
-				"count": len(resourceList.Items),
-			}).Debug("found resources")
-
+			// c.l.WithFields(logger.Fields{
+			// 	"gvr":   gvr,
+			// 	"count": len(resourceList.Items),
+			// }).Debug("found resources")
+			// a namespaced resource means that it is bound by a specific namespace. Some examples of namespaced resources in Kubernetes include Pods, Services, ConfigMaps, and Deployments.
 			if len(resourceList.Items) > 0 {
 				resourceMap[gvr.String()] = provider.ResourceList{
 					Kind:           resourceList.Items[0].GetKind(),
@@ -239,26 +244,20 @@ func (c *kubernetesClient) AllResources(ctx context.Context, ch chan<- provider.
 					ResourcesCount: len(resourceList.Items),
 					Resources:      make([]provider.Resource, 0),
 				}
-			}
-			if !concise {
-				for _, item := range resourceList.Items {
-					res := provider.Resource{
-						Name:      item.GetName(),
-						Namespace: item.GetNamespace(),
+				if !concise {
+					for _, item := range resourceList.Items {
+						res := provider.Resource{
+							Name:      item.GetName(),
+							Namespace: item.GetNamespace(),
+						}
+						val := resourceMap[gvr.String()]
+						val.Resources = append(val.Resources, res)
+						resourceMap[gvr.String()] = val
 					}
-
-					val := resourceMap[gvr.String()]
-					val.Resources = append(val.Resources, res)
-					resourceMap[gvr.String()] = val
 				}
+				sendCh <- resourceMap[gvr.String()]
 			}
 		}
-	}
-
-	if j, err := json.Marshal(resourceMap); err != nil {
-		return errortree.Add(rcerror, "provider.AllResources", err)
-	} else {
-		fmt.Printf("%s\n", pretty.Pretty(j))
 	}
 
 	return nil

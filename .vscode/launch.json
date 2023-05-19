@@ -159,11 +159,11 @@
             "program": "${workspaceFolder}/cmd/kuberium",
             "env": {
                 // "SC_LOGGING_LEVEL": "debug",
-                "SC_KUBE_IMAGES_CMD": "kube --no-probes.enable --kube.path /Users/fraildan/.kube/config --kube.context aws-rcs-sit --kube.namespace dc-cp-sit resources"
+                "SC_KUBE_IMAGES_CMD": "kube --no-kube.probes.enable --kube.path /Users/fraildan/.kube/config --kube.context aws-rcs-sit --kube.namespace dc-cp-sit resources"
             },
             "args": [
                 "kube",
-                "--no-probes.enable",
+                "--no-kube.probes.enable",
                 "--kube.path",
                 "/Users/fraildan/.kube/config",
                 "--kube.context",

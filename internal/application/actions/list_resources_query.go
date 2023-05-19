@@ -10,8 +10,8 @@ import (
 
 // ListResourcesRequest query params
 type ListResourcesRequest struct {
-	SendCh    chan<- provider.Resource
-	Namespace string
+	SendCh    chan<- provider.ResourceList
+	Namespace *string
 	Selector  string
 	Concise   bool
 }

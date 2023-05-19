@@ -28,8 +28,8 @@ type KubeFlags struct {
 	Namespace string        `help:"namespace" env:"SC_KUBE_CONFIG_NAMESPACE" required:""`
 	Path      string        `help:"path to the kubeconfig file to use for requests or host url" env:"SC_KUBE_CONFIG_PATH" required:""`
 	Context   string        `help:"the name of the kubeconfig context to use" env:"SC_KUBE_CONTEXT" required:""`
-	Selector  *string       `help:"selector (label query) to filter on," env:"SC_KUBE_SELECTOR" short:"l"`
-	Output    string        `help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KUBE_OUTPUT"`
+	Selector  *string       `help:"selector (label query) to filter on" env:"SC_KUBE_SELECTOR" short:"l"`
+	Output    string        `help:"Output format (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KUBE_OUTPUT"`
 }
 
 func initializeKubeCmd(ctx floc.Context, ctrl floc.Control) error {

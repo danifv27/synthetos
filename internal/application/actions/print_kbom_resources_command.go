@@ -10,7 +10,7 @@ import (
 // PrintResourcesRequest query params
 type PrintResourcesRequest struct {
 	Mode      printer.PrinterMode
-	ReceiveCh <-chan provider.Resource
+	ReceiveCh <-chan provider.ResourceList
 }
 
 type PrintResourcesCommand interface {
