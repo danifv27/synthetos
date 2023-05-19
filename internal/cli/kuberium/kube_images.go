@@ -18,48 +18,53 @@ import (
 	"github.com/workanator/go-floc/v3/run"
 )
 
-type KmzSummaryCmd struct {
-	Flags KmzSummaryFlags `embed:"" prefix:"kmz.summary."`
+type KubeImagesCmd struct {
+	Flags KubeImagesFlags `embed:""`
 }
 
-type KmzSummaryFlags struct {
-	Output string `help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KMZ_SUMMARY_OUTPUT"`
-}
+type KubeImagesFlags struct{}
 
-func initializeKmzSummaryCmd(ctx floc.Context, ctrl floc.Control) error {
+func initializeKubeImagesCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
-	var cmd KmzCmd
+	var cmd KubeCmd
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzSummaryCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmzSummaryCmd", e)
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKubeImagesCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKubeImagesCmd", e)
 		}
 		return err
 	}
-	if cmd, err = KuberiumKmzCmd(ctx); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzSummaryCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmzSummaryCmd", e)
+	if cmd, err = KuberiumKubeCmd(ctx); err != nil {
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKubeImagesCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKubeImagesCmd", e)
 		}
 		return err
 	}
-	uri := fmt.Sprintf("provider:kustomize?kustomization=%s", url.QueryEscape(cmd.Flags.KustomizationPath))
+	// provider:k8s?path=<kubeconfig_path>&context=<kubernetes_context>&namespace=<kubernetes_namespace>&selector=<kubernetes_object_selector>
+	uri := fmt.Sprintf("provider:k8s?path=%s&context=%s&namespace=%s",
+		url.QueryEscape(cmd.Flags.Path),
+		url.QueryEscape(cmd.Flags.Context),
+		url.QueryEscape(cmd.Flags.Namespace))
+	if cmd.Flags.Selector != nil {
+		uri = fmt.Sprintf("%s&selector=%s", uri, url.QueryEscape(*cmd.Flags.Selector))
+	}
 	infraOptions := []infrastructure.AdapterOption{
 		infrastructure.WithTablePrinter(),
 		infrastructure.WithResourceProvider(uri, c.Apps.Logger),
 	}
 	if err = infrastructure.AdapterWithOptions(&c.Adapters, infraOptions...); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzSummaryCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmzSummaryCmd", e)
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKubeImagesCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKubeImagesCmd", e)
 		}
 		return err
 	}
 	if err = application.WithOptions(&c.Apps,
-		application.WithShowSummaryQuery(c.Apps.Logger, c.Adapters.ResourceProvider),
-		application.WithPrintResourceSummaryCommand(c.Apps.Logger, c.Adapters.Printer),
+		application.WithListImagesQuery(c.Apps.Logger, c.Adapters.ResourceProvider),
+		application.WithPrintImagesCommand(c.Apps.Logger, c.Adapters.Printer),
 	); err != nil {
-		if e := KuberiumSetRCErrorTree(ctx, "initializeKmzSummaryCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmzSummaryCmd", e)
+		if e := KuberiumSetRCErrorTree(ctx, "initializeKubeImagesCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKubeImagesCmd", e)
 		}
 		return err
 	}
@@ -74,26 +79,27 @@ func initializeKmzSummaryCmd(ctx floc.Context, ctrl floc.Control) error {
 	return nil
 }
 
-func kmzSummaryJob(ctx floc.Context, ctrl floc.Control) error {
+func kubeImagesJob(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
-	var cmd KmzCmd
+	var cmd KubeCmd
 	var err error
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
+		KuberiumSetRCErrorTree(ctx, "kubeImagesJob", err)
 		return err
 	}
-	if cmd, err = KuberiumKmzCmd(ctx); err != nil {
-		KuberiumSetRCErrorTree(ctx, "kmzSummaryJob", err)
+	if cmd, err = KuberiumKubeCmd(ctx); err != nil {
+		KuberiumSetRCErrorTree(ctx, "kubeImagesJob", err)
 		return err
 	}
-	summaryCh := make(chan provider.Summary, 3)
+	imagesCh := make(chan provider.Image, 3)
 	quit := make(chan struct{})
+
 	// Let's start the printer consumer
-	m := cmd.Summary.Flags.Output
-	reqPrint := actions.PrintResourceSummaryRequest{
-		Mode: printer.PrinterModeNone,
-		Ch:   summaryCh,
+	m := cmd.Flags.Output
+	reqPrint := actions.PrintImagesRequest{
+		Mode:      printer.PrinterModeNone,
+		ReceiveCh: imagesCh,
 	}
 	switch {
 	case m == "json":
@@ -103,20 +109,22 @@ func kmzSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 	case m == "table":
 		reqPrint.Mode = printer.PrinterModeTable
 	}
-	go func(req actions.PrintResourceSummaryRequest) {
-		if err = c.Apps.Commands.PrintResourceSummary.Handle(req); err != nil {
-			KuberiumSetRCErrorTree(ctx, "kmzSummaryJob", err)
+	go func(req actions.PrintImagesRequest) {
+		if err = c.Apps.Commands.PrintImages.Handle(req); err != nil {
+			KuberiumSetRCErrorTree(ctx, "kubeImagesJob", err)
 		}
 		close(quit)
 	}(reqPrint)
 	//Start the producer
-	reqShow := actions.ShowSummaryRequest{
-		Location: cmd.Flags.KustomizationPath,
-		Ch:       summaryCh,
+	reqShow := actions.ListImagesRequest{
+		SendCh: imagesCh,
 	}
-	go func(req actions.ShowSummaryRequest) {
-		if err = c.Apps.Queries.ShowSummary.Handle(req); err != nil {
-			KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
+	if cmd.Flags.Selector != nil {
+		reqShow.Selector = *cmd.Flags.Selector
+	}
+	go func(req actions.ListImagesRequest) {
+		if err = c.Apps.Queries.ListImages.Handle(req); err != nil {
+			KuberiumSetRCErrorTree(ctx, "kubeImagesJob", err)
 		}
 	}(reqShow)
 	//Wait until printer finish it work
@@ -125,16 +133,16 @@ func kmzSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 	return nil
 }
 
-func (cmd *KmzSummaryCmd) Run(c *common.Cmdctx, rcerror *error) error {
+func (cmd *KubeImagesCmd) Run(c *common.Cmdctx, rcerror *error) error {
 
 	//We need to append at the beginning to traverse the initseq in the right order
-	c.InitSeq = append([]floc.Job{initializeKmzSummaryCmd}, c.InitSeq...)
+	c.InitSeq = append([]floc.Job{initializeKubeImagesCmd}, c.InitSeq...)
 	c.RunSeq = guard.OnTimeout(
 		guard.ConstTimeout(5*time.Minute),
 		nil, // No need for timeout data
 		run.Sequence(
-			run.Background(startKmzProbesServer),
-			kmzSummaryJob,
+			run.Background(startKubeProbesServer),
+			kubeImagesJob,
 			func(ctx floc.Context, ctrl floc.Control) error {
 				if rcerror, err := KuberiumRCErrorTree(ctx); err != nil {
 					ctrl.Fail(fmt.Sprintf("Command '%s' internal error", c.Cmd), err)

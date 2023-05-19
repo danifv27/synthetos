@@ -16,11 +16,11 @@ import (
 )
 
 type VersionCmd struct {
-	Flags VersionFlags `embed:""`
+	Flags VersionFlags `embed:"" prefix:"version."`
 }
 
 type VersionFlags struct {
-	Output string `env:"SC_VERSION_OUTPUT" prefix:"version." help:"Format the output (pretty|json)." enum:"pretty,json" default:"pretty"`
+	Output string `env:"SC_VERSION_OUTPUT" help:"Format the output (pretty|json)." enum:"pretty,json" default:"pretty"`
 }
 
 func initializeVersionCmd(ctx floc.Context, ctrl floc.Control) error {

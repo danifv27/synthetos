@@ -127,6 +127,52 @@
                 "/Users/fraildan/Proyectos/packagesGit/bitbucket/cmodevops/cmo-atlas/kustomize.nogit/servicemonitor.yaml"
             ],
             "showLog": true
+        },
+        {
+            "name": "kube images",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/kuberium",
+            "env": {
+                // "SC_LOGGING_LEVEL": "debug",
+                "SC_KUBE_IMAGES_CMD": "kube --no-probes.enable --kube.path /Users/fraildan/.kube/config --kube.context aws-rcs-sit --kube.namespace dc-cp-sit images"
+            },
+            "args": [
+                "kube",
+                "--no-probes.enable",
+                "--kube.path",
+                "/Users/fraildan/.kube/config",
+                "--kube.context",
+                "aws-rcs-sit",
+                "--kube.namespace",
+                "dc-cp-sit",
+                "images"
+            ],
+            "showLog": true
+        },
+        {
+            "name": "kube resources",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/kuberium",
+            "env": {
+                // "SC_LOGGING_LEVEL": "debug",
+                "SC_KUBE_IMAGES_CMD": "kube --no-kube.probes.enable --kube.path /Users/fraildan/.kube/config --kube.context aws-rcs-sit --kube.namespace dc-cp-sit resources"
+            },
+            "args": [
+                "kube",
+                "--no-kube.probes.enable",
+                "--kube.path",
+                "/Users/fraildan/.kube/config",
+                "--kube.context",
+                "aws-rcs-sit",
+                "--kube.namespace",
+                "dc-cp-sit",
+                "resources"
+            ],
+            "showLog": true
         }
     ]
 }

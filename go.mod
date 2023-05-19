@@ -6,7 +6,6 @@ require (
 	github.com/alecthomas/kong v0.7.1
 	github.com/alexeyco/simpletable v1.0.0
 	github.com/antifuchs/o v1.1.0
-	github.com/aquilax/truncate v1.0.0
 	github.com/avast/retry-go/v4 v4.3.4
 	github.com/chromedp/cdproto v0.0.0-20230220211738-2b1ec77315c9
 	github.com/chromedp/chromedp v0.9.1
@@ -100,6 +99,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kisielk/gotool v1.0.0 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect

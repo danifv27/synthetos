@@ -19,23 +19,23 @@ import (
 )
 
 type TestCmd struct {
-	Flags TestFlags `embed:""`
+	Flags TestFlags `embed:"" prefix:"test."`
 }
 
 type TestFlags struct {
-	FeaturesFolder  string        `help:"path to gherkin features folder" prefix:"test." hidden:"" default:"./features" env:"SC_TEST_FEATURES_FOLDER"`
-	SnapshotsFolder string        `help:"path to chromedp snapshots folder" prefix:"test." hidden:"" default:"./snapshots" env:"SC_TEST_SNAPSHOTS_FOLDER"`
-	Timeout         time.Duration `help:"maximum amount of time that we should wait for a step or scenario to complete before timing out and marking the test as failed" prefix:"test." default:"1m" env:"SC_TEST_TIMEOUT"`
-	// TargetURL      string        `help:"URL to check against" prefix:"test." env:"SC_TEST_TARGET_URL"`
+	FeaturesFolder  string        `help:"path to gherkin features folder" hidden:"" default:"./features" env:"SC_TEST_FEATURES_FOLDER"`
+	SnapshotsFolder string        `help:"path to chromedp snapshots folder" hidden:"" default:"./snapshots" env:"SC_TEST_SNAPSHOTS_FOLDER"`
+	Timeout         time.Duration `help:"maximum amount of time that we should wait for a step or scenario to complete before timing out and marking the test as failed" default:"1m" env:"SC_TEST_TIMEOUT"`
+	// TargetURL      string        `help:"URL to check against" env:"SC_TEST_TARGET_URL"`
 	Auth struct {
-		Id       string `help:"name used for authentication" prefix:"test." env:"SC_TEST_AZURE_USERNAME" hidden:""`
-		Password string `help:"password used for authentication" prefix:"test." env:"SC_TEST_AZURE_PASSWORD" hidden:""`
+		Id       string `help:"name used for authentication" env:"SC_TEST_AZURE_USERNAME" hidden:""`
+		Password string `help:"password used for authentication" env:"SC_TEST_AZURE_PASSWORD" hidden:""`
 	} `embed:"" group:"auth"`
-	Probes  common.Probes `embed:"" group:"probes"`
+	Probes  common.Probes `embed:"" prefix:"probes." group:"probes"`
 	Metrics struct {
-		Address    string `help:"actuator adress with port" prefix:"metrics." default:":8082" env:"SC_TEST_METRICS_ADDRESS" optional:"" `
-		RootPrefix string `help:"Prefix for the internal routes of web endpoints." prefix:"metrics." env:"SC_TEST_METRICS_ROUTE_PREFIX" default:"/" optional:""`
-	} `embed:"" group:"metrics"`
+		Address    string `help:"actuator adress with port" default:":8082" env:"SC_TEST_METRICS_ADDRESS" optional:"" `
+		RootPrefix string `help:"Prefix for the internal routes of web endpoints." env:"SC_TEST_METRICS_ROUTE_PREFIX" default:"/" optional:""`
+	} `embed:"" group:"metrics" prefix:"metrics."`
 }
 
 func initializeTestCmd(ctx floc.Context, ctrl floc.Control) error {
