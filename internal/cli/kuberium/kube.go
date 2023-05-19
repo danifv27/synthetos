@@ -17,7 +17,7 @@ import (
 )
 
 type KubeCmd struct {
-	Flags     KubeFlags        `embed:""`
+	Flags     KubeFlags        `embed:"" prefix:"kube."`
 	Images    KubeImagesCmd    `cmd:"" help:"List images used in deployed kubernetes pods."`
 	Resources KubeResourcesCmd `cmd:"" help:"List resources associated with deployed kubernetes objects."`
 	Summary   KubeSummaryCmd   `cmd:"" help:"Show a summary of the objects deployed in a namespace or present in a kubernetes manifests."`
@@ -25,11 +25,11 @@ type KubeCmd struct {
 
 type KubeFlags struct {
 	Probes    common.Probes `embed:"" prefix:"probes."`
-	Namespace string        `help:"namespace" prefix:"kube." env:"SC_KUBE_CONFIG_NAMESPACE" required:""`
-	Path      string        `help:"path to the kubeconfig file to use for requests or host url" prefix:"kube." env:"SC_KUBE_CONFIG_PATH" required:""`
-	Context   string        `help:"the name of the kubeconfig context to use" prefix:"kube." env:"SC_KUBE_CONTEXT" required:""`
-	Selector  *string       `help:"selector (label query) to filter on," prefix:"kube." env:"SC_KUBE_SELECTOR" short:"l"`
-	Output    string        `prefix:"kube." help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KUBE_OUTPUT"`
+	Namespace string        `help:"namespace" env:"SC_KUBE_CONFIG_NAMESPACE" required:""`
+	Path      string        `help:"path to the kubeconfig file to use for requests or host url" env:"SC_KUBE_CONFIG_PATH" required:""`
+	Context   string        `help:"the name of the kubeconfig context to use" env:"SC_KUBE_CONTEXT" required:""`
+	Selector  *string       `help:"selector (label query) to filter on," env:"SC_KUBE_SELECTOR" short:"l"`
+	Output    string        `help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KUBE_OUTPUT"`
 }
 
 func initializeKubeCmd(ctx floc.Context, ctrl floc.Control) error {

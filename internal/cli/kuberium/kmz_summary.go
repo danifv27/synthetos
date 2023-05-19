@@ -19,11 +19,11 @@ import (
 )
 
 type KmzSummaryCmd struct {
-	Flags KmzSummaryFlags `embed:""`
+	Flags KmzSummaryFlags `embed:"" prefix:"kmz.summary."`
 }
 
 type KmzSummaryFlags struct {
-	Output string `prefix:"kmz.summary." help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KMZ_SUMMARY_OUTPUT"`
+	Output string `help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KMZ_SUMMARY_OUTPUT"`
 }
 
 func initializeKmzSummaryCmd(ctx floc.Context, ctrl floc.Control) error {

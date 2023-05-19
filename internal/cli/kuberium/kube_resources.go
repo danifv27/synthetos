@@ -18,10 +18,12 @@ import (
 )
 
 type KubeResourcesCmd struct {
-	Flags KubeResourcesFlags `embed:""`
+	Flags KubeResourcesFlags `embed:"" prefix:"kube.resources."`
 }
 
-type KubeResourcesFlags struct{}
+type KubeResourcesFlags struct {
+	Concise bool `help:"Do not include a detailed resource list." env:"SC_KUBE_RESOURCES_DETAILED" default:"true" negatable=""`
+}
 
 func initializeKubeResourcesCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
