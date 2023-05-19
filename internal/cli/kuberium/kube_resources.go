@@ -22,7 +22,7 @@ type KubeResourcesCmd struct {
 }
 
 type KubeResourcesFlags struct {
-	Concise bool `help:"Do not include a detailed resource list." env:"SC_KUBE_RESOURCES_DETAILED" default:"true" negatable=""`
+	Concise bool `help:"Do not include a detailed resource list." env:"SC_KUBE_RESOURCES_DETAILED" default:"true" negatable:""`
 }
 
 func initializeKubeResourcesCmd(ctx floc.Context, ctrl floc.Control) error {
@@ -120,7 +120,7 @@ func kubeResourcesJob(ctx floc.Context, ctrl floc.Control) error {
 	reqShow := actions.ListResourcesRequest{
 		SendCh:    resourcesCh,
 		Namespace: cmd.Flags.Namespace,
-		Full:      true,
+		Concise:   cmd.Resources.Flags.Concise,
 	}
 	if cmd.Flags.Selector != nil {
 		reqShow.Selector = *cmd.Flags.Selector

@@ -13,7 +13,7 @@ type ListResourcesRequest struct {
 	SendCh    chan<- provider.Resource
 	Namespace string
 	Selector  string
-	Full      bool
+	Concise   bool
 }
 
 type ListResourcesQuery interface {
@@ -39,7 +39,7 @@ func (h listResourcesQueryHandler) Handle(request ListResourcesRequest) error {
 	var err, rcerror error
 
 	ctx := context.Background()
-	if err = h.prvdr.AllResources(ctx, request.SendCh, request.Namespace, request.Selector, request.Full); err != nil {
+	if err = h.prvdr.AllResources(ctx, request.SendCh, request.Namespace, request.Selector, request.Concise); err != nil {
 		return errortree.Add(rcerror, "Handle", err)
 	}
 

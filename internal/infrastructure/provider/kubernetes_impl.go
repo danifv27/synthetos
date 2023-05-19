@@ -194,7 +194,7 @@ func (c *kubernetesClient) AllImages(ctx context.Context, sendCh chan<- provider
 	return nil
 }
 
-func (c *kubernetesClient) AllResources(ctx context.Context, ch chan<- provider.Resource, ns string, selector string, full bool) error {
+func (c *kubernetesClient) AllResources(ctx context.Context, ch chan<- provider.Resource, ns string, selector string, concise bool) error {
 	var rcerror, err error
 	var apiResourceList []*metav1.APIResourceList
 
@@ -240,7 +240,7 @@ func (c *kubernetesClient) AllResources(ctx context.Context, ch chan<- provider.
 					Resources:      make([]provider.Resource, 0),
 				}
 			}
-			if full {
+			if !concise {
 				for _, item := range resourceList.Items {
 					res := provider.Resource{
 						Name:      item.GetName(),
