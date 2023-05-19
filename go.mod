@@ -6,7 +6,6 @@ require (
 	github.com/alecthomas/kong v0.7.1
 	github.com/alexeyco/simpletable v1.0.0
 	github.com/antifuchs/o v1.1.0
-	github.com/aquilax/truncate v1.0.0
 	github.com/avast/retry-go/v4 v4.3.4
 	github.com/chromedp/cdproto v0.0.0-20230220211738-2b1ec77315c9
 	github.com/chromedp/chromedp v0.9.1
@@ -17,7 +16,6 @@ require (
 	github.com/iancoleman/strcase v0.2.0
 	github.com/prometheus/client_golang v1.14.0
 	github.com/robert-nix/ansihtml v1.0.1
-	github.com/ryboe/q v1.0.19
 	github.com/sethvargo/go-retry v0.2.4
 	github.com/sirupsen/logrus v1.9.0
 	github.com/speijnik/go-errortree v1.0.1
@@ -102,7 +100,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kisielk/gotool v1.0.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -125,7 +122,6 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/rivo/uniseg v0.1.0 // indirect
-	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/securego/gosec v0.0.0-20200103095621-79fbf3af8d83 // indirect
 	github.com/sourcegraph/go-diff v0.5.1 // indirect
 	github.com/spf13/afero v1.1.2 // indirect

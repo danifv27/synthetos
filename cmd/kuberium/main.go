@@ -77,7 +77,7 @@ func main() {
 		kong.Bind(pCtxcmd),
 		kong.Bind(&rcerror),
 		kong.Name(bin),
-		kong.Description("KMS manager"),
+		kong.Description("Kubernetes manager"),
 		kong.UsageOnError(),
 		kong.ConfigureHelp(kong.HelpOptions{
 			Tree: true,
