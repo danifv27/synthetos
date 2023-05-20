@@ -1,6 +1,8 @@
 package printer
 
 import (
+	"io"
+
 	"github.com/alexeyco/simpletable"
 	"github.com/speijnik/go-errortree"
 )
@@ -20,6 +22,7 @@ func (o PrinterOptionFunc) Apply(t *PrinterClient) error {
 
 type PrinterClient struct {
 	table *simpletable.Table
+	wr    io.Writer
 }
 
 // NewPrinter Constructor
@@ -29,6 +32,7 @@ func NewPrinter(opts ...PrinterOption) (*PrinterClient, error) {
 	t := PrinterClient{
 		table: simpletable.New(),
 	}
+	t.table.SetStyle(simpletable.StyleMarkdown)
 	// Loop through each option
 	for _, option := range opts {
 		if err := option.Apply(&t); err != nil {
@@ -37,4 +41,13 @@ func NewPrinter(opts ...PrinterOption) (*PrinterClient, error) {
 	}
 
 	return &t, nil
+}
+
+func WithWriter(w io.Writer) PrinterOption {
+
+	return PrinterOptionFunc(func(c *PrinterClient) error {
+		c.wr = w
+
+		return nil
+	})
 }

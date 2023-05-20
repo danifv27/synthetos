@@ -65,6 +65,7 @@ func (h showSummaryQueryHandler) Handle(request ShowSummaryRequest) error {
 
 	ctx := context.Background()
 	if resources, err = h.provider.GetResources(ctx, request.Location, request.Selector); err != nil {
+		close(request.Ch)
 		return errortree.Add(rcerror, "Handle", err)
 	}
 	for _, r := range resources {

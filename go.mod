@@ -7,11 +7,12 @@ require (
 	github.com/alexeyco/simpletable v1.0.0
 	github.com/antifuchs/o v1.1.0
 	github.com/avast/retry-go/v4 v4.3.4
-	github.com/chromedp/cdproto v0.0.0-20230408222125-26b95782d8e2
+	github.com/chromedp/cdproto v0.0.0-20230220211738-2b1ec77315c9
 	github.com/chromedp/chromedp v0.9.1
 	github.com/cucumber/godog v0.12.6
 	github.com/fortanix/sdkms-client-go v0.2.2
 	github.com/gonejack/linesprinter v0.0.1
+	github.com/google/uuid v1.3.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/prometheus/client_golang v1.14.0
 	github.com/robert-nix/ansihtml v1.0.1
@@ -20,10 +21,14 @@ require (
 	github.com/speijnik/go-errortree v1.0.1
 	github.com/tidwall/pretty v1.2.1
 	github.com/workanator/go-floc/v3 v3.0.1
+	k8s.io/api v0.27.1
 	k8s.io/apimachinery v0.27.1
+	k8s.io/cli-runtime v0.27.1
 	k8s.io/client-go v0.27.1
-	sigs.k8s.io/kustomize/api v0.13.2
-	sigs.k8s.io/kustomize/kyaml v0.14.1
+	k8s.io/kubectl v0.27.1
+	sigs.k8s.io/kustomize/api v0.13.3
+	sigs.k8s.io/kustomize/kyaml v0.14.2
+
 )
 
 require (
@@ -82,19 +87,20 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/gostaticanalysis/analysisutil v0.0.0-20190318220348-4088753ea4d3 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
 	github.com/hashicorp/go-memdb v1.3.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
-	github.com/inconshreveable/mousetrap v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jingyugao/rowserrcheck v0.0.0-20191204022205-72ab7603b68a // indirect
 	github.com/jirfag/go-printf-func-name v0.0.0-20191110105641-45db9963cdd3 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kisielk/gotool v1.0.0 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
+	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matoous/godox v0.0.0-20190911065817-5d6d842e92eb // indirect
@@ -120,7 +126,7 @@ require (
 	github.com/sourcegraph/go-diff v0.5.1 // indirect
 	github.com/spf13/afero v1.1.2 // indirect
 	github.com/spf13/cast v1.3.0 // indirect
-	github.com/spf13/cobra v1.4.0 // indirect
+	github.com/spf13/cobra v1.6.0 // indirect
 	github.com/spf13/jwalterweatherman v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.1 // indirect
@@ -150,7 +156,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.4 // indirect
-	k8s.io/api v0.27.1 // indirect
 	k8s.io/klog/v2 v2.90.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230308215209-15aac26d736a // indirect
 	k8s.io/utils v0.0.0-20230209194617-a36077c30491 // indirect

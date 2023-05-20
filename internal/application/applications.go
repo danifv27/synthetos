@@ -36,14 +36,24 @@ func (o ApplicationOptionFunc) Apply(a *Applications) error {
 
 // Queries operations that request data
 type Queries struct {
-	ListGroups  actions.ListGroupsQueryHandler
-	ShowSummary actions.ShowSummaryQueryHandler
+	ListGroups    actions.ListGroupsQueryHandler
+	ListSecrets   actions.ListSecretsQuery
+	DecryptSecret actions.DecryptSecretQuery
+	ShowSummary   actions.ShowSummaryQueryHandler
+	ListManifests actions.ListManifestsObjectsQuery
+	ListImages    actions.ListImagesQuery
+	ListResources actions.ListResourcesQuery
 }
 
 // Commands operations that accept data to make a change or trigger an action
 type Commands struct {
 	PrintVersion         actions.PrintVersionCommandHandler
 	PrintResourceSummary actions.PrintResourceSummaryCommand
+	PrintSecret          actions.PrintSecretCommand
+	DecryptManifests     actions.DecryptManifestsCommand
+	PrintManifests       actions.PrintManifestsCommand
+	PrintImages          actions.PrintImagesCommand
+	PrintResources       actions.PrintResourcesCommand
 }
 
 // Applications contains all exposed services of the application layer
@@ -114,11 +124,41 @@ func WithPrintVersionCommand(v version.Version, p printer.Printer) ApplicationOp
 	})
 }
 
+func WithPrintSecretCommand(l logger.Logger, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.PrintSecret = actions.NewPrintSecretCommandHandler(l, p)
+
+		return nil
+	})
+}
+
 func WithPrintResourceSummaryCommand(l logger.Logger, p printer.Printer) ApplicationOption {
 
 	return ApplicationOptionFunc(func(a *Applications) error {
 
 		a.Commands.PrintResourceSummary = actions.NewPrintResourceSummaryCommandHandler(l, p)
+
+		return nil
+	})
+}
+
+func WithPrintImagesCommand(l logger.Logger, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.PrintImages = actions.NewPrintImagesCommandHandler(l, p)
+
+		return nil
+	})
+}
+
+func WithPrintResourcesCommand(l logger.Logger, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.PrintResources = actions.NewPrintResourcesCommandHandler(l, p)
 
 		return nil
 	})
@@ -134,11 +174,81 @@ func WithListGroupsQuery(l logger.Logger, p printer.Printer, k kms.KeyManager) A
 	})
 }
 
+func WithListSecretsQuery(l logger.Logger, k kms.KeyManager) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ListSecrets = actions.NewListSecretsQueryHandler(l, k)
+
+		return nil
+	})
+}
+
 func WithShowSummaryQuery(l logger.Logger, pr provider.ResourceProvider) ApplicationOption {
 
 	return ApplicationOptionFunc(func(a *Applications) error {
 
 		a.Queries.ShowSummary = actions.NewShowSummaryQueryHandler(l, pr)
+
+		return nil
+	})
+}
+
+func WithDecryptSecretsQuery(l logger.Logger, k kms.KeyManager) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.DecryptSecret = actions.NewDecryptSecretQueryHandler(l, k)
+
+		return nil
+	})
+}
+
+func WithDecryptManifestsCommand(l logger.Logger, k kms.KeyManager) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.DecryptManifests = actions.NewDecryptManifestsCommandHandler(l, k)
+
+		return nil
+	})
+}
+
+func WithListManifestsCommand(l logger.Logger, pr provider.ManifestProvider) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ListManifests = actions.NewListManifestsObjectsQueryHandler(l, pr)
+
+		return nil
+	})
+}
+
+func WithPrintManifestsCommand(l logger.Logger, p printer.Printer) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Commands.PrintManifests = actions.NewPrintManifestsCommandHandler(l, p)
+
+		return nil
+	})
+}
+
+func WithListImagesQuery(l logger.Logger, pr provider.ResourceProvider) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ListImages = actions.NewListImagesQueryHandler(l, pr)
+
+		return nil
+	})
+}
+
+func WithListResourcesQuery(l logger.Logger, pr provider.ResourceProvider) ApplicationOption {
+
+	return ApplicationOptionFunc(func(a *Applications) error {
+
+		a.Queries.ListResources = actions.NewListResourcesQueryHandler(l, pr)
 
 		return nil
 	})

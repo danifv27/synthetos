@@ -9,7 +9,9 @@ It supports several commands, each accessible through the application binary. It
 
 ℹ️ command flags have precedence over environment values
 
-## Common Flags
+## Flags
+
+ℹ️ Flags are inherited from parent commands.
 
 CLI commands support both local (specific to the given command) and global (works for every command available) flags. Some of the most common global flags are:
 
@@ -25,7 +27,7 @@ CLI commands support both local (specific to the given command) and global (work
 {
     "logging": {
         "level": "debug",
-        "format": "logger:stdout?json=false"
+        "json": "true"
     }
 }
 ```
@@ -42,5 +44,5 @@ synthetos <command> <subcommand> [flags]
 ```
 
 # Available Commands
-* [version](./version.md)
 * [test](./test.md)
+* [version](./version.md)

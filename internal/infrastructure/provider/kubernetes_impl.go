@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"fry.org/cmo/cli/internal/application/logger"
@@ -11,6 +12,7 @@ import (
 	iClient "fry.org/cmo/cli/internal/infrastructure/client"
 	"github.com/avast/retry-go/v4"
 	"github.com/speijnik/go-errortree"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -54,10 +56,10 @@ func WithKubernetesDynamicClient(path string, context *string) ProviderOption {
 
 		if c, ok = i.(*kubernetesClient); ok {
 			if kubeconfig, _, err = iClient.NewKubeClusterConfig(path, context); err != nil {
-				errortree.Add(rcerror, "provider.WithKubernetesDynamicClient", err)
+				return errortree.Add(rcerror, "provider.WithKubernetesDynamicClient", err)
 			}
 			if c.Client, err = iClient.NewKubeDynamicClient(kubeconfig); err != nil {
-				errortree.Add(rcerror, "provider.WithKubernetesDynamicClient", err)
+				return errortree.Add(rcerror, "provider.WithKubernetesDynamicClient", err)
 			}
 			return nil
 		}
@@ -96,6 +98,169 @@ func WithKubernetesLabelSelector(selector string) ProviderOption {
 
 		return errortree.Add(rcerror, "provider.WithK8sLabelSelector", errors.New("type mismatch, kustomizeClient expected"))
 	})
+}
+
+func containerToImage(img string, imgName string, statuses []v1.ContainerStatus) (*provider.Image, error) {
+	if img == "" {
+		return nil, fmt.Errorf("container %s has no image", img)
+	}
+
+	res := &provider.Image{
+		Name: img,
+	}
+
+	if strings.Contains(img, "@") {
+		res.Digest = strings.Split(img, "@")[1]
+		return res, nil
+	}
+	// search in statuses for ImageID to get digest
+	for i := range statuses {
+		if imgName == statuses[i].Name {
+			if statuses[i].State.Running == nil && statuses[i].State.Terminated == nil {
+				break // We can get valid digest only from running or terminated containers
+			}
+			if strings.Contains(statuses[i].ImageID, "@") {
+				res.Digest = strings.Split(statuses[i].ImageID, "@")[1]
+			}
+			break
+		}
+	}
+
+	return res, nil
+}
+
+func (c *kubernetesClient) AllImages(ctx context.Context, sendCh chan<- provider.Image, selector string) error {
+	var rcerror error
+
+	//We do not have enough rights to list namespaces.
+	// namespaces, e := c.Client.KubeInterface.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
+	// if err != nil {
+	// 	return images, errortree.Add(rcerror, "AllImages", err)
+	// }
+	defer close(sendCh)
+	listOptions := metav1.ListOptions{
+		LabelSelector: selector,
+	}
+	// for i := range namespaces.Items {
+	// namespace := namespaces.Items[i].Name
+	pods, err := c.Client.KubeInterface.CoreV1().Pods(c.Namespace).List(ctx, listOptions)
+	if err != nil {
+		return errortree.Add(rcerror, "AllImages", err)
+	}
+	images := make(map[string]bool)
+	for j := range pods.Items {
+		pod := pods.Items[j]
+		for k := range pod.Spec.InitContainers {
+			img, err := containerToImage(pod.Spec.InitContainers[k].Image, pod.Spec.InitContainers[k].Name, pod.Status.InitContainerStatuses)
+			if err != nil {
+				return errortree.Add(rcerror, "AllImages", err)
+			}
+			if _, ok := images[img.Digest]; !ok {
+				images[img.Digest] = true
+				sendCh <- *img
+			}
+		}
+		for k := range pod.Spec.Containers {
+			img, err := containerToImage(pod.Spec.Containers[k].Image, pod.Spec.Containers[k].Name, pod.Status.ContainerStatuses)
+			if err != nil {
+				return errortree.Add(rcerror, "AllImages", err)
+			}
+			if _, ok := images[img.Digest]; !ok {
+				images[img.Digest] = true
+				sendCh <- *img
+			}
+		}
+		for k := range pod.Spec.EphemeralContainers {
+			img, err := containerToImage(pod.Spec.EphemeralContainers[k].Image,
+				pod.Spec.EphemeralContainers[k].Name, pod.Status.EphemeralContainerStatuses)
+			if err != nil {
+				return errortree.Add(rcerror, "AllImages", err)
+			}
+			if _, ok := images[img.Digest]; !ok {
+				images[img.Digest] = true
+				sendCh <- *img
+			}
+		}
+	}
+	// }
+
+	// toReturn := make([]provider.Image, 0)
+	// for _, v := range images {
+	// 	toReturn = append(toReturn, v)
+	// }
+
+	return nil
+}
+
+func (c *kubernetesClient) AllResources(ctx context.Context, sendCh chan<- provider.ResourceList, ns *string, selector string, concise bool) error {
+	var rcerror, err error
+	var apiResourceList []*metav1.APIResourceList
+
+	if apiResourceList, err = c.Client.KubeInterface.Discovery().ServerPreferredResources(); err != nil {
+		return errortree.Add(rcerror, "provider.AllResources", err)
+	}
+	defer close(sendCh)
+	listOptions := metav1.ListOptions{
+		LabelSelector: selector,
+	}
+	resourceMap := make(map[string]provider.ResourceList)
+	for _, apiResource := range apiResourceList {
+		gv, e := schema.ParseGroupVersion(apiResource.GroupVersion)
+		if e != nil {
+			return errortree.Add(rcerror, "provider.AllResources", e)
+		}
+		for i := range apiResource.APIResources {
+			var resourceList *unstructured.UnstructuredList
+			var e1 error
+			res := apiResource.APIResources[i]
+			gvr := schema.GroupVersionResource{
+				Group:    gv.Group,
+				Version:  gv.Version,
+				Resource: res.Name,
+			}
+			if ns == nil {
+				resourceList, e1 = c.Client.DynamicInterface.Resource(gvr).List(ctx, listOptions)
+			} else {
+				resourceList, e1 = c.Client.DynamicInterface.Resource(gvr).Namespace(*ns).List(ctx, listOptions)
+			}
+			// Most of the errors are due to do not have rights to list them (they are usually out of the namespace)
+			if e1 != nil {
+				// c.l.WithFields(logger.Fields{
+				// 	"err": e1,
+				// 	"gvr": gvr,
+				// }).Debug("failed to list resources")
+				continue
+			}
+			// c.l.WithFields(logger.Fields{
+			// 	"gvr":   gvr,
+			// 	"count": len(resourceList.Items),
+			// }).Debug("found resources")
+			// a namespaced resource means that it is bound by a specific namespace. Some examples of namespaced resources in Kubernetes include Pods, Services, ConfigMaps, and Deployments.
+			if len(resourceList.Items) > 0 {
+				resourceMap[gvr.String()] = provider.ResourceList{
+					Kind:           resourceList.Items[0].GetKind(),
+					APIVersion:     gvr.GroupVersion().String(),
+					Namespaced:     res.Namespaced,
+					ResourcesCount: len(resourceList.Items),
+					Resources:      make([]provider.Resource, 0),
+				}
+				if !concise {
+					for _, item := range resourceList.Items {
+						res := provider.Resource{
+							Name:      item.GetName(),
+							Namespace: item.GetNamespace(),
+						}
+						val := resourceMap[gvr.String()]
+						val.Resources = append(val.Resources, res)
+						resourceMap[gvr.String()] = val
+					}
+				}
+				sendCh <- resourceMap[gvr.String()]
+			}
+		}
+	}
+
+	return nil
 }
 
 func (c *kubernetesClient) GetResources(ctx context.Context, location string, selector string) ([]*unstructured.Unstructured, error) {
@@ -203,13 +368,13 @@ func (c *kubernetesClient) GetResources(ctx context.Context, location string, se
 			} //select
 		}(ch, list[idx])
 	} //for range
-	c.l.Debug("Waiting for kubernetes producers to stop...")
+	// c.l.Debug("Waiting for kubernetes producers to stop...")
 	wg.Wait()
-	c.l.Debug("Kubernetes producers closed. Closing channel...")
+	// c.l.Debug("Kubernetes producers closed. Closing channel...")
 	close(ch)
-	c.l.Debug("Channel closed. Waiting for kubernetes consumer to close")
+	// c.l.Debug("Channel closed. Waiting for kubernetes consumer to close")
 	<-quit
-	c.l.Debug("Kubernetes consumer closed")
+	// c.l.Debug("Kubernetes consumer closed")
 
 	return uItems, nil
 }

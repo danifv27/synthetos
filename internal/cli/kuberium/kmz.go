@@ -15,13 +15,13 @@ import (
 )
 
 type KmzCmd struct {
-	Flags   KmzFlags      `embed:""`
+	Flags   KmzFlags      `embed:"" prefix:"kmz."`
 	Summary KmzSummaryCmd `cmd:"" help:"Show a summary of the objects present in a kubernetes manifests."`
 }
 
 type KmzFlags struct {
 	Probes            common.Probes `embed:"" prefix:"probes."`
-	KustomizationPath string        `help:"Absolute path to kustomization file" type:"path" prefix:"kmz." env:"SC_KMZ_KUSTOMIZATION_PATH" required:""`
+	KustomizationPath string        `help:"Absolute path to kustomization file" type:"path" env:"SC_KMZ_KUSTOMIZATION_PATH" required:""`
 }
 
 func initializeKmzCmd(ctx floc.Context, ctrl floc.Control) error {

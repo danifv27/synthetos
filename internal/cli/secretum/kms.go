@@ -15,12 +15,13 @@ import (
 )
 
 type KmsCmd struct {
-	Flags KmsFlags   `embed:""`
-	List  KmsListCmd `cmd:"" help:"KMS list."`
+	Flags    KmsFlags       `embed:""`
+	Fortanix KmsFortanixCmd `cmd:"" help:"Manage Fortanix KMS instance."`
 }
 
 type KmsFlags struct {
-	Probes common.Probes `embed:"" group:"probes"`
+	Output string        `prefix:"kms." help:"Format the output (table|json|text)." enum:"table,json,text" default:"table" env:"SC_KMS_OUTPUT"`
+	Probes common.Probes `embed:"" prefix:"probes."`
 }
 
 func initializeKmsCmd(ctx floc.Context, ctrl floc.Control) error {

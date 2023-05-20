@@ -1,11 +1,10 @@
 # build stage
 FROM golang:1.20.2-alpine3.16 AS build-env
 
-RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv@v1.8.3
 RUN apk update && apk add --no-cache git make bash
 
 COPY . /src
-RUN cd /src/cmd/secretum && make build-linux-amd64
+RUN cd /src/cmd/kuberium && make build-linux-amd64
 
 # final stage
 FROM alpine:3.16
@@ -22,8 +21,7 @@ RUN addgroup -g $GROUP_ID $GROUP_NAME && \
     --no-create-home --uid $USER_ID --ingroup $GROUP_NAME $USER_NAME
 
 RUN mkdir -p /app/bin; mkdir -p /app/config
-
-COPY --from=build-env /src/output/linux/amd64/bin/secretum /app/bin/secretum
+COPY --from=build-env /src/output/linux/amd64/bin/kuberium /app/bin/kuberium
 
 RUN chown $USER_ID:$GROUP_ID -R /app
 
@@ -33,6 +31,6 @@ WORKDIR /app
 USER $USER_ID
 
 # executable
-ENTRYPOINT [ "/app/bin/secretum" ]
+ENTRYPOINT [ "/app/bin/kuberium" ]
 # arguments that can be overridden
 CMD ["version"]

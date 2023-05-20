@@ -15,27 +15,26 @@ import (
 	"github.com/workanator/go-floc/v3/run"
 )
 
-type KmsListFortanixGroupsCmd struct {
-	Flags KmsListFortanixGroupsFlags `embed:""`
+type KmsFortanixListGroupsCmd struct {
+	Flags KmsFortanixListGroupsFlags `embed:""`
 }
 
-type KmsListFortanixGroupsFlags struct {
-}
+type KmsFortanixListGroupsFlags struct{}
 
-func initializeKmsListFortanixGroupsCmd(ctx floc.Context, ctrl floc.Control) error {
+func initializeKmsFortanixListGroupsCmd(ctx floc.Context, ctrl floc.Control) error {
 	var err, rcerror error
 	var c *common.Cmdctx
 	// var cli CLI
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		if e := SecretumSetRCErrorTree(ctx, "initializeKmsListFortanixGroupsCmd", err); e != nil {
-			return errortree.Add(rcerror, "initializeKmsListFortanixGroupsCmd", e)
+		if e := SecretumSetRCErrorTree(ctx, "initializeKmsFortanixListGroupsCmd", err); e != nil {
+			return errortree.Add(rcerror, "initializeKmsFortanixListGroupsCmd", e)
 		}
 		return err
 	}
 	// if cli, err = SecretumFlags(ctx); err != nil {
-	// 	if e := SecretumSetRCErrorTree(ctx, "initializeKmsListFortanixGroupsCmd", err); e != nil {
-	// 		return errortree.Add(rcerror, "initializeKmsListFortanixGroupsCmd", e)
+	// 	if e := SecretumSetRCErrorTree(ctx, "initializeKmsFortanixListGroupsCmd", err); e != nil {
+	// 		return errortree.Add(rcerror, "initializeKmsFortanixListGroupsCmd", e)
 	// 	}
 	// 	return err
 	// }
@@ -43,7 +42,7 @@ func initializeKmsListFortanixGroupsCmd(ctx floc.Context, ctrl floc.Control) err
 	if err = application.WithOptions(&c.Apps,
 		application.WithListGroupsQuery(c.Apps.Logger, c.Adapters.Printer, c.Adapters.KeyManager),
 	); err != nil {
-		return errortree.Add(rcerror, "initializeKmsListFortanixGroupsCmd", err)
+		return errortree.Add(rcerror, "initializeKmsFortanixListGroupsCmd", err)
 	}
 	*c = common.Cmdctx{
 		Cmd:      c.Cmd,
@@ -56,23 +55,23 @@ func initializeKmsListFortanixGroupsCmd(ctx floc.Context, ctrl floc.Control) err
 	return nil
 }
 
-func kmsListFortanixGroupsJob(ctx floc.Context, ctrl floc.Control) error {
+func kmsFortanixListGroupsJob(ctx floc.Context, ctrl floc.Control) error {
 	var c *common.Cmdctx
 	var cmd KmsCmd
 	var err error
 
 	if c, err = common.CommonCmdCtx(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.kmsListFortanixGroupsJob", err)
+		SecretumSetRCErrorTree(ctx, "secretum.kmsFortanixListGroupsJob", err)
 		return err
 	}
 	if cmd, err = SecretumKmsCmd(ctx); err != nil {
-		SecretumSetRCErrorTree(ctx, "secretum.kmsListFortanixGroupsJob", err)
+		SecretumSetRCErrorTree(ctx, "secretum.kmsFortanixListGroupsJob", err)
 		return err
 	}
 	req := actions.ListGroupsRequest{
 		Mode: printer.PrinterModeNone,
 	}
-	m := cmd.List.Flags.Output
+	m := cmd.Flags.Output
 	switch {
 	case m == "json":
 		req.Mode = printer.PrinterModeJSON
@@ -82,24 +81,24 @@ func kmsListFortanixGroupsJob(ctx floc.Context, ctrl floc.Control) error {
 		req.Mode = printer.PrinterModeTable
 	}
 	if _, err = c.Apps.Queries.ListGroups.Handle(req); err != nil {
-		SecretumSetRCErrorTree(ctx, "kmsListFortanixGroupsJob", err)
+		SecretumSetRCErrorTree(ctx, "kmsFortanixListGroupsJob", err)
 		return err
 	}
 
 	return nil
 }
 
-func (cmd *KmsListFortanixGroupsCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
+func (cmd *KmsFortanixListGroupsCmd) Run(cli *CLI, c *common.Cmdctx, rcerror *error) error {
 
 	p := cli.Kms.Flags.Probes
 	//We need to append at the beginning to traverse the initseq in the right order
-	c.InitSeq = append([]floc.Job{initializeKmsListFortanixGroupsCmd}, c.InitSeq...)
+	c.InitSeq = append([]floc.Job{initializeKmsFortanixListGroupsCmd}, c.InitSeq...)
 	c.RunSeq = guard.OnTimeout(
 		guard.ConstTimeout(5*time.Minute),
 		nil, // No need for timeout data
 		run.Sequence(
 			run.If(p.AreProbesEnabled, run.Background(startSecretumProbesServer)),
-			kmsListFortanixGroupsJob,
+			kmsFortanixListGroupsJob,
 			func(ctx floc.Context, ctrl floc.Control) error {
 				if rcerror, err := SecretumRCErrorTree(ctx); err != nil {
 					ctrl.Fail(fmt.Sprintf("Command '%s' internal error", c.Cmd), err)

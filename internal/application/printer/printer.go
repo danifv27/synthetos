@@ -18,5 +18,9 @@ const (
 type Printer interface {
 	PrintVersion(v version.Version, mode PrinterMode) error
 	ListKmsGroups(groups []kms.Group, mode PrinterMode) error
+	ListKmsSecrets(receiveCh <-chan kms.Secret, mode PrinterMode, decode bool) error
+	ListManifests(receiveCh <-chan provider.Manifest) error
+	ListKbomImages(receiveCh <-chan provider.Image, mode PrinterMode) error
+	ListKbomResources(receiveCh <-chan provider.ResourceList, mode PrinterMode) error
 	PrintResourceSummary(receiveCh <-chan provider.Summary, mode PrinterMode) error
 }
