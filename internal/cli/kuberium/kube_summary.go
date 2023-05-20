@@ -77,6 +77,7 @@ func kubeSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 		KuberiumSetRCErrorTree(ctx, "kubeSummaryJob", err)
 		return err
 	}
+	printerCh := make(chan provider.Summary, 3)
 	summaryCh := make(chan provider.Summary, 3)
 	quit := make(chan struct{})
 
@@ -100,6 +101,7 @@ func kubeSummaryJob(ctx floc.Context, ctrl floc.Control) error {
 		}
 		close(quit)
 	}(reqPrint)
+	//Start the filtering middleware
 
 	//Start the producer
 	reqShow := actions.ShowSummaryRequest{
